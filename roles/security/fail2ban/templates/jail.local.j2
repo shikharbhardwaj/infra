@@ -14,7 +14,7 @@ enabled = true
 port = {{ security_ssh_port }}
 filter = sshd
 
-{% for name in installed_configs %}
+{% for name in installed_configs | default([]) %}
 [{{ name }}]
 enabled  = true
 port     = http,https,{{ security_ssh_port }}

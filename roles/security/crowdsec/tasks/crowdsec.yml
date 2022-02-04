@@ -1,14 +1,10 @@
 ---
-- name: Add Crowdsec GPG apt Key
-  apt_key:
-    url: https://packagecloud.io/crowdsec/crowdsec/gpgkey
-    state: present
+- name: Setup crowdsec repository
+  become: yes
+  shell:
+      cmd: get_url -s https://packagecloud.io/install/repositories/crowdsec/crowdsec/script.deb.sh | bash
 
-- name: Add Crowdsec Repository
-  apt_repository:
-    repo: deb https://packagecloud.io/crowdsec/crowdsec/ubuntu bionic stable
-    state: present
-    
+
 - name: Update apt and install Crowdsec and Prometheus
   apt: 
     update_cache: yes 
