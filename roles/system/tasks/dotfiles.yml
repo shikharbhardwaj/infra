@@ -10,7 +10,8 @@
 - name: Stow the dotfiles
   become: no
   shell:
-    cmd: stow -v */
+    cmd: ./install
     chdir: "/home/{{ username }}/dotfiles"
-  register: stow_result
-  changed_when: stow_result.stdout != ""
+  register: dotbot_result
+  changed_when: dotbot_result.stdout != ""
+  failed_when: dotbot_result.rc not in [0, 1]
