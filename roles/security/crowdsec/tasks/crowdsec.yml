@@ -2,7 +2,7 @@
 - name: Setup crowdsec repository
   become: yes
   shell:
-      cmd: get_url -s https://packagecloud.io/install/repositories/crowdsec/crowdsec/script.deb.sh | bash
+      cmd: curl https://packagecloud.io/install/repositories/crowdsec/crowdsec/script.deb.sh | bash
 
 
 - name: Update apt and install Crowdsec and Prometheus
