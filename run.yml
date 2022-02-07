@@ -67,13 +67,6 @@
     #
     # Network
     #
-    - role: network/swag
-      become: no
-      tags:
-        - swag
-        - containers
-      when: enable_swag | default(False)
-
     - role: network/bunkerized-nginx
       become: no
       tags:
@@ -81,12 +74,26 @@
         - containers
       when: enable_bunkerized_nginx | default(False)
 
+    - role: network/swag
+      become: no
+      tags:
+        - swag
+        - containers
+      when: enable_swag | default(False)
+
     - role: network/wireguard
       become: no
       tags:
         - wireguard
         - containers
       when: enable_wireguard | default(False)
+
+    - role: network/tailscale
+      become: no
+      tags:
+        - tailscale
+        - containers
+      when: enable_tailscale | default(False)
 
     - role: network/ikev2
       become: no

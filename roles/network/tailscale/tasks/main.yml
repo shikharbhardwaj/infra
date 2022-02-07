@@ -1,0 +1,22 @@
+---
+- name: Make sure the tailscale container is created and running
+  docker_container:
+    name: "{{ container_name }}"
+    image: "tailscale/tailscale"
+    pull: yes
+    privileged: yes
+    capabilities: 
+      - net_admin
+      - sys_module
+    state: 'started'
+    volumes:
+      - "{{ docker_dir }}/{{ container_name }}/config:/config"
+      - "/lib/modules:/lib/modules"
+      - "/var/lib:/var/lib"
+      - "/dev/net/tun:/dev/net/tun"
+    network_mode: host
+    command: tailscaled
+    restart_policy: unless-stopped
+- name: Login to tailscale
+  shell:
+    cmd: "docker exec tailscaled tailscale up --authkey={{ tailscale_auth_key }}"
