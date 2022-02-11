@@ -81,6 +81,13 @@
         - containers
       when: enable_swag | default(False)
 
+    - role: network/traefik
+      become: no
+      tags:
+        - traefik
+        - containers
+      when: enable_traefik | default(False)
+
     - role: network/wireguard
       become: no
       tags:
