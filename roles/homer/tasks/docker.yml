@@ -12,6 +12,11 @@
     volumes:
       - "{{ docker_dir }}/{{ container_name }}:/www/assets"
     restart_policy: unless-stopped
+    labels:
+      "traefik.enable": "true"
+      "traefik.docker.network": "traefik-proxy"
+
+      "traefik.http.routers.homer.rule": "Host(`homer.{{ host }}`)"
 
 - name: Make sure cors-container is created and running
   docker_container:
@@ -31,3 +36,12 @@
       - cors-container
     appends: yes
   when: enable_swag
+
+- name: Add {{ container_name }} to the traefik network (reverse-proxy)
+  docker_network:
+    name: traefik-proxy
+    connected:
+      - homer
+      - cors-container
+    appends: yes
+  when: enable_traefik
