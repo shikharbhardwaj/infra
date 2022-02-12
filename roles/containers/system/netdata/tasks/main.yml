@@ -1,0 +1,51 @@
+---
+# - name: Create the config folders
+#   become: true
+#   file:
+#     path: "{{ item }}"
+#     state: directory
+#     recurse: 'yes'
+#     owner: "201"
+#     group: "201"
+#     mode: 0755
+#   with_items:
+#     - "{{ docker_dir}}/{{ container_name }}/netdatalib/"
+#     - "{{ docker_dir}}/{{ container_name }}/netdatalib/registry/"
+#     - "{{ docker_dir}}/{{ container_name }}/netdataconfig/"
+#     - "{{ docker_dir}}/{{ container_name }}/netdatacache/"
+
+# - name: Chown with the user, group that netdata creates the files with
+
+- name: Make sure the netdata container is created and running
+  docker_container:
+    name: "{{ container_name }}"
+    image: "netdata/netdata"
+    capabilities:
+      - sys_ptrace
+    pull: yes
+    state: 'started'
+    # user: "root:root"
+    volumes:
+      - "{{ docker_dir }}/{{ container_name }}/netdataconfig:/etc/netdata"
+      - "{{ docker_dir }}/{{ container_name }}/netdatalib:/var/lib/netdata"
+      - "{{ docker_dir }}/{{ container_name }}/netdatacache:/var/cache/netdata"
+      - "/etc/passwd:/host/etc/passwd:ro"
+      - "/etc/group:/host/etc/group:ro"
+      - "/proc:/host/proc:ro"
+      - "/sys:/host/sys:ro"
+      - "/etc/os-release:/host/etc/os-release:ro"
+    env:
+      "DOCKER_HOST": "traefik-socket-proxy:2375"
+      "PGID": "{{ guid }}"
+    restart_policy: unless-stopped
+    published_ports:
+      - "19999:19999"
+    security_opts:
+      - "apparmor:unconfined"
+    networks:
+      - name: "traefik-proxy"
+    labels:
+      "traefik.enable": "true"
+      "traefik.docker.network": "traefik-proxy"
+
+      "traefik.http.routers.netdata.rule": "Host(`{{ container_name }}.{{ host }}`)"

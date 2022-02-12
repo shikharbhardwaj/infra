@@ -16,7 +16,7 @@
       "traefik.enable": "true"
       "traefik.docker.network": "traefik-proxy"
 
-      "traefik.http.routers.homer.rule": "Host(`homer.{{ host }}`)"
+      "traefik.http.routers.homer.rule": "Host(`{{ container_name }}.{{ host }}`)"
 
 - name: Make sure cors-container is created and running
   docker_container:

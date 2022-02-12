@@ -217,6 +217,16 @@
       when: enable_unifi | default(False)
 
     #
+    # System
+    #
+    - role: containers/system/netdata
+      become: no
+      tags:
+        - netdata
+        - containers
+      when: enable_netdata | default(False)
+
+    #
     # Media
     #
     - role: containers/media/deluge
