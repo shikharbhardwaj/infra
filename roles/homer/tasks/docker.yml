@@ -27,6 +27,13 @@
     ports:
       - 3000:3000
     restart_policy: unless-stopped
+    networks:
+      - name: traefik-proxy
+    labels:
+      "traefik.enable": "true"
+      "traefik.docker.network": "traefik-proxy"
+
+      "traefik.http.routers.cors.rule": "Host(`cors-container.{{ host }}`)"
 
 - name: Add {{ container_name }} to the SWAG network (reverse-proxy)
   docker_network:

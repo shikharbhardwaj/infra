@@ -11,6 +11,12 @@ footer: false
 columns: 4
 connectivityCheck: true
 
+message:
+  url: https://cors-container.{{ host}}/https://quotes-api.{{ host }}/random
+  mapping:
+    title: 'title'
+    content: 'content'
+
 theme: default
 colors:
   light:
@@ -81,8 +87,8 @@ services:
       - name: "PiKVM"
         type: Ping
         logo: /assets/tools/homer-icons/pikvm.png
-        url: "https://pikvm.{{ host }}/"
-        endpoint: "https://pikvm.{{ host }}/"
+        url: "https://cors-container.{{ host }}/https://pikvm.{{ host }}/"
+        endpoint: "https://cors-container.{{ host }}/https://pikvm.{{ host }}/"
         target: "_blank"
 {% endif %}
 {% if enable_pihole %}

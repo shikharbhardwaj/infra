@@ -1,0 +1,17 @@
+---
+- name: Make sure that the quotes-api container is running
+  docker_container:
+    image: "bluefog/svalbard:quotes-api-latest"
+    name: "{{ container_name }}"
+    pull: yes
+    restart_policy: unless-stopped
+    networks:
+      - name: traefik-proxy
+    published_ports:
+      - "8008:8008"
+    labels:
+      "traefik.enable": "true"
+      "traefik.docker.network": "traefik-proxy"
+
+      "traefik.http.routers.quotes.rule": "Host(`{{ container_name }}.{{ host }}`)"
+      "traefik.http.services.quotes.loadbalancer.server.port": "8008"
