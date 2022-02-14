@@ -91,6 +91,14 @@ services:
         endpoint: "https://cors-container.{{ host }}/https://pikvm.{{ host }}/"
         target: "_blank"
 {% endif %}
+{% if enable_netdata %}
+      - name: "Netdata"
+        type: Ping
+        logo: /assets/tools/homer-icons/netdata.png
+        url: "https://cors-container.{{ host }}/https://netdata.{{ host }}/"
+        endpoint: "https://cors-container.{{ host }}/https://netdata.{{ host }}/"
+        target: "_blank"
+{% endif %}
 {% if enable_pihole %}
       - name: "PiHole"
         type: Ping
