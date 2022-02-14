@@ -7,6 +7,12 @@
     owner: "{{ username }}"
     group: "{{ username }}"
 
+
+- name: Print container files
+  ansible.builtin.debug:
+    msg: 'Files: {{ containers.files }}'
+
+
 - name: Copy the icons
   copy:
     src: "files/icons/{{ item.path.split('/')[-1] }}.png"
