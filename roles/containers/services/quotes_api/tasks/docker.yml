@@ -15,3 +15,6 @@
 
       "traefik.http.routers.quotes.rule": "Host(`{{ container_name }}.{{ host }}`)"
       "traefik.http.services.quotes.loadbalancer.server.port": "8008"
+
+
+      "traefik.http.routers.quotes.middlewares": "corsheader@file"

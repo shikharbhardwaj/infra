@@ -216,12 +216,12 @@
         - containers
       when: enable_unifi | default(False)
 
-    - role: containers/services/quotes-api
+    - role: containers/services/quotes_api
       become: no
       tags:
         - quotes
         - containers
-      when: enable_quotes-api | default(False)
+      when: enable_quotes_api | default(False)
 
     #
     # System
