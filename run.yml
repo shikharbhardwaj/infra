@@ -309,6 +309,13 @@
         - containers
       when: enable_vaultwarden | default(False)
 
+    - role: containers/services/seafile
+      become: no
+      tags:
+        - seafile
+        - containers
+      when: enable_seafile | default(False)
+
     #
     # Home automation
     #
