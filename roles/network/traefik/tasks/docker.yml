@@ -36,9 +36,10 @@
      - name: traefik-proxy
     labels:
       "traefik.enable": "true"
-      "traefik.http.routers.traefik.entrypoints": "websecure"
-      "traefik.http.routers.traefik.tls.certresolver": "letsencrypt"
-      "traefik.http.routers.traefik.rule": "Host(`{{ host }}`)"
+      # "traefik.http.routers.traefik.entrypoints": "websecure"
+      # "traefik.http.routers.traefik.tls.certresolver": "letsencrypt"
+      "traefik.http.routers.dashboard.rule": "Host(`traefik.{{ host }}`)"
+      "traefik.http.routers.dashboard.service": "api@internal"
 
       # Watchtower Update
       "com.centurylinklabs.watchtower.enable": "true"

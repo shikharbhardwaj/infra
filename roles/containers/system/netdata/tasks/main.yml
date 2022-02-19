@@ -49,3 +49,5 @@
       "traefik.docker.network": "traefik-proxy"
 
       "traefik.http.routers.netdata.rule": "Host(`{{ container_name }}.{{ host }}`)"
+
+      "traefik.http.routers.netdata.middlewares": "corsheader@file"

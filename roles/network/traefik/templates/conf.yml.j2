@@ -1,0 +1,8 @@
+http:
+  middlewares:
+    corsheader:
+      headers:
+        accesscontrolallowmethods: "GET,OPTIONS,PUT,HEAD"
+        accessControlAllowOriginListRegex: ".*\\.{{ host }}"
+        accesscontrolmaxage: "100"
+        addvaryheader: "true"

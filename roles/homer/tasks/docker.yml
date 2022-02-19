@@ -20,6 +20,8 @@
 
       "traefik.http.routers.homer.rule": "Host(`{{ container_name }}.{{ host }}`)"
 
+      "traefik.http.routers.homer.middlewares": "corsheader@file"
+
 - name: Make sure cors-container is created and running
   docker_container:
     name: 'cors-container'

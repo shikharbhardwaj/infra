@@ -12,7 +12,7 @@ columns: 4
 connectivityCheck: true
 
 message:
-  url: https://cors-container.{{ host}}/https://quotes-api.{{ host }}/random
+  url: https://quotes_api.{{ host }}/random
   mapping:
     title: 'title'
     content: 'content'
@@ -87,15 +87,15 @@ services:
       - name: "PiKVM"
         type: Ping
         logo: /assets/tools/homer-icons/pikvm.png
-        url: "https://cors-container.{{ host }}/https://pikvm.{{ host }}/"
-        endpoint: "https://cors-container.{{ host }}/https://pikvm.{{ host }}/"
+        url: "https://pikvm.{{ host }}/"
+        endpoint: "https://cors-container.{{ host }}/https://pikvm.{{ host }}"
         target: "_blank"
 {% endif %}
 {% if enable_netdata %}
       - name: "Netdata"
         type: Ping
         logo: /assets/tools/homer-icons/netdata.png
-        url: "https://cors-container.{{ host }}/https://netdata.{{ host }}/"
+        url: "https://netdata.{{ host }}/"
         endpoint: "https://cors-container.{{ host }}/https://netdata.{{ host }}/"
         target: "_blank"
 {% endif %}

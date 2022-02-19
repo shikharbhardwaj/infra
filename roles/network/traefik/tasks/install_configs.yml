@@ -17,10 +17,18 @@
     group: "{{ username }}"
     mode: 0755
 
-- name: Install the traefik config file
+- name: Install the traefik static config file
   template:
     src: "traefik.yml.j2"
     dest: "{{ docker_dir }}/traefik/traefik.yml"
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: 0644
+
+- name: Install the traefik dynamic config file
+  template:
+    src: "conf.yml.j2"
+    dest: "{{ docker_dir }}/traefik/rules/conf.yml"
     owner: "{{ username }}"
     group: "{{ username }}"
     mode: 0644
