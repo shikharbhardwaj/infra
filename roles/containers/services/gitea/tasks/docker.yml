@@ -1,0 +1,95 @@
+---
+- name: Make sure the MariaDB container is created and running
+  docker_container:
+    name: "{{ container_name }}-mariadb"
+    image: "mariadb:latest"
+    pull: yes
+    networks:
+      - name: traefik-proxy
+    command: "--transaction-isolation=READ-COMMITTED --binlog-format=ROW --skip-innodb-read-only-compressed --innodb-read-only-compressed=OFF"
+    state: 'started'
+    labels:
+      "flame.type": "application"
+      "flame.name": "{{ container_name | title }}"
+      "flame.url": "{{ dashboard_url }}"
+      "flame.icon": "custom"
+
+      # Watchtower Update
+      "com.centurylinklabs.watchtower.enable": "true"
+    env:
+      "PUID": "{{ guid }}"
+      "PGID": "{{ guid }}"
+      "TZ": "{{ timezone }}"
+      "MYSQL_ROOT_PASSWORD": "{{ mysql_root_password }}"
+      "MYSQL_DATABASE": "{{ mysql_db }}"
+      "MYSQL_USER": "{{ mysql_user }}"
+      "MYSQL_PASSWORD": "{{ mysql_gitea_password }}"
+    volumes:
+      - "{{ docker_dir }}/{{ container_name }}/mariadb/mysql:/var/lib/mysql"
+    restart_policy: unless-stopped
+
+- name: Make sure the redis container is created and running
+  docker_container:
+    name: "{{ container_name }}-redis"
+    image: "redis:6-alpine"
+    pull: yes
+    networks:
+      - name: traefik-proxy
+    volumes:
+      - "{{ docker_dir }}/{{ container_name }}/redis:/etc/redis"
+    command: redis-server /etc/redis/redis.conf
+    state: 'started'
+    labels:
+        # Watchtower Update
+        "com.centurylinklabs.watchtower.enable": "true"
+    restart_policy: unless-stopped
+
+
+- name: Make sure the gitea container is created and running
+  docker_container:
+    name: "{{ container_name }}"
+    image: "gitea/gitea:1.16"
+    pull: yes
+    networks:
+      - name: traefik-proxy
+    state: 'started'
+    env:
+      "USER_UID": "{{ guid }}"
+      "USER_GID": "{{ guid }}"
+      "TZ": "{{ timezone }}"
+      "APP_NAME": "Gitea"
+      "USER": "{{ username }}"
+      "RUN_MODE": "prod"
+      "DOMAIN": "{{ container_name }}.{{ host }}"
+      "SSH_DOMAIN": "{{ container_name }}.{{ host }}"
+      "ROOT_URL": "https://{{ container_name }}.{{ host }}"
+      "HTTP_PORT": "3030"
+      "SSH_PORT": "222"
+      "SSH_LISTEN_PORT": "22"
+      "DB_TYPE": "mysql"
+      "GITEA__cache__ENABLED": "true"
+      "GITEA__cache__ADAPTER": "redis"
+      "GITEA__cache__HOST": "redis://{{ container_name }}-redis:6379/0?pool_size=100&idle_timeout=180s"
+      "GITEA__cache__ITEM_TTL": "24h"
+      "GITEA__database__DB_TYPE": "mysql"
+      "GITEA__database__HOST": "{{ container_name }}-mariadb:3306"
+      "GITEA__database__NAME": "{{ mysql_db }}"
+      "GITEA__database__USER": "{{ mysql_user }}"
+      "GITEA__database__PASSWD": "{{ mysql_gitea_password }}"
+    volumes:
+      - "{{ mergerfs_root }}/{{ container_name }}/data:/data"
+      - "/etc/timezone:/etc/timezone:ro"
+      - "/etc/localtime:/etc/localtime:ro"
+    published_ports:
+      - "3030:3030"
+      - "222:22"
+    labels:
+      "traefik.enable": "true"
+      "traefik.docker.network": "traefik-proxy"
+
+      "traefik.http.routers.gitea.rule": "Host(`{{ container_name }}.{{ host }}`)"
+      "traefik.http.services.gitea.loadbalancer.server.port": "3030"
+
+      "traefik.http.routers.gitea.middlewares": "corsheader@file"
+      
+    restart_policy: unless-stopped

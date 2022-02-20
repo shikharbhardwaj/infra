@@ -316,6 +316,13 @@
         - containers
       when: enable_seafile | default(False)
 
+    - role: containers/services/gitea
+      become: no
+      tags:
+        - gitea
+        - containers
+      when: enable_gitea | default(False)
+
     #
     # Home automation
     #
