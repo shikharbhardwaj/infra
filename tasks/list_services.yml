@@ -28,7 +28,7 @@
   set_fact:
     web_applications: []
     swag_urls: {}
-  when: web_applications is defined and swag_urls is defined
+  when: web_applications is not defined and swag_urls is not defined
 
 - name: Populate the dictionary of all containers
   set_fact:

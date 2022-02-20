@@ -1,0 +1,2 @@
+---
+  'dashboard_url': 'https://pikvm.{{ host }}'

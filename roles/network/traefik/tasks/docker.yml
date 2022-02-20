@@ -1,0 +1,46 @@
+---
+- name: Make sure that the socket-proxy container is created and running
+  docker_container:
+    image: "tecnativa/docker-socket-proxy"
+    name: "traefik-socket-proxy"
+    pull: yes
+    restart_policy: unless-stopped
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    env:
+      "CONTAINERS": "1"
+    networks:
+      - name: traefik-proxy
+    labels:
+      # Watchtower Update
+      "com.centurylinklabs.watchtower.enable": "true"
+
+
+- name: Make sure that the traefik container is created and running
+  docker_container:
+    name: "traefik"
+    image: "traefik:latest"
+    pull: yes
+    restart_policy: unless-stopped
+    volumes:
+     - "{{ docker_dir }}/traefik/traefik.yml:/etc/traefik/traefik.yml:ro"
+     - "{{ docker_dir }}/traefik/rules:/etc/traefik/rules:ro"
+     - "{{ docker_dir }}/swag/letsencrypt:/letsencrypt"
+    env:
+      "CLOUDFLARE_EMAIL": "{{ cloudflare_email }}"
+      "CLOUDFLARE_API_KEY": "{{ cloudflare_global_api_key }}"
+    published_ports:
+      - "0.0.0.0:80:80"
+      - "0.0.0.0:443:443"
+    networks:
+     - name: traefik-proxy
+    labels:
+      "traefik.enable": "true"
+      # "traefik.http.routers.traefik.entrypoints": "websecure"
+      # "traefik.http.routers.traefik.tls.certresolver": "letsencrypt"
+      "traefik.http.routers.dashboard.rule": "Host(`traefik.{{ host }}`)"
+      "traefik.http.routers.dashboard.service": "api@internal"
+
+      # Watchtower Update
+      "com.centurylinklabs.watchtower.enable": "true"
+    

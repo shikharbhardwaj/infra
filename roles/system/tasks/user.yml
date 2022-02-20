@@ -48,7 +48,6 @@
     key: "{{ ssh_public_key }}"
 
 - name: Set the default shell
-  become: no
   user: 
     name: "{{ username }}"
     shell: "{{ shell }}"

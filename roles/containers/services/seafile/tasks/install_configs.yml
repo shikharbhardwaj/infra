@@ -1,0 +1,17 @@
+---
+- name: Create the seafile conf folders
+  file:
+    path: "{{ docker_dir }}/{{ container_name }}/conf"
+    state: directory
+    recurse: yes
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: 0755
+
+- name: Install the seafile config
+  template:
+    src: "seafile.conf.j2"
+    dest: "{{ docker_dir }}/{{ container_name }}/conf/seafile.conf"
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: 0644

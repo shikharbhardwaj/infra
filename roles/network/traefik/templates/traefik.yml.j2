@@ -1,0 +1,33 @@
+entryPoints:
+  websecure:
+    http:
+      tls:
+        certResolver: letsencrypt
+        domains:
+          - main: "{{ host }}"
+            sans: "*.{{ host }}"
+    address: ":443"
+
+providers:
+  docker:
+    endpoint: "tcp://traefik-socket-proxy:2375"
+    exposedByDefault: false
+
+  file:
+    directory: /etc/traefik/rules/
+    watch: true
+
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: mail@{{ host }}
+      storage: ./letsencrypt/acme.json
+      dnsChallenge:
+        provider: cloudflare
+        delayBeforeCheck: 10
+
+api:
+  dashboard: true
+
+log:
+  level: DEBUG

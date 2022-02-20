@@ -120,7 +120,7 @@
     name: "{{ item.path.split('/')[-1] }}"
     state: absent
   when: not lookup('vars', 'enable_' + item.path.split('/')[-1])
-  with_items: "{{ containers.files }}"
+  with_items: "{{ containers.files | default([]) }}"
 
 - name: Handle persistent data
   become: no

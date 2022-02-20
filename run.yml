@@ -67,13 +67,6 @@
     #
     # Network
     #
-    - role: network/swag
-      become: no
-      tags:
-        - swag
-        - containers
-      when: enable_swag | default(False)
-
     - role: network/bunkerized-nginx
       become: no
       tags:
@@ -81,12 +74,33 @@
         - containers
       when: enable_bunkerized_nginx | default(False)
 
+    - role: network/swag
+      become: no
+      tags:
+        - swag
+        - containers
+      when: enable_swag | default(False)
+
+    - role: network/traefik
+      become: no
+      tags:
+        - traefik
+        - containers
+      when: enable_traefik | default(False)
+
     - role: network/wireguard
       become: no
       tags:
         - wireguard
         - containers
       when: enable_wireguard | default(False)
+
+    - role: network/tailscale
+      become: no
+      tags:
+        - tailscale
+        - containers
+      when: enable_tailscale | default(False)
 
     - role: network/ikev2
       become: no
@@ -202,6 +216,23 @@
         - containers
       when: enable_unifi | default(False)
 
+    - role: containers/services/quotes_api
+      become: no
+      tags:
+        - quotes
+        - containers
+      when: enable_quotes_api | default(False)
+
+    #
+    # System
+    #
+    - role: containers/system/netdata
+      become: no
+      tags:
+        - netdata
+        - containers
+      when: enable_netdata | default(False)
+
     #
     # Media
     #
@@ -277,6 +308,20 @@
         - vaultwarden
         - containers
       when: enable_vaultwarden | default(False)
+
+    - role: containers/services/seafile
+      become: no
+      tags:
+        - seafile
+        - containers
+      when: enable_seafile | default(False)
+
+    - role: containers/services/gitea
+      become: no
+      tags:
+        - gitea
+        - containers
+      when: enable_gitea | default(False)
 
     #
     # Home automation

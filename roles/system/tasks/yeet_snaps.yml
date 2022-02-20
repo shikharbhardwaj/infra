@@ -11,10 +11,10 @@
       name: "/snap/core*"
       state: unmounted
 
-  - name: Remove the pre-installed snaps
-    snap:
-      name: "*"
-      state: absent
+  #- name: Remove the pre-installed snaps
+    #snap:
+      #name: "*"
+      #state: absent
 
   - name: Remove the snap package from apt
     apt:

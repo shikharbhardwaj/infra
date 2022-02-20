@@ -6,5 +6,5 @@ roles:
   - name: chriswayg.msmtp-mailer
   - name: stuvusit.smartd
   - name: oefenweb.dns
-  - name: notthebee.ubuntu_autoinstall
+  - name: shikharbhardwaj.ubuntu_autoinstall
   - name: ironicbadger.ansible_role_snapraid

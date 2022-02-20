@@ -11,6 +11,12 @@ footer: false
 columns: 4
 connectivityCheck: true
 
+message:
+  url: https://quotes_api.{{ host }}/random
+  mapping:
+    title: 'content'
+    content: 'title'
+
 theme: default
 colors:
   light:
@@ -69,32 +75,38 @@ services:
   - name: "System"
     icon: "fas fa-cog"
     items:
-  {% for item in web_applications if "system" in item.category and item.url != "" %}
-    - name: "{{ item.name }}"
-        type: Ping
-        logo: "{{ item.logo }}"
-        url: "{{ item.url }}"
-        endpoint: "{{ item.endpoint }}"
-        target: "_blank"
-  {% endfor %}
+{% if enable_fritzbox %}
     - name: "FRITZ!Box"
         type: Ping
         logo: /assets/tools/homer-icons/fritzbox.png
         url: "http://fritz.box/"
         endpoint: "http://{{ ansible_default_ipv4.address }}:3000/http://fritz.box"
         target: "_blank"
+{% endif %}
+{% if enable_pikvm %}
       - name: "PiKVM"
         type: Ping
         logo: /assets/tools/homer-icons/pikvm.png
-        url: "http://pikvm.box/"
-        endpoint: "http://{{ ansible_default_ipv4.address }}:3000/http://pikvm.box"
+        url: "https://pikvm.{{ host }}/"
+        endpoint: "https://cors-container.{{ host }}/https://pikvm.{{ host }}/login"
         target: "_blank"
+{% endif %}
+{% if enable_netdata %}
+      - name: "Netdata"
+        type: Ping
+        logo: /assets/tools/homer-icons/netdata.png
+        url: "https://netdata.{{ host }}/"
+        endpoint: "https://cors-container.{{ host }}/https://netdata.{{ host }}/"
+        target: "_blank"
+{% endif %}
+{% if enable_pihole %}
       - name: "PiHole"
         type: Ping
         logo: /assets/tools/homer-icons/pihole.png
         url: "http://192.168.178.34:81"
         endpoint: "http://192.168.178.34:81"
         target: "_blank"
+{% endif %}
 
 
 

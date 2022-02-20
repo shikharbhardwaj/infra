@@ -1,0 +1,16 @@
+---
+- name: Create the gitea conf folders
+  file:
+    path: "{{ docker_dir }}/{{ container_name }}/{{ item }}"
+    state: directory
+    recurse: yes
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: 0755
+  with_items:
+    - "redis/conf"
+
+- name: Install the redis config
+  template:
+    src: "redis.conf.j2"
+    dest: "{{ docker_dir }}/{{ container_name }}/redis/redis.conf"

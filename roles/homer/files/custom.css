@@ -78,3 +78,37 @@ body #app .card {
   box-shadow: 0 0 5px 1px var(--status-online) !important;
 }
 
+.message-header::before {
+  content: "“";
+  font-size: 6rem;
+  font-family: serif;
+  display: inline-flex;
+  height: 3rem;
+  position: relative;
+  top: -3.5rem;
+}
+
+.message-header {
+  justify-content: flex-end;
+  background-color: #63b7ff2e;
+}
+
+.message-body::before {
+  content: "— ";
+}
+
+.message-body {
+  justify-content: flex-end;
+  text-align: right;
+  background-color: #63b7ff2e;
+  padding: 0;
+  padding-bottom: 1rem;
+  padding-right: 1rem;
+}
+
+.message {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  width: 22rem;
+}
