@@ -14,8 +14,8 @@ connectivityCheck: true
 message:
   url: https://quotes_api.{{ host }}/random
   mapping:
-    title: 'title'
-    content: 'content'
+    title: 'content'
+    content: 'title'
 
 theme: default
 colors:
@@ -88,7 +88,7 @@ services:
         type: Ping
         logo: /assets/tools/homer-icons/pikvm.png
         url: "https://pikvm.{{ host }}/"
-        endpoint: "https://cors-container.{{ host }}/https://pikvm.{{ host }}"
+        endpoint: "https://cors-container.{{ host }}/https://pikvm.{{ host }}/login"
         target: "_blank"
 {% endif %}
 {% if enable_netdata %}
