@@ -61,7 +61,7 @@
       "SEAFILE_SERVICE_URL": "https://{{ container_name }}.{{ host }}"
       "SEAFULE_USE_HTTPS": "1"
     volumes:
-      "{{ docker_dir }}/{{ container_name }}:/shared"
+      - "{{ mergerfs_root }}/{{ container_name }}/storage:/shared/seafile"
     labels:
       "traefik.enable": "true"
       "traefik.docker.network": "traefik-proxy"
