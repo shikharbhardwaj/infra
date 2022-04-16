@@ -323,6 +323,20 @@
         - containers
       when: enable_gitea | default(False)
 
+    - role: containers/services/rustpad
+      become: no
+      tags:
+        - rustpad
+        - containers
+      when: enable_rustpad | default(False)
+
+    - role: containers/services/etherpad
+      become: no
+      tags:
+        - etherpad
+        - containers
+      when: enable_etherpad | default(False)
+
     #
     # Home automation
     #

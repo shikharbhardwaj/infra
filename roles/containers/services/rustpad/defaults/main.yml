@@ -1,0 +1,5 @@
+container_name: rustpad
+dashboard_url: "https://{{ subdomains['rustpad'] }}.{{ host }}"
+health_url: "https://cors-container.{{ host }}/https://{{ subdomains['rustpad'] }}.{{ host }}"
+homer_category: services
+dashboard_name: Rustpad
