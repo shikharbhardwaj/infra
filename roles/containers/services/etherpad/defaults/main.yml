@@ -1,0 +1,14 @@
+---
+container_name: etherpad
+
+dashboard_url: "https://{{ subdomains['etherpad'] }}.{{ host }}"
+
+homer_category: services
+
+dashboard_name: Etherpad
+
+health_url: "https://cors-container.{{ host }}/https://{{ subdomains['etherpad'] }}.{{ host }}/"
+
+mysql_db: "etherpad_db"
+
+mysql_user: "etherpad"
