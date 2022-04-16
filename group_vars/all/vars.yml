@@ -311,17 +311,13 @@ snapraid_data_disks: "{{ disks }}"
 
 snapraid_parity_disks: "{{ parity_disks }}"
 
-snapraid_runner_gmail_pass: "{{ email_password }}"
+snapraid_runner_email_address: "{{ alert_email }}"
 
-snapraid_runner_email_address: "{{ email }}"
+snapraid_runner_gmail_pass: "{{ alert_email_password }}"
 
 snapraid_runner_email_address_from: "{{ snapraid_runner_email_address }}"
 
 snapraid_runner_email_address_to: "{{ snapraid_runner_email_address }}"
-
-snapraid_runner_smtp_host: "{{ email_smtp_host }}"
-
-snapraid_runner_smtp_port: "{{ email_smtp_port }}"
 
 snapraid_runner_command: "python3 {{ snapraid_runner_bin }} -c {{ snapraid_runner_conf }}"
 
@@ -349,7 +345,7 @@ snapraid_config_excludes:
 #
 # SMART error reporting
 #
-smartd_default_mail_recipients: [ "{{ email }}" ]
+smartd_default_mail_recipients: [ "{{ alert_email }}" ]
 
 #
 # Security
@@ -365,8 +361,11 @@ security_fail2ban_enabled: false
 
 ### BEGIN Secret variables (encrypt and put into vault.yml)
 cloudflare_dns_token: ''
+cloudflare_email: ''
+cloudflare_global_api_key: ''
 cloudflare_firewall_token: ''
-email_password: ''
+alert_email: ''
+alert_email_password: ''
 host: ''
 host_local: ''
 ikev2_excludedssids: ''
@@ -382,4 +381,12 @@ swag_htpasswd_password: ''
 swag_htpasswd_user: ''
 vpn_host: ''
 vpn_password: ''
+blog_host: ''
+tailscale_auth_key: ''
+seafile_password: ''
+mysql_root_password: ''
+mysql_seafile_password: ''
+mysql_gitea_password: ''
+mysql_etherpad_password: ''
+etherpad_admin_password: ''
 ### END Secret variables (encrypt and put into vault.yml)
