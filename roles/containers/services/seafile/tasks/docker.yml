@@ -68,6 +68,7 @@
 
       "traefik.http.routers.seafile.rule": "Host(`{{ container_name }}.{{ host }}`)"
 
-      "traefik.http.routers.seafile.middlewares": "corsheader@file"
+      # "traefik.http.routers.seafile.middlewares": "corsheader@file"
+      # "traefik.http.routers.seafile.middlewares": "authelia@docker"
       
     restart_policy: unless-stopped

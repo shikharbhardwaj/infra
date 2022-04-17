@@ -3,12 +3,15 @@ server.port: 9091
 
 theme: dark
 
+log:
+  level: debug
+
 server:
   read_buffer_size: 4096
   write_buffer_size: 4096
   path: "authelia"
 
-jwt_secret: somethingsomethingrandomrecret
+jwt_secret: {{ authelia_jwt_secret }}
 default_redirection_url: https://{{ host }}
 
 authentication_backend:
@@ -30,11 +33,11 @@ access_control:
 
 session:
   name: authelia_session
-  secret: somerandomsecret
+  secret: {{ authelia_session_secret }}
   expiration: 1h 
   inactivity: 5m
   remember_me_duration: 1M
-  domain: personaldarkness.{{ host }}
+  domain: "{{ host }}"
 
 regulation:
   max_retries: 3
@@ -51,7 +54,7 @@ totp:
 storage:
   local:
     path: /config/db.sqlite3
-  encryption_key: aBrdkD0W4ztuA306Zt3bqQaMiMk
+  encryption_key: {{ authelia_storage_key }}
 
 notifier:
   disable_startup_check: true

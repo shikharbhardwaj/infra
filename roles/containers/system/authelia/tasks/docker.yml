@@ -1,0 +1,32 @@
+
+---
+
+- name: Make sure the {{ container_name }} container is created and running
+  docker_container:
+    name: "{{ container_name }}"
+    image: "authelia/authelia:latest"
+    pull: true
+    state: 'started'
+    env:
+      "TZ": "{{ timezone }}"
+      "LOG_LEVEL": "DEBUG"
+    volumes:
+      - "{{ docker_dir }}/{{ container_name }}/conf:/config"
+    networks:
+      - name: "traefik-proxy"
+    restart_policy: unless-stopped
+    user: "{{ guid }}"
+    labels:
+      "traefik.enable": "true"
+      "traefik.docker.network": "traefik-proxy"
+
+      "traefik.http.routers.authelia.rule": "Host(`{{ container_name }}.{{ host }}`)"
+
+      "traefik.http.routers.authelia.middlewares": "corsheader@file"
+
+      "traefik.http.middlewares.authelia.forwardauth.address": "http://authelia:9091/api/verify?rd=https://{{ container_name }}.{{ host }}/"
+      "traefik.http.middlewares.authelia.forwardauth.trustForwardHeader": "true"
+      "traefik.http.middlewares.authelia.forwardauth.authResponseHeaders": "Remote-User, Remote-Groups, Remote-Name, Remote-Email"
+      "traefik.http.middlewares.authelia-basic.forwardauth.address": "http://authelia:9091/api/verify?auth=basic"
+      "traefik.http.middlewares.authelia-basic.forwardauth.trustForwardHeader": "true"
+      "traefik.http.middlewares.authelia-basic.forwardauth.authResponseHeaders": "Remote-User, Remote-Groups, Remote-Name, Remote-Email"
