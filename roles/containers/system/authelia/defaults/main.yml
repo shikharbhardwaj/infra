@@ -1,4 +1,8 @@
 ---
 container_name: authelia
 
-dashboard_url: "http://authelia.{{ host_local }}"
+dashboard_url: "https://authelia.{{ host }}"
+
+health_url: "https://cors-container.{{ host }}/https://authelia.{{ host }}"
+
+homer_category: system

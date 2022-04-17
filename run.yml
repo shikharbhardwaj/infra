@@ -323,6 +323,13 @@
         - containers
       when: enable_gitea | default(False)
 
+    - role: containers/services/minio
+      become: no
+      tags:
+        - minio
+        - containers
+      when: enable_minio | default(False)
+
     - role: containers/services/rustpad
       become: no
       tags:

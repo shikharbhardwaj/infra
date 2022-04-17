@@ -107,6 +107,14 @@ services:
         endpoint: "http://192.168.178.34:81"
         target: "_blank"
 {% endif %}
+{% if enable_authelia %}
+      - name: "Authelia"
+        type: Ping
+        logo: /assets/tools/homer-icons/authelia.png
+        url: "https://authelia.{{ host }}"
+        endpoint: "https://cors-container.{{ host }}/https://authelia.{{ host }}"
+        target: "_blank"
+{% endif %}
 
 
 
