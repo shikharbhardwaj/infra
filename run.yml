@@ -233,6 +233,13 @@
         - containers
       when: enable_netdata | default(False)
 
+    - role: containers/system/prometheus
+      become: no
+      tags:
+        - prometheus
+        - containers
+      when: enable_prometheus | default(False)
+
     #
     # Media
     #

@@ -1,0 +1,56 @@
+- name: Make sure the Victoriametrics container is created and running
+  docker_container:
+    name: "victoriametrics"
+    image: "victoriametrics/victoria-metrics:v1.76.1"
+    pull: yes
+    networks:
+      - name: traefik-proxy
+    state: 'started'
+    env:
+      "PUID": "{{ guid }}"
+      "PGID": "{{ guid }}"
+      "TZ": "{{ timezone }}"
+    user: "{{ guid }}"
+    volumes:
+      - "{{ docker_dir }}/{{ container_name }}/victoriametrics/data:/victoria-metrics-data"
+    restart_policy: unless-stopped
+    published_ports:
+      - "8428:8428"
+    labels:
+      "traefik.enable": "true"
+      "traefik.docker.network": "traefik-proxy"
+
+      "traefik.http.routers.victoriametrics.rule": "Host(`victoriametrics.{{ host }}`)"
+
+      "traefik.http.routers.victoriametrics.middlewares": "corsheader@file"
+
+
+- name: Make sure the Prometheus container is created and running
+  docker_container:
+    name: "{{ container_name }}"
+    image: "prom/prometheus"
+    pull: yes
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    networks:
+      - name: traefik-proxy
+    state: 'started'
+    env:
+      "PUID": "{{ guid }}"
+      "PGID": "{{ guid }}"
+      "TZ": "{{ timezone }}"
+    user: "{{ guid }}"
+    volumes:
+      - "{{ docker_dir }}/{{ container_name }}/etc:/etc/prometheus"
+      - "{{ docker_dir }}/{{ container_name }}/prometheus:/prometheus"
+    restart_policy: unless-stopped
+    labels:
+      "traefik.enable": "true"
+      "traefik.docker.network": "traefik-proxy"
+
+      "traefik.http.routers.prometheus.rule": "Host(`{{ container_name }}.{{ host }}`)"
+
+      "traefik.http.routers.prometheus.middlewares": "corsheader@file"
