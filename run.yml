@@ -351,6 +351,13 @@
         - containers
       when: enable_etherpad | default(False)
 
+    - role: containers/services/codeserver
+      become: no
+      tags:
+        - codeserver
+        - containers
+      when: enable_codeserver | default(False)
+
     #
     # Home automation
     #

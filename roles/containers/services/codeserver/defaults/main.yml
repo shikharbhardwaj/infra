@@ -1,0 +1,5 @@
+---
+container_name: code-server
+dashboard_url: "http://code.{{ host }}"
+health_url: "https://cors-container.{{ host }}/https://code-server.{{ host }}"
+homer_category: services
