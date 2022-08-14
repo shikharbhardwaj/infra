@@ -5,7 +5,8 @@ entryPoints:
         certResolver: letsencrypt
         domains:
           - main: "{{ host }}"
-            sans: "*.{{ host }}"
+            sans:
+              - "*.{{ host }}"
     address: ":443"
 
 providers:

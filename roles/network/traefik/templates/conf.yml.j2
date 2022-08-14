@@ -2,7 +2,12 @@ http:
   middlewares:
     corsheader:
       headers:
-        accesscontrolallowmethods: "GET,OPTIONS,PUT,HEAD"
-        accessControlAllowOriginListRegex: ".*\\.{{ host }}"
-        accesscontrolmaxage: "100"
-        addvaryheader: "true"
+        accessControlAllowMethods:
+          - GET
+          - OPTIONS
+          - PUT
+          - HEAD
+        accessControlAllowOriginListRegex:
+          - ".*\\.shkhr.ovh"
+        accessControlMaxAge: "100"
+        addVaryHeader: "true"
