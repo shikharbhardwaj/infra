@@ -115,6 +115,14 @@ services:
         endpoint: "https://cors-container.{{ host }}/https://authelia.{{ host }}"
         target: "_blank"
 {% endif %}
+{% if enable_scrutiny %}
+      - name: "Scrutiny"
+        type: Ping
+        logo: /assets/tools/homer-icons/scrutiny.png
+        url: "https://scrutiny.{{ host }}"
+        endpoint: "https://scrutiny.{{ host }}"
+        target: "_blank"
+{% endif %}
 
 
 

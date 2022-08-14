@@ -240,6 +240,13 @@
         - containers
       when: enable_prometheus | default(False)
 
+    - role: containers/system/scrutiny
+      become: no
+      tags:
+        - scrutiny
+        - containers
+      when: enable_scrutiny | default(False)
+
     #
     # Media
     #
