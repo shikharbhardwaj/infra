@@ -1,0 +1,7 @@
+---
+app_name: "{{app_name}}"
+container_name: "{{app_name}}"
+image_name: "{{image_name}}"
+dashboard_url: "http://{{app_name}}.{% raw %}{{ host }}{% endraw %}"
+health_url: "https://cors-container.{% raw %}{{ host }}{% endraw %}/https://{{ app_name }}.{% raw %}{{ host }}{% endraw %}"
+homer_category: services

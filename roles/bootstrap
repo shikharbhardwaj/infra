@@ -1,0 +1,128 @@
+#!/usr/bin/env python3
+import dataclasses
+import os
+import shutil
+
+from typing import Dict, List
+
+import click
+import jinja2
+
+
+defaults_template = 'templates/defaults_main.jinja.yml'
+tasks_template = 'templates/tasks_main.yml'
+
+@dataclasses.dataclass
+class Step:
+    def run(self):
+        NotImplementedError("run() is not implemented.")
+    
+    def revert(self):
+        NotImplementedError("revert() is not implemented")
+
+def raise_if_dir_exists(path: str) -> Step:
+    @dataclasses.dataclass
+    class DirCheckStep(Step):
+        dir_path: str
+
+        def run(self):
+            if os.path.exists(self.dir_path):
+                raise ValueError("The path already exists.")
+        
+        def revert(self):
+            # No-op
+            ...
+
+    return DirCheckStep(dir_path=path)
+
+def make_dir(path: str) -> Step:
+    @dataclasses.dataclass
+    class MakeDirStep(Step):
+        dir_path: str
+
+        def run(self):
+            os.makedirs(self.dir_path, exist_ok=True)
+        
+        def revert(self):
+            os.removedirs(self.dir_path)
+
+    return MakeDirStep(dir_path=path)
+
+def add_template(src_path: str, destination_path: str, *args, **kwargs) -> Step:
+    @dataclasses.dataclass
+    class AddTemplateStep(Step):
+        src_path: str
+        destination_path: str
+        vars: Dict = dataclasses.field(default_factory=lambda: kwargs)
+
+        def run(self):
+            with open(src_path, 'r') as src_file:
+                template = jinja2.Template(src_file.read(), undefined=jinja2.StrictUndefined)
+
+                rendered_template = template.render(self.vars)
+            
+            with open(destination_path, 'w') as dst_file:
+                dst_file.write(rendered_template)
+        
+        def revert(self):
+            os.remove(destination_path)
+            
+
+    return AddTemplateStep(src_path=src_path, destination_path=destination_path)
+
+
+def copy_file(src_path: str, destination_path: str, *args, **kwargs) -> Step:
+    @dataclasses.dataclass
+    class CopyFileStep(Step):
+        src_path: str
+        destination_path: str
+
+        def run(self):
+            shutil.copy(src_path, destination_path)
+        
+        def revert(self):
+            os.remove(destination_path)
+            
+
+    return CopyFileStep(src_path=src_path, destination_path=destination_path)
+
+
+@click.command()
+@click.argument('destination_dir')
+@click.argument('app_name')
+@click.option('--template-vars', multiple=True)
+def setup(destination_dir: str, app_name: str, template_vars: List):
+    app_dir = os.path.join(destination_dir, app_name)
+    defaults_dir = os.path.join(app_dir, 'defaults')
+    tasks_dir = os.path.join(app_dir, 'tasks')
+
+    defaults_template_path = os.path.join(defaults_dir, 'main.yml')
+    tasks_template_path = os.path.join(tasks_dir, 'main.yml')
+
+    template_vars = dict([var.split('=') for var in template_vars])
+
+    steps = [
+        raise_if_dir_exists(app_dir),
+        make_dir(app_dir),
+        make_dir(defaults_dir),
+        make_dir(tasks_dir),
+        add_template(defaults_template, defaults_template_path, app_name=app_name, **template_vars),
+        copy_file(tasks_template, tasks_template_path, app_name=app_name, **template_vars),
+    ]
+
+    already_run: List[Step] = []
+
+    for step in steps:
+        try:
+            step.run()
+            already_run.append(step)
+        except Exception as ex:
+            # Let's undo all steps run so-far.
+            for done in reversed(already_run):
+                done.revert()
+            
+            raise ex
+
+
+if __name__ == '__main__':
+    setup()
