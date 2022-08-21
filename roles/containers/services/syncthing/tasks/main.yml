@@ -1,0 +1,43 @@
+---
+- name: Create the {{ container_name }} folders
+  file:
+    path: "{{ docker_dir }}/{{ container_name }}/{{ item }}"
+    state: directory
+    recurse: yes
+    owner: "{{ username }}"
+    group: "{{ guid }}"
+    mode: 0755
+  with_items:
+    - "config"
+    - "data1"
+    - "data2"
+
+- name: Make sure the {{ container_name }} container is created and running
+  docker_container:
+    name: "{{ container_name }}"
+    image: "{{ image_name }}"
+    pull: yes
+    networks:
+      - name: traefik-proxy
+    state: 'started'
+    env:
+      "PUID": "{{ guid }}"
+      "PGID": "{{ guid }}"
+      "TZ": "{{ timezone }}"
+    published_ports:
+      - "8384:8384"
+      - "22000:22000/tcp"
+      - "22000:22000/udp"
+      - "21027:21027/udp"
+    volumes:
+      - "{{ docker_dir }}/{{ container_name }}/config:/config"
+      - "{{ docker_dir }}/{{ container_name }}/data1:/data1"
+      - "{{ docker_dir }}/{{ container_name }}/data2:/data2"
+    restart_policy: unless-stopped
+    labels:
+      "traefik.enable": "true"
+      "traefik.docker.network": "traefik-proxy"
+
+      "traefik.http.routers.syncthing.rule": "Host(`{{app_name}}.{{ host }}`)"
+
+      "traefik.http.routers.syncthing.middlewares": "corsheader@file"

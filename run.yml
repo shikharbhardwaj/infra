@@ -364,6 +364,13 @@
         - codeserver
         - containers
       when: enable_codeserver | default(False)
+    
+    - role: containers/services/syncthing
+      become: no
+      tags:
+        - syncthing
+        - containers
+      when: enable_syncthing | default(False)
 
     #
     # Home automation
