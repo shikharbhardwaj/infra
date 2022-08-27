@@ -2,6 +2,6 @@
 app_name: "syncthing"
 container_name: "syncthing"
 image_name: "lscr.io/linuxserver/syncthing:latest"
-dashboard_url: "http://syncthing.{{ host }}"
+dashboard_url: "https://syncthing.{{ host }}"
 health_url: "https://cors-container.{{ host }}/https://syncthing.{{ host }}"
 homer_category: services

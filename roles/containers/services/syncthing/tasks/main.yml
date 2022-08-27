@@ -1,5 +1,6 @@
 ---
 - name: Create the {{ container_name }} folders
+  become: true
   file:
     path: "{{ docker_dir }}/{{ container_name }}/{{ item }}"
     state: directory
@@ -31,8 +32,7 @@
       - "21027:21027/udp"
     volumes:
       - "{{ docker_dir }}/{{ container_name }}/config:/config"
-      - "{{ docker_dir }}/{{ container_name }}/data1:/data1"
-      - "{{ docker_dir }}/{{ container_name }}/data2:/data2"
+      - "{{ mergerfs_root }}/{{ container_name }}/data1:/data1"
     restart_policy: unless-stopped
     labels:
       "traefik.enable": "true"
