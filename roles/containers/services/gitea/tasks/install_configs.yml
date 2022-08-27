@@ -9,6 +9,7 @@
     mode: 0755
   with_items:
     - "redis/conf"
+    - "indexers"
 
 - name: Install the redis config
   template:

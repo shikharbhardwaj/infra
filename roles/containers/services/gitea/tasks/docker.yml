@@ -78,6 +78,7 @@
       "GITEA__database__PASSWD": "{{ mysql_gitea_password }}"
     volumes:
       - "{{ mergerfs_root }}/{{ container_name }}/data:/data"
+      - "{{ docker_dir }}/{{ container_name }}/indexers:/indexers"
       - "/etc/timezone:/etc/timezone:ro"
       - "/etc/localtime:/etc/localtime:ro"
     published_ports:
