@@ -10,7 +10,7 @@
 
 - name: Copy the icons
   copy:
-    src: "files/icons/{{ item.path.split('/')[-1] }}.png"
+    src: "files/assets/tools/{{ item.path.split('/')[-1] }}.png"
     dest: "{{ docker_dir }}/{{ container_name }}/tools/homer-icons"
     owner: "{{ username }}"
     group: "{{ username }}"
@@ -20,7 +20,7 @@
 
 - name: Copy the logo
   copy:
-    src: "files/icons/logo.jpg"
+    src: "files/assets/icons/logo.jpg"
     dest: "{{ docker_dir }}/{{ container_name }}/tools/homer-icons"
     owner: "{{ username }}"
     group: "{{ username }}"
@@ -38,6 +38,22 @@
   template:
     src: config.yml.j2
     dest: "{{ docker_dir }}/{{ container_name }}/config.yml"
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: 0644
+
+- name: Generate the Homer config file
+  template:
+    src: config.yml.j2
+    dest: "{{ docker_dir }}/{{ container_name }}/config.yml"
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: 0644
+
+- name: Copy icons
+  copy:
+    src: "files/assets/icons"
+    dest: "{{ docker_dir }}/{{ container_name }}"
     owner: "{{ username }}"
     group: "{{ username }}"
     mode: 0644
