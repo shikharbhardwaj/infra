@@ -1,4 +1,4 @@
-# notthebee/infra
+# shikharbhardwaj/infra
 
 An Ansible playbook that sets up an Ubuntu-based home media server/NAS with reasonable security, auto-updates, e-mail notifications for S.M.A.R.T./Snapraid errors and remote access via Tailscale VPN. 
 
