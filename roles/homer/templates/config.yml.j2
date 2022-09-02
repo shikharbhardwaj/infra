@@ -8,7 +8,7 @@ stylesheet:
 
 header: true
 footer: false
-columns: 4
+columns: 2
 connectivityCheck: true
 
 message:
@@ -46,6 +46,8 @@ colors:
     status-online: "{{ colors.color10 }}"
 
 services:
+
+{% if false %}
   - name: "Media"
     icon: "fas fa-photo-video"
     items:
@@ -56,8 +58,8 @@ services:
         url: "{{ item.url }}"
         endpoint: "{{ item.endpoint }}"
         target: "_blank"
-
   {% endfor %}
+{% endif %}
 
   - name: "Services"
     icon: "fas fa-stream"
@@ -125,7 +127,7 @@ services:
 {% endif %}
 
 
-
+{% if false %}
   - name: "Home Automation"
     icon: "fas fa-home"
     items:
@@ -138,5 +140,5 @@ services:
         target: "_blank"
 
   {% endfor %}
-
+{% endif %}
 
