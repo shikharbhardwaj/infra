@@ -193,7 +193,7 @@ enable_rustpad: false
 
 enable_etherpad: true
 
-enable_codeserver: true
+enable_coder: true
 
 enable_syncthing: true
 
@@ -484,4 +484,5 @@ authelia_session_secret: ''
 authelia_storage_key: ''
 minio_root_user: ''
 minio_root_password: ''
+coder_postgres_password: ''
 ### END Secret variables (encrypt and put into vault.yml)

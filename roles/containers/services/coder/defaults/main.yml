@@ -1,5 +1,5 @@
 ---
-container_name: code-server
-dashboard_url: "http://code.{{ host }}"
+container_name: coder
+dashboard_url: "https://code.{{ host }}"
 health_url: "https://cors-container.{{ host }}/https://code.{{ host }}"
 homer_category: services

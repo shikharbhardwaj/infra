@@ -1,0 +1,63 @@
+---
+- name: Create the coder folders
+  file:
+    path: "{{ docker_dir }}/{{ container_name }}/{{ item }}"
+    state: directory
+    recurse: yes
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: 0755
+  with_items:
+    - "home"
+    - "postgres/data"
+- name: Make sure the postgres container is created and running
+  docker_container:
+    name: "{{ container_name }}-postgres"
+    image: "postgres:13.8-bullseye"
+    pull: yes
+    networks:
+      - name: traefik-proxy
+    state: 'started'
+    labels:
+      # Watchtower Update
+      "com.centurylinklabs.watchtower.enable": "true"
+    user: "{{ guid }}"
+    env:
+      "PUID": "{{ guid }}"
+      "PGID": "{{ guid }}"
+      "TZ": "{{ timezone }}"
+      "POSTGRES_PASSWORD": "{{ coder_postgres_password }}"
+      "POSTGRES_USER": "coder"
+      "PGDATA": "/var/lib/postgresql/data/pgdata"
+    volumes:
+      - "{{ docker_dir }}/{{ container_name }}/postgres/data:/var/lib/postgresql/data/pgdata"
+    restart_policy: unless-stopped
+- name: Make sure the coder container is created and running
+  docker_container:
+    name: "{{ container_name }}"
+    image: "ghcr.io/coder/coder:latest"
+    pull: yes
+    networks:
+      - name: traefik-proxy
+    state: 'started'
+    user: "{{ guid }}"
+    env:
+      "PUID": "{{ guid }}"
+      "PGID": "{{ guid }}"
+      "TZ": "{{ timezone }}"
+      "CODER_ADDRESS": "0.0.0.0:7080"
+      "CODER_ACCESS_URL": "https://code.{{ host }}"
+      "CODER_PG_CONNECTION_URL": "postgresql://coder:{{coder_postgres_password}}@{{container_name}}-postgres:5432/coder?sslmode=disable"
+    published_ports:
+      - "8081:7080"
+    volumes:
+      - "{{ docker_dir }}/{{ container_name }}/home:/home/coder"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    restart_policy: unless-stopped
+    labels:
+      "traefik.enable": "true"
+      "traefik.docker.network": "traefik-proxy"
+
+      "traefik.http.routers.codeserver.rule": "Host(`code.{{ host }}`)"
+
+      "traefik.http.routers.codeserver.middlewares": "corsheader@file"

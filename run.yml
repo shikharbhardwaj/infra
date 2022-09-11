@@ -358,12 +358,12 @@
         - containers
       when: enable_etherpad | default(False)
 
-    - role: containers/services/codeserver
+    - role: containers/services/coder
       become: no
       tags:
-        - codeserver
+        - coder
         - containers
-      when: enable_codeserver | default(False)
+      when: enable_coder | default(False)
     
     - role: containers/services/syncthing
       become: no
