@@ -323,6 +323,13 @@
         - containers
       when: enable_vaultwarden | default(False)
 
+    - role: containers/services/vault
+      become: no
+      tags:
+        - vault
+        - containers
+      when: enable_vault | default(False)
+
     - role: containers/services/seafile
       become: no
       tags:

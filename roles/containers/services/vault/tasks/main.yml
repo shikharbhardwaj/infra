@@ -1,0 +1,53 @@
+---
+- name: Create the vault folders
+  file:
+    path: "{{ docker_dir }}/{{ container_name }}/{{ item }}"
+    state: directory
+    recurse: yes
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: 0755
+  with_items:
+    - "data"
+    - "config"
+- name: Install the vault config
+  template:
+    src: "vault.config.j2"
+    dest: "{{ docker_dir }}/{{ container_name }}/config/vault.config"
+- name: Make sure the {{ container_name }} container is created and running
+  docker_container:
+    name: "{{ container_name }}"
+    image: "{{ image_name }}"
+    pull: yes
+    networks:
+      - name: traefik-proxy
+    state: 'started'
+    user: "{{ guid }}"
+    capabilities:
+      - IPC_LOCK
+    env:
+      "PUID": "{{ guid }}"
+      "PGID": "{{ guid }}"
+      "TZ": "{{ timezone }}"
+      "DOCKER_USER": "{{ username }}"
+      "SKIP_CHOWN": "true"
+      "SKIP_SETCAP": "true"
+      "VAULT_DISABLE_MLOCK": "true"
+      "VAULT_LOCAL_CONFIG": '{"backend": {"file": {"path": "/vault/data/file"}}, "default_lease_ttl": "168h", "max_lease_ttl": "720h"}'
+    published_ports:
+      - "8200:8200"
+    command:
+      - "server"
+      - -config
+      - /vault/config/vault.config
+    volumes:
+      - "{{ docker_dir }}/{{ container_name }}/data:/vault/data"
+      - "{{ docker_dir }}/{{ container_name }}/config:/vault/config"
+    restart_policy: unless-stopped
+    labels:
+      "traefik.enable": "true"
+      "traefik.docker.network": "traefik-proxy"
+
+      "traefik.http.routers.vault.rule": "Host(`secrets.{{ host }}`)"
+
+      "traefik.http.routers.vault.middlewares": "corsheader@file"

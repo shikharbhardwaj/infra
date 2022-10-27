@@ -1,0 +1,7 @@
+---
+app_name: "vault"
+container_name: "vault"
+image_name: "vault:latest"
+dashboard_url: "http://vault.{{ host }}"
+health_url: "https://cors-container.{{ host }}/https://secrets.{{ host }}"
+homer_category: services
