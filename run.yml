@@ -330,6 +330,13 @@
         - containers
       when: enable_vault | default(False)
 
+    - role: containers/services/hugo
+      become: no
+      tags:
+        - blog
+        - containers
+      when: enable_blog | default(False)
+
     - role: containers/services/seafile
       become: no
       tags:

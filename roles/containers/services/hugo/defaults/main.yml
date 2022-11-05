@@ -1,0 +1,7 @@
+---
+app_name: "hugo"
+container_name: "hugo"
+image_name: "klakegg/hugo:latest"
+dashboard_url: "http://{{ host }}"
+health_url: "https://cors-container.{{ host }}/https://{{ host }}"
+homer_category: services
