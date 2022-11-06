@@ -1,0 +1,16 @@
+---
+- name: Create the cloudflare cfg folders
+  file:
+    path: "{{ docker_dir }}/{{ container_name }}/{{ item }}"
+    state: directory
+    recurse: yes
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: 0755
+  with_items:
+    - "cfg"
+
+- name: Install the cloudflare config
+  template:
+    src: "config.yml.j2"
+    dest: "{{ docker_dir }}/{{ container_name }}/cfg/config.yml"

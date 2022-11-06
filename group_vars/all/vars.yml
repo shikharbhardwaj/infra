@@ -237,6 +237,8 @@ enable_prometheus: true
 
 enable_scrutiny: true
 
+enable_cloudflare_tunnel: true
+
 #
 # Time Machine
 #
@@ -485,4 +487,6 @@ authelia_storage_key: ''
 minio_root_user: ''
 minio_root_password: ''
 coder_postgres_password: ''
+cloudflare_tunnel_token: ''
+cloudflare_tunnel_uuid: ''
 ### END Secret variables (encrypt and put into vault.yml)

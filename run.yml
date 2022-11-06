@@ -247,6 +247,13 @@
         - containers
       when: enable_scrutiny | default(False)
 
+    - role: containers/system/cloudflare
+      become: no
+      tags:
+        - cloudflare-tunnel
+        - containers
+      when: enable_cloudflare_tunnel | default(False)
+
     #
     # Media
     #
