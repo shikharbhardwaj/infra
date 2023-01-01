@@ -445,6 +445,9 @@ security_fail2ban_enabled: false
 # Ansible ssh port
 ansible_ssh_port: 69
 
+# Yubico API client ID
+yubico_client_id: ''
+
 ### BEGIN Secret variables (encrypt and put into vault.yml)
 cloudflare_dns_token: ''
 cloudflare_email: ''
@@ -489,4 +492,5 @@ minio_root_password: ''
 coder_postgres_password: ''
 cloudflare_tunnel_token: ''
 cloudflare_tunnel_uuid: ''
+yubico_secret_key: ''
 ### END Secret variables (encrypt and put into vault.yml)

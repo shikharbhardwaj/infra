@@ -24,10 +24,12 @@
     env:
       WEBSOCKET_ENABLED: "true"
       INVITATIONS_ALLOWED: "false"
-      SIGNUPS_ALLOWED: "true"
+      SIGNUPS_ALLOWED: "false"
       DOMAIN: "https://{{ subdomains['vaultwarden'] }}.{{ host }}"
       LOG_FILE: "/data/vaultwarden.log"
       TZ: "{{ timezone }}"
+      YUBICO_CLIENT_ID: "{{ yubico_client_id }}"
+      YUBICO_SECRET_KEY: "{{ yubico_secret_key }}"
     volumes:
       - "{{ docker_dir }}/{{ container_name }}:/data"
     restart_policy: unless-stopped
