@@ -1,0 +1,114 @@
+#!/usr/bin/env python3
+
+import dataclasses
+import os
+
+from typing import Dict, List
+
+import click
+import jinja2
+
+
+deployment_template = 'templates/deployment.jinja.yml'
+service_template = 'templates/service.jinja.yml'
+kustomization_app_template = 'templates/kustomization_app.jinja.yml'
+kustomization_dev_template = 'templates/kustomization_dev.jinja.yml'
+
+@dataclasses.dataclass
+class Step:
+    def run(self):
+        NotImplementedError("run() is not implemented.")
+    
+    def revert(self):
+        NotImplementedError("revert() is not implemented")
+
+def raise_if_dir_exists(path: str) -> Step:
+    @dataclasses.dataclass
+    class DirCheckStep(Step):
+        dir_path: str
+
+        def run(self):
+            if os.path.exists(self.dir_path):
+                raise ValueError("The path already exists.")
+        
+        def revert(self):
+            # No-op
+            ...
+
+    return DirCheckStep(dir_path=path)
+
+def make_dir(path: str) -> Step:
+    @dataclasses.dataclass
+    class MakeDirStep(Step):
+        dir_path: str
+
+        def run(self):
+            os.makedirs(self.dir_path, exist_ok=True)
+        
+        def revert(self):
+            os.removedirs(self.dir_path)
+
+    return MakeDirStep(dir_path=path)
+
+def add_template(src_path: str, destination_path: str, *args, **kwargs) -> Step:
+    @dataclasses.dataclass
+    class AddTemplateStep(Step):
+        src_path: str
+        destination_path: str
+        vars: Dict = dataclasses.field(default_factory=lambda: kwargs)
+
+        def run(self):
+            with open(src_path, 'r') as src_file:
+                template = jinja2.Template(src_file.read(), undefined=jinja2.StrictUndefined)
+
+                rendered_template = template.render(self.vars)
+            
+            with open(destination_path, 'w') as dst_file:
+                dst_file.write(rendered_template)
+        
+        def revert(self):
+            os.remove(destination_path)
+            
+
+    return AddTemplateStep(src_path=src_path, destination_path=destination_path)
+
+
+@click.command()
+@click.argument('app_name')
+@click.option('--template-vars', multiple=True)
+def setup(app_name: str, template_vars: List):
+    base_dir = os.path.join(app_name, "base")
+    dev_dir = os.path.join(app_name, "overlays", "dev")
+    base_deployment_path = os.path.join(base_dir, "deployment.yml")
+    base_service_path = os.path.join(base_dir, "service.yml")
+    base_kustomize_path = os.path.join(base_dir, "kustomization.yml")
+    dev_kustomize_path = os.path.join(dev_dir, "kustomization.yml")
+
+    template_vars = dict([var.split('=') for var in template_vars])
+
+    steps = [
+        raise_if_dir_exists(app_name),
+        make_dir(base_dir),
+        add_template(deployment_template, base_deployment_path, app=app_name, **template_vars),
+        add_template(service_template, base_service_path, app=app_name, **template_vars),
+        add_template(kustomization_app_template, base_kustomize_path, app=app_name, **template_vars),
+        make_dir(dev_dir),
+        add_template(kustomization_dev_template, dev_kustomize_path, app=app_name, **template_vars)
+    ]
+
+    already_run: List[Step] = []
+
+    for step in steps:
+        try:
+            step.run()
+            already_run.append(step)
+        except Exception as ex:
+            # Let's undo all steps run so-far.
+            for done in reversed(already_run):
+                done.revert()
+            
+            raise ex
+
+
+if __name__ == '__main__':
+    setup()
