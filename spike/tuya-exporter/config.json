@@ -1,0 +1,9 @@
+{
+    "devices": [
+        {
+            "ip": "foo",
+            "key": "bar",
+            "id": "baz"
+        }
+    ]
+}
