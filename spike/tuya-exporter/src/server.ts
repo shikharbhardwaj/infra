@@ -1,15 +1,16 @@
-const express = require('express');
-const client = require('prom-client');
-const logger = require('pino')();
+import express from 'express';
+import client from 'prom-client';
+import pino from 'pino';
 
-const stats = require('./stats');
+import {PowerPlugStats, Config} from './stats';
 
+const logger = pino();
 const server = express();
 const register = client.register;
 
 logger.info('Starting app')
 
-server.get('/metrics', async (req, res) => {
+server.get('/metrics', async (req: any, res: any) => {
 	try {
 		res.set('Content-Type', client.register.contentType);
 		res.end(await register.metrics());
@@ -24,7 +25,7 @@ logger.info(
 	`Server listening to ${port}, metrics exposed on /metrics endpoint`,
 );
 
-logger.info(stats.PowerPlugStats.fromDatapoint({
+logger.info(PowerPlugStats.fromDatapoint({
   '1': true,
   '9': 0,
   '17': 100,
@@ -46,6 +47,6 @@ logger.info(stats.PowerPlugStats.fromDatapoint({
   '44': ''
 }));
 
-logger.info(stats.Config.fromConfig('/home/shikhar/dev/infra/spike/tuya-exporter/config.json'));
+logger.info(Config.fromConfig('/home/shikhar/dev/infra/spike/tuya-exporter/config.json'));
 
 server.listen(port);
