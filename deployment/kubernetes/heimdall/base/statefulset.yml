@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: heimdall
+spec:
+  selector:
+    matchLabels:
+      app: heimdall
+  serviceName: heimdall
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: heimdall
+    spec:
+      containers:
+      - name: heimdall
+        image: lscr.io/linuxserver/heimdall:latest
+        env:
+          - name: TZ
+            value: Asia/Kolkata
+          - name: PUID
+            value: "1000"
+          - name: PGID
+            value: "1000"
+        ports:
+        - containerPort: 80
+          name: web
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        volumeMounts:
+        - name: config
+          mountPath: /config
+  volumeClaimTemplates:
+  - metadata:
+      name: config
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
+      storageClassName: freenas-nfs-csi
