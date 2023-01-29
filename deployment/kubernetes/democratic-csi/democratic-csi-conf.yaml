@@ -37,14 +37,14 @@ driver:
       datasetEnableQuotas: true
       datasetEnableReservation: false
       datasetPermissionsMode: "0777"
-      datasetPermissionsUser: 0
-      datasetPermissionsGroup: 0
+      datasetPermissionsUser: 1000
+      datasetPermissionsGroup: 1000
     nfs:
       shareHost: truenas.shkhr.ovh
       shareAlldirs: false
       shareAllowedHosts: []
       shareAllowedNetworks: []
-      shareMaprootUser: homeuser
-      shareMaprootGroup: homeuser
+      shareMaprootUser: kubeuser
+      shareMaprootGroup: kubeuser
       shareMapallUser: ""
       shareMapallGroup: ""
