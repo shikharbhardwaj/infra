@@ -1,0 +1,10 @@
+{
+    "devices": [
+        {
+            "ip": "<device IP>",
+            "id": "<device ID>",
+            "key": "<device key>",
+            "friendly_name": "<friendly name for the device>"
+        }
+    ]
+}
