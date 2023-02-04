@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: "tuya-monitor"
+spec:
+  selector:
+    app: "tuya-monitor"
+  ports:
+  - port: 9080
+    targetPort: stats

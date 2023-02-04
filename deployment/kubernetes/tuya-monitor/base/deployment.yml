@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "tuya-monitor"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: "tuya-monitor"
+  template:
+    metadata:
+      labels:
+        app: "tuya-monitor"
+    spec:
+      containers:
+      - name: "tuya-monitor"
+        image: "ghcr.io/shikharbhardwaj/tuya-monitor:latest"
+        ports:
+          - containerPort: 9080
+            name: stats
+        env:
+        - name: DEVICE_CONFIG_PATH
+          value: /config/device-config.json
+        volumeMounts:
+          - mountPath: /config
+            name: device-config
+            readOnly: true
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+      volumes:
+        - name: device-config
+          secret:
+            secretName: tuya-device-config
