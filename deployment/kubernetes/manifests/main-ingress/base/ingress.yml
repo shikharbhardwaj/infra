@@ -48,6 +48,16 @@ spec:
             name: docker-registry
             port: 
               number: 5000
+  - host: "vault.{{ host }}"
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: vaultwarden
+            port: 
+              number: 80
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: Middleware
