@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: docker-registry
+spec:
+  selector:
+    matchLabels:
+      app: docker-registry
+  serviceName: docker-registry
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: docker-registry
+    spec:
+      containers:
+      - name: docker-registry
+        image: registry:2
+        env:
+          - name: REGISTRY_STORAGE_CACHE_BLOBDESCRIPTOR
+            value: inmemory
+          - name: REGISTRY_STORAGE_CACHE_BLOBDESCRIPTORSIZE
+            value: "10000"
+        ports:
+        - containerPort: 5000
+          name: web
+        resources:
+          limits:
+            memory: "2Gi"
+            cpu: "1"
+        volumeMounts:
+        - name: registry-data
+          mountPath: /var/lib/registry
+  volumeClaimTemplates:
+  - metadata:
+      name: registry-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 250Gi
+      storageClassName: freenas-nfs-csi

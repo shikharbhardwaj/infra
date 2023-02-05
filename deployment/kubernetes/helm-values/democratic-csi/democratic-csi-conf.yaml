@@ -28,9 +28,9 @@ driver:
     instance_id: truenas
     httpConnection:
       protocol: https
-      host: truenas.shkhr.ovh
+      host: "{{ truenas_host }}"
       port: 443
-      apiKey: ${TRUENAS_API_KEY}
+      apiKey: "{{ truenas_api_key }}"
     zfs:
       datasetParentName: pool0/vostok/a/vols
       detachedSnapshotsDatasetParentName: pool0/vostok/a/snaps
@@ -40,7 +40,7 @@ driver:
       datasetPermissionsUser: 1000
       datasetPermissionsGroup: 1000
     nfs:
-      shareHost: truenas.shkhr.ovh
+      shareHost: "{{ truenas_host }}"
       shareAlldirs: false
       shareAllowedHosts: []
       shareAllowedNetworks: []

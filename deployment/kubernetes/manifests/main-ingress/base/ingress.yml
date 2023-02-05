@@ -9,8 +9,8 @@ metadata:
 spec:
   tls:
   - hosts:
-    - "tenzing.shkhr.ovh"
-    - "*.tenzing.shkhr.ovh"
+    - "{{ host }}"
+    - "*.{{ host }}"
     secretName: tenzing-dev-cert-tls
   defaultBackend:
     service:
@@ -18,7 +18,7 @@ spec:
       port:
         number: 80
   rules:
-  - host: tenzing.shkhr.ovh
+  - host: "{{ host }}"
     http:
       paths:
       - pathType: Prefix
@@ -28,7 +28,7 @@ spec:
             name: heimdall
             port: 
               number: 80
-  - host: homeassistant.tenzing.shkhr.ovh
+  - host: "homeassistant.{{ host }}"
     http:
       paths:
       - pathType: Prefix
@@ -38,6 +38,16 @@ spec:
             name: home-assistant
             port: 
               number: 80
+  - host: "docker-registry.{{ host }}"
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: docker-registry
+            port: 
+              number: 5000
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: Middleware

@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: vaultwarden
+spec:
+  selector:
+    matchLabels:
+      app: vaultwarden
+  serviceName: vaultwarden
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: vaultwarden
+    spec:
+      containers:
+      - name: vaultwarden
+        image: vaultwarden/server
+        envFrom:
+          - secretRef:
+              name: vaultwarden-config
+        env:
+        - name: INVITATIONS_ALLOWED
+          value: "false"
+        - name: LOG_FILE
+          value: "/data/vaultwarden.log"
+        - name: SIGNUPS_ALLOWED
+          value: "false"
+        - name: TZ
+          value: "Asia/Kolkata"
+        - name: WEBSOCKET_ENABLED
+          value: "true"
+        ports:
+        - containerPort: 80
+          name: web
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+        volumeMounts:
+        - name: config
+          mountPath: /data
+  volumeClaimTemplates:
+  - metadata:
+      name: config
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
+      storageClassName: freenas-iscsi-csi
