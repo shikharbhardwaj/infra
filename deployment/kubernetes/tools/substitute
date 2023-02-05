@@ -1,0 +1,56 @@
+#!/usr/bin/env python3
+
+import logging
+import os
+from pathlib import Path
+import sys
+import tempfile
+import subprocess
+import time
+
+import click
+
+LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')
+BASE_DIR = Path(__file__).parent.absolute()
+
+logging.basicConfig(level=LOG_LEVEL, format='[%(levelname)8s] %(asctime)s %(filename)16s:L%(lineno)-3d %(funcName)16s() : %(message)s')
+
+log = logging.getLogger(__name__)
+
+@click.command()
+def substitute():
+    '''
+    Substitute the input stream with Ansible-managed secrets.
+    '''
+    with tempfile.TemporaryDirectory(suffix='-ansible-substitute') as base_dir:
+        src_path = os.path.join(base_dir, 'src.yml')
+        dst_path = os.path.join(base_dir, 'dst.yml')
+
+        with open(src_path, 'w') as src:
+            log.info('Saving kustomize results to: %s', src.name)
+
+            for line in sys.stdin:
+                src.write(line)
+
+        log.info('Running ansible with dir: %s', BASE_DIR)
+        try:
+            subprocess.run(['ansible-playbook',
+                'ansible-secrets-subst.yml', '--extra-vars',
+                f'template_src={src_path}', '--extra-vars',
+                f'template_dest={dst_path}'], check=True, cwd=BASE_DIR, capture_output=True)
+        except subprocess.CalledProcessError as ex:
+            log.exception('Failed running ansible playbook to substitute values. Logging lines from ansible stdout.')
+            log.error("[Ansible stdout begin]")
+            log.error(ex.stdout)
+            log.error("[Ansible stdout end]")
+            log.error("[Ansible stderr begin]")
+            log.error(ex.stderr)
+            log.error("[Ansible stderr end]")
+
+        
+        with open(dst_path, 'r') as dst:
+            for line in dst:
+                print(line, end='')
+
+if __name__ == '__main__':
+    substitute()

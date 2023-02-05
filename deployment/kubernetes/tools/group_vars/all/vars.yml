@@ -1,0 +1,8 @@
+# Subdomains
+subdomains:
+  vaultwarden: vault
+
+### BEGIN Secrets (encrypt into vault.yml)
+host: ''
+yubico_client_id: ''
+yubico_secret_key: ''

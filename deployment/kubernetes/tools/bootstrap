@@ -77,8 +77,9 @@ def add_template(src_path: str, destination_path: str, *args, **kwargs) -> Step:
 @click.argument('app_name')
 @click.option('--template-vars', multiple=True)
 def setup(app_name: str, template_vars: List):
-    base_dir = os.path.join(app_name, "base")
-    dev_dir = os.path.join(app_name, "overlays", "dev")
+    manifests_dir = os.path.join("manifests", app_name)
+    base_dir = os.path.join(manifests_dir, "base")
+    dev_dir = os.path.join(manifests_dir, "overlays", "dev")
     base_deployment_path = os.path.join(base_dir, "deployment.yml")
     base_service_path = os.path.join(base_dir, "service.yml")
     base_kustomize_path = os.path.join(base_dir, "kustomization.yml")

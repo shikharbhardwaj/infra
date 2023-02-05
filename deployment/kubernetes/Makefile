@@ -1,2 +1,6 @@
+SHELL := /bin/bash
+
+current_dir = $(shell pwd)
+
 deploy:
-	cd $(app)/overlays/$(variant) && kubectl kustomize | envsubst | kubectl apply -f -
+	cd manifests/$(app)/overlays/$(variant) && kubectl kustomize | $(current_dir)/tools/substitute | kubectl apply -f -
