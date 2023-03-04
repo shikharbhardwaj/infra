@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: "postgres-mlflow"
+spec:
+  selector:
+    matchLabels:
+      app: "postgres-mlflow"
+  serviceName: "postgres-mlflow"
+  template:
+    metadata:
+      labels:
+        app: "postgres-mlflow"
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+      - name: "postgres-mlflow"
+        image: "postgres:13.8-bullseye"
+        env:
+        - name: PUID
+          value: "1000"
+        - name: PGID
+          value: "1000"
+        - name: PGDATA
+          value: "/var/lib/postgresql/data/pgdata"
+        envFrom:
+          - secretRef:
+              name: postgres-mlflow-creds
+        ports:
+          - containerPort: 5432
+            name: postgres
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        volumeMounts:
+          - mountPath: "/var/lib/postgresql/data/pgdata"
+            name: postgres-data
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 2Gi
+      storageClassName: freenas-nfs-csi
