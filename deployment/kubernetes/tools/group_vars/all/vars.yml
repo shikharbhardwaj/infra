@@ -4,5 +4,9 @@ subdomains:
 
 ### BEGIN Secrets (encrypt into vault.yml)
 host: ''
+parent_host: ''
+cloudflare_api_token: ''
+letsencrypt_email: ''
 yubico_client_id: ''
 yubico_secret_key: ''
+tuya_device_config: ''
