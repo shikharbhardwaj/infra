@@ -12,3 +12,4 @@ spec:
   renewBefore: 720h # 30d before SSL will expire, renew it
   dnsNames:
     - "*.{{ parent_host }}"
+    - "*.{{ host }}"

@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: "mlflow"
+spec:
+  selector:
+    matchLabels:
+      app: "mlflow"
+  serviceName: "mlflow"
+  template:
+    metadata:
+      labels:
+        app: "mlflow"
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+      - name: "mlflow"
+        image: "ghcr.io/shikharbhardwaj/mlflow:2.0.1"
+        envFrom:
+          - secretRef:
+              name: postgres-mlflow-creds
+        ports:
+          - containerPort: 5000
+            name: web
+        command:
+          - mlflow
+          - server
+          - --backend-store-uri
+          - postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres-mlflow/mlflow
+          - --default-artifact-root
+          - /artifact-store
+          - --host
+          - 0.0.0.0
+          - --port
+          - '5000'
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        volumeMounts:
+          - mountPath: "/artifact-store"
+            name: artifact-store
+  volumeClaimTemplates:
+  - metadata:
+      name: artifact-store
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 10Gi
+      storageClassName: freenas-nfs-csi
