@@ -1,0 +1,4 @@
+# We terminate SSL at the ingress.
+configs:
+  params:
+    server.insecure: true

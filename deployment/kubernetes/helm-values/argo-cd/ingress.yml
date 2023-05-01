@@ -3,33 +3,33 @@ kind: Ingress
 metadata:
   annotations:
       traefik.ingress.kubernetes.io/router.middlewares: dev-https-redirect@kubernetescrd
-  name: coder-ingress
-  namespace: coder
+  name: argocd-ingress
+  namespace: argocd
   labels:
-    name: coder-ingress
+    name: argocd-ingress
 spec:
+  tls:
+  - hosts:
+    - "argocd.{{ host }}"
+    secretName: tenzing-dev-cert-tls
   rules:
-  - host: coder.tenzing.shkhr.ovh
+  - host: argocd.tenzing.shkhr.ovh
     http:
       paths:
       - backend:
           service:
-            name: coder
+            name: argocd-server
             port:
               number: 80
         path: /
         pathType: Prefix
-  tls:
-  - hosts:
-    - "coder.{{ host }}"
-    secretName: tenzing-dev-cert-tls
 
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: Middleware
 metadata:
   name: https-redirect
-  namespace: coder
+  namespace: argocd
 spec:
   redirectScheme:
     scheme: https
