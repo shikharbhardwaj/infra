@@ -1,0 +1,7 @@
+kind: Certificate
+metadata:
+  name: tenzing-dev-cert
+spec:
+  dnsNames:
+    - "zero2prod.{{ host }}"
+    - "*.zero2prod.{{ host }}"
