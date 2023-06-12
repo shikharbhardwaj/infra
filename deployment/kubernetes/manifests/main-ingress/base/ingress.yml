@@ -25,9 +25,9 @@ spec:
         path: "/"
         backend:
           service:
-            name: heimdall
+            name: homepage
             port: 
-              number: 80
+              number: 3000
   - host: "homeassistant.{{ host }}"
     http:
       paths:

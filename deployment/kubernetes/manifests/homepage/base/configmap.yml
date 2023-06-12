@@ -1,0 +1,107 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: homepage
+  namespace: default
+  labels:
+    app.kubernetes.io/name: homepage
+data:
+  kubernetes.yaml: |
+    mode: cluster
+  settings.yaml: |
+    background: https://images.unsplash.com/photo-1502790671504-542ad42d5189?auto=format&fit=crop&w=2560&q=80
+  #settings.yaml: |
+  #  providers:
+  #    longhorn:
+  #      url: https://longhorn.my.network
+  bookmarks.yaml: |
+    - Developer:
+        - Github:
+            - abbr: GH
+              href: https://github.com/
+  services.yaml: |
+    - Infrastructure:
+        - Proxmox:
+            href: https://phoenix.artemis.shkhr.ovh
+            icon: proxmox.png
+            description: VM cluster
+            widget:
+              type: proxmox
+              url: https://phoenix.artemis.shkhr.ovh
+              username: {{ proxmox_api_username }}
+              password: {{ proxmox_api_token }}
+        - Portainer:
+            href: https://portainer.artemis.shkhr.ovh
+            icon: portainer.png
+            description: Docker containers on DigitalOcean droplet
+            widget:
+              type: portainer
+              url: https://portainer.artemis.shkhr.ovh
+              env: 2
+              key: {{ portainer_api_token }}
+        - TrueNAS:
+            href: https://truenas.shkhr.ovh
+            icon: truenas.png
+            description: NAS
+            widget:
+              type: truenas
+              url: https://truenas.shkhr.ovh
+              key: {{ truenas_api_key }}
+        - Omada:
+            href: https://omada.shkhr.ovh
+            icon: omada.png
+            description: Networking infra
+            widget:
+              type: omada
+              url: https://omada.shkhr.ovh
+              username: {{ omada_user_name }}
+              password: {{ omada_user_pass }}
+              site: Homelab
+              fields: ["activeUser", "alerts", "connectedGateways"]
+
+    - Services:
+        - Bitwarden:
+            href: https://vault.shkhr.ovh
+            ping: https://vault.shkhr.ovh
+            description: Password manager
+            icon: bitwarden.png
+        - MLFlow:
+            href: https://mlflow.tenzing.shkhr.ovh
+            ping: https://mlflow.tenzing.shkhr.ovh
+            description: ML Experiments and model organization
+            icon: mlflow.png
+
+    - Observability:
+        - Uptime Kuma:
+            href: https://status.shkhr.ovh
+            icon: uptime-kuma.png
+            description: Service uptime
+            widget:
+              type: uptimekuma
+              url: https://status.shkhr.ovh
+              slug: overall
+        - Netdata:
+            href: https://app.netdata.cloud/spaces/shikharbhardwa-space/rooms/all-nodes/home
+            icon: netdata.png
+            description: Hardware monitoring
+        - Grafana:
+            href: https://arete.grafana.net
+            icon: grafana.png
+            description: Application stats and logs
+  widgets.yaml: |
+    - kubernetes:
+        cluster:
+          show: true
+          cpu: true
+          memory: true
+          showLabel: true
+          label: "Cluster: tenzing"
+        nodes:
+          show: true
+          cpu: true
+          memory: true
+          showLabel: true
+    - search:
+        provider: duckduckgo
+        target: _blank
+  docker.yaml: ""
