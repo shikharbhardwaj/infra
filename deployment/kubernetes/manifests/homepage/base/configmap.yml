@@ -22,38 +22,38 @@ data:
   services.yaml: |
     - Infrastructure:
         - Proxmox:
-            href: https://phoenix.artemis.shkhr.ovh
+            href: https://phoenix.artemis.{{ parent_host }}
             icon: proxmox.png
             description: VM cluster
             widget:
               type: proxmox
-              url: https://phoenix.artemis.shkhr.ovh
+              url: https://phoenix.artemis.{{ parent_host }}
               username: {{ proxmox_api_username }}
               password: {{ proxmox_api_token }}
         - Portainer:
-            href: https://portainer.artemis.shkhr.ovh
+            href: https://portainer.artemis.{{ parent_host }}
             icon: portainer.png
             description: Docker containers on DigitalOcean droplet
             widget:
               type: portainer
-              url: https://portainer.artemis.shkhr.ovh
+              url: https://portainer.artemis.{{ parent_host }}
               env: 2
               key: {{ portainer_api_token }}
         - TrueNAS:
-            href: https://truenas.shkhr.ovh
+            href: https://{{ truenas_host }}
             icon: truenas.png
             description: NAS
             widget:
               type: truenas
-              url: https://truenas.shkhr.ovh
+              url: https://{{ truenas_host }}
               key: {{ truenas_api_key }}
         - Omada:
-            href: https://omada.shkhr.ovh
+            href: https://omada.{{ parent_host }}
             icon: omada.png
             description: Networking infra
             widget:
               type: omada
-              url: https://omada.shkhr.ovh
+              url: https://omada.{{ parent_host }}
               username: {{ omada_user_name }}
               password: {{ omada_user_pass }}
               site: Homelab
@@ -61,24 +61,35 @@ data:
 
     - Services:
         - Bitwarden:
-            href: https://vault.shkhr.ovh
-            ping: https://vault.shkhr.ovh
+            href: https://vault.{{ parent_host }}
+            ping: https://vault.{{ parent_host }}
             description: Password manager
             icon: bitwarden.png
         - MLFlow:
-            href: https://mlflow.tenzing.shkhr.ovh
-            ping: https://mlflow.tenzing.shkhr.ovh
-            description: ML Experiments and model organization
-            icon: mlflow.png
+            href: https://mlflow.{{ host }}
+            ping: https://mlflow.{{ host }}
+            description: ML experiment and model organization
+            icon: https://mlflow.{{ host }}/static-files/favicon.ico
+        - Argo CD:
+            href: https://argocd.{{ host }}
+            ping: https://argocd.{{ host }}
+            description: Continuous Deployment
+            icon: argocd.png
+        - Coder:
+            href: https://coder.{{ host }}
+            ping: https://coder.{{ host }}
+            description: Remote dev
+            icon: coder.png
+
 
     - Observability:
         - Uptime Kuma:
-            href: https://status.shkhr.ovh
+            href: https://status.{{ parent_host }}
             icon: uptime-kuma.png
             description: Service uptime
             widget:
               type: uptimekuma
-              url: https://status.shkhr.ovh
+              url: https://status.{{ parent_host }}
               slug: overall
         - Netdata:
             href: https://app.netdata.cloud/spaces/shikharbhardwa-space/rooms/all-nodes/home
