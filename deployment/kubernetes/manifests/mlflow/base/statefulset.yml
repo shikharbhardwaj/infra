@@ -18,7 +18,7 @@ spec:
         fsGroup: 1000
       containers:
       - name: "mlflow"
-        image: "ghcr.io/shikharbhardwaj/mlflow:2.0.1"
+        image: "ghcr.io/shikharbhardwaj/mlflow:2.4.1"
         envFrom:
           - secretRef:
               name: postgres-mlflow-creds
