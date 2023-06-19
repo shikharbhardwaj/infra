@@ -22,6 +22,11 @@ spec:
         envFrom:
           - secretRef:
               name: postgres-mlflow-creds
+          - secretRef:
+              name: mlflow-aws-access-key
+        env:
+          - name: MLFLOW_S3_ENDPOINT_URL
+            value: https://minio-api.{{ host }}
         ports:
           - containerPort: 5000
             name: web
@@ -31,7 +36,7 @@ spec:
           - --backend-store-uri
           - postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres-mlflow/mlflow
           - --default-artifact-root
-          - /artifact-store
+          - s3://mlflow
           - --host
           - 0.0.0.0
           - --port

@@ -68,6 +68,26 @@ spec:
             name: mlflow
             port: 
               number: 5000
+  - host: "minio.{{ host }}"
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: minio
+            port: 
+              number: 9090
+  - host: "minio-api.{{ host }}"
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: minio
+            port: 
+              number: 9000
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: Middleware
