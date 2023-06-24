@@ -1,0 +1,5 @@
+global:
+  persistence:
+    config:
+      volume:
+        storageClass: freenas-nfs-csi

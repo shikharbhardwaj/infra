@@ -80,6 +80,16 @@ data:
             ping: https://coder.{{ host }}
             description: Remote dev
             icon: coder.png
+        - Label Studio:
+            href: https://labelstudio.{{ host }}
+            ping: https://labelstudio.{{ host }}
+            description: Annotation and labelling project organization
+            icon: https://labelstudio.{{ host }}/favicon.ico
+        - MinIO:
+            href: https://minio.{{ host }}
+            ping: https://minio.{{ host }}
+            description: Object storage
+            icon: minio.png
 
 
     - Observability:
