@@ -3,3 +3,9 @@ global:
     config:
       volume:
         storageClass: freenas-nfs-csi
+
+postgresql:
+  primary:
+    persistence:
+      storageClass: freenas-nfs-csi
+      size: 10Gi
