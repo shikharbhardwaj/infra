@@ -18,9 +18,10 @@ driver:
     instance_id: truenas
     httpConnection:
       protocol: https
-      host: "{{ truenas_host }}"
+      host: "{{ truenas_ip }}"
       port: 443
       apiKey: "{{ truenas_api_key }}"
+      allowInsecure: true
     zfs:
       datasetParentName: pool0/winnipeg/a/vols
       detachedSnapshotsDatasetParentName: pool0/winnipeg/a/snaps
@@ -30,7 +31,7 @@ driver:
       datasetPermissionsUser: 1000
       datasetPermissionsGroup: 1000
     iscsi:
-      targetPortal: "{{ truenas_host }}"
+      targetPortal: "{{ truenas_ip }}"
 
       namePrefix: csi-
       nameSuffix: "-clustera"
