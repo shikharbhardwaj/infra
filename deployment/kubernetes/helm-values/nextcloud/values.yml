@@ -1,0 +1,42 @@
+image:
+  repository: ghcr.io/shikharbhardwaj/nextcloud
+  tag: 25.0.8-apache
+
+nextcloud:
+  host: nextcloud.{{ host }}
+  podSecurityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+
+internalDatabase:
+  enabled: false
+
+externalDatabase:
+  enabled: true
+  type: postgresql
+  host: nextcloud-postgresql:5432
+  password: "{{ postgres_nextcloud_pass }}"
+
+global:
+  postgresql:
+    auth:
+      password: "{{ postgres_nextcloud_pass }}"
+      postgressPassword: "{{ postgres_nextcloud_pass }}"
+
+postgresql:
+  enabled: true
+  primary:
+    podSecurityContext:
+      enabled: false
+    persistence:
+      enabled: true
+      storageClass: freenas-nfs-csi
+      size: 10Gi
+
+persistence:
+  enabled: true
+  storageClass: freenas-iscsi-csi
+  nextcloudData:
+    enabled: true
+    storageClass: freenas-iscsi-csi
