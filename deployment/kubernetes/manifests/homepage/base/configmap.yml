@@ -60,6 +60,11 @@ data:
               fields: ["activeUser", "alerts", "connectedGateways"]
 
     - Services:
+        - Nextcloud:
+            href: https://nextcloud.{{ host }}
+            ping: https://nextcloud.{{ host }}
+            description: File sharing
+            icon: nextcloud.png
         - Bitwarden:
             href: https://vault.{{ parent_host }}
             ping: https://vault.{{ parent_host }}
