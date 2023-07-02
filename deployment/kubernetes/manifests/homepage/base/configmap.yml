@@ -62,7 +62,7 @@ data:
     - Services:
         - Nextcloud:
             href: https://nextcloud.{{ host }}
-            ping: https://nextcloud.{{ host }}
+            ping: https://nextcloud.{{ host }}/status.php
             description: File sharing
             icon: nextcloud.png
         - Bitwarden:
