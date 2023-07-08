@@ -1,6 +1,6 @@
 image:
   repository: ghcr.io/shikharbhardwaj/nextcloud
-  tag: 25.0.8-apache
+  tag: 26.0.3-apache
 
 nextcloud:
   host: nextcloud.{{ host }}

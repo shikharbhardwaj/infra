@@ -1,4 +1,4 @@
-VERSION:=25.0.8-apache
+VERSION:=26.0.3-apache
 
 build-docker:
 	docker build -t mlflow:latest .
