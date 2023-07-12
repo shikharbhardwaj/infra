@@ -1,0 +1,10 @@
+{
+    "devices": [
+        {
+            "ip": "192.168.x.x",
+            "id": "0",
+            "key": "xxx",
+            "friendly_name": "PC smart plug"
+        }
+    ]
+}
