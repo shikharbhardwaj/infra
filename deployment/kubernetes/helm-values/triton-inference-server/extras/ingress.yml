@@ -1,0 +1,36 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+      traefik.ingress.kubernetes.io/router.middlewares: dev-https-redirect@kubernetescrd
+  name: triton-ingress
+  namespace: triton
+  labels:
+    name: triton-ingress
+spec:
+  rules:
+  - host: triton.{{ host }}
+    http:
+      paths:
+      - backend:
+          service:
+            name: triton-triton-inference-server
+            port:
+              number: 8000
+        path: /
+        pathType: Prefix
+  tls:
+  - hosts:
+    - "triton.{{ host }}"
+    secretName: tenzing-dev-cert-tls
+
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: https-redirect
+  namespace: triton
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
