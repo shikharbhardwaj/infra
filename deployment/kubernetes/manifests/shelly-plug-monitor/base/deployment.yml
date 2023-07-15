@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "shelly-plug-monitor"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: "shelly-plug-monitor"
+  template:
+    metadata:
+      labels:
+        app: "shelly-plug-monitor"
+    spec:
+      containers:
+      - name: "shelly-plug-monitor"
+        image: "ghcr.io/shikharbhardwaj/shelly-plug-monitor:latest"
+        ports:
+          - containerPort: 9080
+            name: stats
+        env:
+        - name: DEVICE_CONFIG_PATH
+          value: /config/device-config.json
+        volumeMounts:
+          - mountPath: /config
+            name: device-config
+            readOnly: true
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+      volumes:
+        - name: device-config
+          secret:
+            secretName: shelly-plug-device-config
