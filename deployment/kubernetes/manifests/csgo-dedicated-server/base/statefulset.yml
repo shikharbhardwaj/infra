@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: csgo-dedicated-server
+spec:
+  selector:
+    matchLabels:
+      app: csgo-dedicated-server
+  serviceName: csgo-dedicated-server
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: csgo-dedicated-server
+    spec:
+      hostNetwork: true
+      serviceAccountName: "csgo-dedicated-server"
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+      - name: csgo-dedicated-server
+        image: "cm2network/csgo:sourcemod"
+        ports:
+        - name: tcp-01
+          containerPort: 27015
+          protocol: TCP
+        - name: tcp-02
+          containerPort: 27036
+        - name: udp-01
+          containerPort: 27015
+          protocol: UDP
+        - name: udp-02
+          containerPort: 27020
+          protocol: UDP
+        - name: udp-03
+          containerPort: 27031
+          protocol: UDP
+        - name: udp-04
+          containerPort: 27032
+          protocol: UDP
+        - name: udp-05
+          containerPort: 27033
+          protocol: UDP
+        - name: udp-06
+          containerPort: 27034
+          protocol: UDP
+        - name: udp-07
+          containerPort: 27035
+          protocol: UDP
+        resources:
+          requests:
+            memory: "1Gi"
+        envFrom:
+          - secretRef:
+              name: csgo-dedicated-server-env
+        volumeMounts:
+        - name: csgo-dedicated-data
+          mountPath: /home/steam/csgo-dedicated
+      # - name: sftp-sidecar
+      #   image: "atmoz/sftp:latest"
+      #   resources:
+      #     requests:
+      #       memory: "50Mi"
+      #   args:
+      #   - 'kubeuser:$1$Bp6U.IJI$IgRi1t2RKmBGAfqSw/cDO0:e:1000'
+      #   ports:
+      #   - name: sftp
+      #     containerPort: 22
+      #   envFrom:
+      #     - secretRef:
+      #         name: csgo-dedicated-server-env
+      #   volumeMounts:
+      #   - name: csgo-dedicated-data
+      #     mountPath: /home/kubeuser/share
+  volumeClaimTemplates:
+  - metadata:
+      name: csgo-dedicated-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 40Gi
+      storageClassName: local-path
