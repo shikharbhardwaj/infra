@@ -1,0 +1,13 @@
+csiDriver:
+  name: "org.democratic-csi.node-manual"
+
+driver:
+  config:
+    driver: node-manual
+
+controller:
+  externalSnapshotter:
+    enabled: false
+
+  externalResizer:
+    enabled: false

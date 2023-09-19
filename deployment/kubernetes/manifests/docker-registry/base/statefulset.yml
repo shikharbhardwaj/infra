@@ -17,6 +17,8 @@ spec:
       - name: docker-registry
         image: registry:2
         env:
+          - name: REGISTRY_STORAGE_DELETE_ENABLED
+            value: "true"
           - name: REGISTRY_STORAGE_CACHE_BLOBDESCRIPTOR
             value: inmemory
           - name: REGISTRY_STORAGE_CACHE_BLOBDESCRIPTORSIZE
