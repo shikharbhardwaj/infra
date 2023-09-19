@@ -36,7 +36,7 @@ data:
             description: Docker containers on DigitalOcean droplet
             widget:
               type: portainer
-              url: https://portainer.artemis.{{ parent_host }}
+              url: https://{{ artemis_tailscale_ip }}:9443
               env: 2
               key: {{ portainer_api_token }}
         - TrueNAS:
@@ -70,6 +70,11 @@ data:
             ping: https://vault.{{ parent_host }}
             description: Password manager
             icon: bitwarden.png
+        - Jellyfin:
+            href: https://media.{{ parent_host }}
+            ping: http://{{ jellyfin_tailscale_ip }}:8096/health
+            description: Media streaming
+            icon: jellyfin.png
         - MLFlow:
             href: https://mlflow.{{ host }}
             ping: https://mlflow.{{ host }}
