@@ -63,7 +63,11 @@ spec:
             limits:
               nvidia.com/gpu: {{ .Values.image.numGpus }}
 
-          args: ["tritonserver", "--model-repository=/models"]
+          args: ["tritonserver", "--model-repository=s3://https://minio-api.tenzing.shkhr.ovh:443/models/triton", "--model-control-mode=explicit"]
+
+          envFrom:
+          - secretRef:
+              name: triton-minio-access-key
 
           ports:
             - containerPort: 8000
