@@ -1,0 +1,7 @@
+postgreql:
+  auth:
+    password: "{{ prefect_postgres_password }}"
+
+server:
+  image:
+    prefectTag: 2.11-python3.9
