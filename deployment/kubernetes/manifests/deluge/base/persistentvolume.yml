@@ -1,0 +1,25 @@
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: deluge-media-pv
+spec:
+  capacity:
+    storage: 500Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  mountOptions:
+    - nfsvers=3
+    - nolock
+    - noatime
+  csi:
+    driver: org.democratic-csi.node-manual
+    readOnly: false
+    fsType: nfs
+    volumeHandle: deluge-media-pv
+    volumeAttributes:
+      server: "{{ truenas_ip }}"
+      share: "/mnt/pool0/baykal"
+      node_attach_driver: nfs
+      provisioner_driver: node-manual

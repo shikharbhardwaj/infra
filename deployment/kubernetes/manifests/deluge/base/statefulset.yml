@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: deluge
+spec:
+  selector:
+    matchLabels:
+      app: deluge
+  serviceName: deluge
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: "deluge"
+    spec:
+      containers:
+      - name: "deluge"
+        image: "lscr.io/linuxserver/deluge:latest"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 8112
+        - containerPort: 6881
+        - containerPort: 58846
+        volumeMounts:
+        - mountPath: /data/media
+          name: media
+        - mountPath: /config
+          name: config
+      - name: gluetun
+        image: qmcgaw/gluetun:v3
+        env:
+        - name: VPN_SERVICE_PROVIDER
+          value: surfshark
+        envFrom:
+        - secretRef:
+            name: deluge-surfshark-creds
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "500m"
+        securityContext:
+          capabilities:
+            add: ["NET_ADMIN"]
+      volumes:
+      - name: media
+        persistentVolumeClaim:
+          claimName: deluge-media-pvc
+  volumeClaimTemplates:
+  - metadata:
+      name: config
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
+      storageClassName: freenas-nfs-csi
+
