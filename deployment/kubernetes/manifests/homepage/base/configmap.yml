@@ -10,15 +10,15 @@ data:
     mode: cluster
   settings.yaml: |
     background: https://images.unsplash.com/photo-1502790671504-542ad42d5189?auto=format&fit=crop&w=2560&q=80
-  #settings.yaml: |
+  # settings.yaml: |
   #  providers:
   #    longhorn:
   #      url: https://longhorn.my.network
   bookmarks.yaml: |
-    - Developer:
-        - Github:
-            - abbr: GH
-              href: https://github.com/
+    - General:
+        - WindowSwap:
+            - abbr: WS
+              href: https://www.window-swap.com/Window
   services.yaml: |
     - Infrastructure:
         - Proxmox:
@@ -70,11 +70,6 @@ data:
             ping: https://vault.{{ parent_host }}
             description: Password manager
             icon: bitwarden.png
-        - Jellyfin:
-            href: https://media.{{ parent_host }}
-            ping: http://{{ jellyfin_tailscale_ip }}:8096/health
-            description: Media streaming
-            icon: jellyfin.png
         - MLFlow:
             href: https://mlflow.{{ host }}
             ping: https://mlflow.{{ host }}
@@ -101,6 +96,35 @@ data:
             description: Object storage
             icon: minio.png
 
+    - Media:
+        - Jellyfin:
+            href: https://media.{{ parent_host }}
+            ping: http://{{ jellyfin_tailscale_ip }}:8096/health
+            description: Media streaming
+            icon: jellyfin.png
+            widget:
+              type: jellyfin
+              url: http://{{ jellyfin_tailscale_ip }}:8096
+              key: {{ jellyfin_api_key }}
+              enableBlocks: true
+        - Radarr:
+            href: https://radarr.{{ host }}
+            ping: https://radarr.{{ host }}
+            description: Movie library management
+            icon: radarr.png
+            widget:
+              type: radarr
+              url: https://radarr.{{ host }}
+              key: {{ radarr_api_key }}
+        - Deluge:
+            href: https://deluge.{{ host }}
+            ping: https://deluge.{{ host }}
+            description: Download manager
+            icon: deluge.png
+            widget:
+              type: deluge
+              url: https://deluge.{{ host }}
+              password: {{ deluge_webui_password }}
 
     - Observability:
         - Uptime Kuma:
@@ -135,4 +159,11 @@ data:
     - search:
         provider: duckduckgo
         target: _blank
+    - openmeteo:
+        label: Delhi
+        latitude: 28.7
+        longitude: 77.1
+        timezone: Asia/Kolkata
+        units: metric
+        cache: 5
   docker.yaml: ""
