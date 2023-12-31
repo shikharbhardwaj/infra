@@ -1,46 +1,47 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: deluge
+  name: prowlarr
 spec:
   selector:
     matchLabels:
-      app: deluge
-  serviceName: deluge
+      app: prowlarr
+  serviceName: prowlarr
   replicas: 1
   template:
     metadata:
       labels:
-        app: "deluge"
+        app: prowlarr
     spec:
       securityContext:
         fsGroup: 1000
       containers:
-      - name: "deluge"
-        image: "lscr.io/linuxserver/deluge:latest"
+      - name: prowlarr
+        image: lscr.io/linuxserver/prowlarr:1.11.4
         env:
         - name: PUID
           value: "1000"
         - name: PGID
           value: "1000"
+        ports:
+        - containerPort: 9696
+          name: web
+        volumeMounts:
+        - name: config
+          mountPath: /config
         resources:
           requests:
-            memory: "128Mi"
-            cpu: "500m"
-        ports:
-        - containerPort: 8112
-        - containerPort: 6881
-        - containerPort: 58846
-        volumeMounts:
-        - mountPath: /data/media
-          name: media
-        - mountPath: /config
-          name: config
+            memory: 128Mi
+            cpu: 100m
       - name: gluetun
         image: qmcgaw/gluetun:v3
         env:
         - name: VPN_SERVICE_PROVIDER
           value: surfshark
+        - name: FIREWALL_OUTBOUND_SUBNETS
+          value: 10.0.0.0/8
+        - name: DNS_PLAINTEXT_ADDRESS
+          value: "10.43.0.10"
         envFrom:
         - secretRef:
             name: deluge-surfshark-creds
@@ -51,10 +52,6 @@ spec:
         securityContext:
           capabilities:
             add: ["NET_ADMIN"]
-      volumes:
-      - name: media
-        persistentVolumeClaim:
-          claimName: deluge-media-pvc
   volumeClaimTemplates:
   - metadata:
       name: config
@@ -64,4 +61,3 @@ spec:
         requests:
           storage: 1Gi
       storageClassName: freenas-nfs-csi
-

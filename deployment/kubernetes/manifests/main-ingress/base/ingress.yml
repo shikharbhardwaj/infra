@@ -98,6 +98,26 @@ spec:
             name: deluge
             port: 
               number: 8112
+  - host: "radarr.{{ host }}"
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: radarr
+            port: 
+              number: 7878
+  - host: "prowlarr.{{ host }}"
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: prowlarr
+            port: 
+              number: 9696
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: Middleware

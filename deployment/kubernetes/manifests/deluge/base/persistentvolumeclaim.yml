@@ -4,7 +4,7 @@ metadata:
   name: deluge-media-pvc
 spec:
   storageClassName: ""
-  volumeName: deluge-media-pv
+  volumeName: media-pv
   accessModes:
     - ReadWriteMany
   resources:

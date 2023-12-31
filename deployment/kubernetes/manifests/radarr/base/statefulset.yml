@@ -1,56 +1,40 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: deluge
+  name: radarr
 spec:
   selector:
     matchLabels:
-      app: deluge
-  serviceName: deluge
+      app: radarr
+  serviceName: radarr
   replicas: 1
   template:
     metadata:
       labels:
-        app: "deluge"
+        app: radarr
     spec:
       securityContext:
         fsGroup: 1000
       containers:
-      - name: "deluge"
-        image: "lscr.io/linuxserver/deluge:latest"
+      - name: radarr
+        image: lscr.io/linuxserver/radarr:5.2.6
         env:
         - name: PUID
           value: "1000"
         - name: PGID
           value: "1000"
-        resources:
-          requests:
-            memory: "128Mi"
-            cpu: "500m"
         ports:
-        - containerPort: 8112
-        - containerPort: 6881
-        - containerPort: 58846
+        - containerPort: 7878
+          name: web
         volumeMounts:
+        - name: config
+          mountPath: /config
         - mountPath: /data/media
           name: media
-        - mountPath: /config
-          name: config
-      - name: gluetun
-        image: qmcgaw/gluetun:v3
-        env:
-        - name: VPN_SERVICE_PROVIDER
-          value: surfshark
-        envFrom:
-        - secretRef:
-            name: deluge-surfshark-creds
         resources:
           requests:
-            memory: "128Mi"
-            cpu: "500m"
-        securityContext:
-          capabilities:
-            add: ["NET_ADMIN"]
+            memory: 128Mi
+            cpu: 100m
       volumes:
       - name: media
         persistentVolumeClaim:
@@ -64,4 +48,3 @@ spec:
         requests:
           storage: 1Gi
       storageClassName: freenas-nfs-csi
-
