@@ -7,3 +7,6 @@ deploy:
 
 substitute:
 	cat $(file) | $(current_dir)/tools/substitute > out/dst.yml
+
+edit-secrets:
+	cd tools && ansible-vault edit group_vars/all/vault.yml
