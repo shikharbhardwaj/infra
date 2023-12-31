@@ -40,35 +40,35 @@ changes.
 
 * Authenticate
 
-The secrets referenced in the manifests are decrypted using credentials stored
-in a Bitwarden vault, which needs to be unlocked to execute any deployment
-commands.
-
-```
-export BW_SESSION=$(bw unlock --raw)
-```
+   The secrets referenced in the manifests are decrypted using credentials stored
+   in a Bitwarden vault, which needs to be unlocked to execute any deployment
+   commands.
+   
+   ```
+   export BW_SESSION=$(bw unlock --raw)
+   ```
 
 * Creating a new app
 
-The `bootstrap` script in the `tools` directory creates a new instance of an
-app, substituting a couple of variables from the templates kept in the
-`templates` directory. It also creates a `dev` variant by default.
-
-```
-./tools/bootstrap --template-vars image=<IMAGE TAG> <APP NAME>
-```
+   The `bootstrap` script in the `tools` directory creates a new instance of an
+   app, substituting a couple of variables from the templates kept in the
+   `templates` directory. It also creates a `dev` variant by default.
+   
+   ```
+   ./tools/bootstrap --template-vars image=<IMAGE TAG> <APP NAME>
+   ```
 
 * Deploying an app
-
-```
-make deploy app=<APP NAME> variant=<VARIANT>
-```
+   
+   ```
+   make deploy app=<APP NAME> variant=<VARIANT>
+   ```
 
 * Adding/updating secrets
 
-```
-make edit-secrets
-```
+   ```
+   make edit-secrets
+   ```
 
 ### TODOs
 
