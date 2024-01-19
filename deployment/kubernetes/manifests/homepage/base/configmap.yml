@@ -116,6 +116,15 @@ data:
               type: radarr
               url: https://radarr.{{ host }}
               key: {{ radarr_api_key }}
+        - Sonarr:
+            href: https://sonarr.{{ host }}
+            ping: https://sonarr.{{ host }}
+            description: TV library management
+            icon: sonarr.png
+            widget:
+              type: sonarr
+              url: https://sonarr.{{ host }}
+              key: {{ sonarr_api_key }}
         - Deluge:
             href: https://deluge.{{ host }}
             ping: https://deluge.{{ host }}

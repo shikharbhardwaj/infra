@@ -118,6 +118,16 @@ spec:
             name: prowlarr
             port: 
               number: 9696
+  - host: "sonarr.{{ host }}"
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: sonarr
+            port: 
+              number: 8989
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: Middleware
