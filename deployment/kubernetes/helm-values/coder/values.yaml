@@ -28,3 +28,9 @@ coder:
   #tls:
   #  secretNames:
   #    - my-tls-secret-name
+
+postgresql:
+  primary:
+    persistence:
+      storageClass: freenas-nfs-csi
+      size: 10Gi
