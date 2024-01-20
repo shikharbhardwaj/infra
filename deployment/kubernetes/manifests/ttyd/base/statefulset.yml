@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ttyd
+spec:
+  selector:
+    matchLabels:
+      app: ttyd
+  serviceName: ttyd
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: ttyd
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+      - name: ttyd
+        image: ghcr.io/shikharbhardwaj/ttyd:39ac5349
+        ports:
+        - containerPort: 7681
+          name: web
+        volumeMounts:
+        - name: home
+          mountPath: /home/appuser
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+  volumeClaimTemplates:
+  - metadata:
+      name: home
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: freenas-iscsi-csi
+      resources:
+        requests:
+          storage: 5Gi
