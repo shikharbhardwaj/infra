@@ -138,6 +138,26 @@ spec:
             name: ttyd
             port: 
               number: 7681
+  - host: "readarr.{{ host }}"
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: readarr
+            port: 
+              number: 8787
+  - host: "books.{{ host }}"
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: kavita
+            port: 
+              number: 5000
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: Middleware
