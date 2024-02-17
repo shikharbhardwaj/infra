@@ -7,3 +7,5 @@ primary:
   persistence:
     storageClass: freenas-nfs-csi
     size: 10Gi
+  podSecurityContext:
+    enabled: false
