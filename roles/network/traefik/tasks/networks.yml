@@ -1,5 +1,0 @@
-
-- name: Create the traefik proxy network
-  docker_network:
-    name: traefik-proxy
-    internal: no

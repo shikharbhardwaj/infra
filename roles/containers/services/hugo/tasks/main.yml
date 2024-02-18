@@ -1,3 +1,0 @@
----
-- include_tasks: copy_site.yml
-- include_tasks: docker.yml

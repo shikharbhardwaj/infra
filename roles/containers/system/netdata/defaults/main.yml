@@ -1,3 +1,0 @@
----
-container_name: netdata
-dashboard_url: "https://cors-container.{{ host }}/https://netdata.{{ host }}"

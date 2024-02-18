@@ -1,7 +1,0 @@
----
-- hosts: all
-  gather_facts: yes
-  become: no
-
-  roles:
-    - role: shikharbhardwaj.ubuntu_autoinstall

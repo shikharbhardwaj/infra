@@ -1,3 +1,0 @@
----
-container_name: scrutiny
-dashboard_url: "https://scrutiny.{{ host }}"

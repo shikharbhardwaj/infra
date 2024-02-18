@@ -1,6 +1,0 @@
-container_name: gitea
-dashboard_url: "https://gitea.{{ host }}"
-health_url: "https://cors-container.{{ host }}/https://gitea.{{ host }}"
-homer_category: services
-mysql_db: "gitea_db"
-mysql_user: "gitea"

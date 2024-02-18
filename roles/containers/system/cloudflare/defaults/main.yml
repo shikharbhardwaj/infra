@@ -1,7 +1,0 @@
----
-app_name: "cloudflare"
-container_name: "cloudflare"
-image_name: "cloudflare/cloudflared:latest"
-dashboard_url: "http://cloudflare.{{ host }}"
-health_url: "https://cors-container.{{ host }}/https://cloudflare.{{ host }}"
-homer_category: system

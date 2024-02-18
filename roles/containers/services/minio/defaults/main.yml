@@ -1,7 +1,0 @@
-container_name: "minio"
-
-dashboard_url: "https://minio-console.{{ host }}"
-
-health_url: "https://cors-container.{{ host }}/https://minio-console.{{ host }}"
-
-homer_category: services
