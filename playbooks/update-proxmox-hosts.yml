@@ -1,0 +1,34 @@
+---
+- hosts: proxmox_hosts
+  name: update apt
+
+  tasks:
+  - name: apt update
+    apt:
+      update_cache: yes
+      force_apt_get: yes
+      cache_valid_time: 3600
+
+  - name: apt upgrade
+    apt:
+      upgrade: dist
+
+  - name: remove old packages and clean cache
+    apt:
+      autoremove: yes
+      autoclean: yes
+      clean: yes
+
+  - name: check for reboot required
+    register: reboot_required_file
+    stat: path=/var/run/reboot-required get_md5=no
+
+  - name: Reboot if kernel updated
+    reboot:
+      msg: "Reboot initiated by Ansible for kernel updates"
+      connect_timeout: 5
+      reboot_timeout: 300
+      pre_reboot_delay: 0
+      post_reboot_delay: 30
+      test_command: uptime 
+    when: reboot_required_file.stat.exists
