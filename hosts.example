@@ -1,0 +1,14 @@
+[proxmox_hosts]
+arete
+perseus
+thor
+
+[proxmox_hosts:vars]
+ansible_user=root
+
+[ubuntu_hosts]
+tenzing-01
+tenzing-02
+tenzing-03
+omada-controller
+jellyfin ansible_user=root
