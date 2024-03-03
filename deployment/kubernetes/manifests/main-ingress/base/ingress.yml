@@ -148,7 +148,7 @@ spec:
             name: readarr
             port: 
               number: 8787
-  - host: "books.{{ host }}"
+  - host: "kavita.{{ host }}"
     http:
       paths:
       - pathType: Prefix

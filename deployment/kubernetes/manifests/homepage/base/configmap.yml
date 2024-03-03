@@ -10,10 +10,10 @@ data:
     mode: cluster
   settings.yaml: |
     background: https://images.unsplash.com/photo-1603568301602-3924e87dc8d6?q=80&w=2560&auto=format&fit=crop
-  # settings.yaml: |
-  #  providers:
-  #    longhorn:
-  #      url: https://longhorn.my.network
+    layout:
+      Media:
+        style: row
+        columns: 4
   bookmarks.yaml: |
     - General:
         - WindowSwap:
@@ -97,16 +97,6 @@ data:
             icon: minio.png
 
     - Media:
-        - Jellyfin:
-            href: https://media.{{ parent_host }}
-            ping: http://{{ jellyfin_tailscale_ip }}:8096/health
-            description: Media streaming
-            icon: jellyfin.png
-            widget:
-              type: jellyfin
-              url: http://{{ jellyfin_tailscale_ip }}:8096
-              key: {{ jellyfin_api_key }}
-              enableBlocks: true
         - Radarr:
             href: https://radarr.{{ host }}
             ping: https://radarr.{{ host }}
@@ -116,6 +106,15 @@ data:
               type: radarr
               url: https://radarr.{{ host }}
               key: {{ radarr_api_key }}
+        - Readarr:
+            href: https://readarr.{{ host }}
+            ping: https://readarr.{{ host }}
+            description: Books library management
+            icon: readarr.png
+            widget:
+              type: readarr
+              url: https://readarr.{{ host }}
+              key: {{ readarr_api_key }}
         - Sonarr:
             href: https://sonarr.{{ host }}
             ping: https://sonarr.{{ host }}
@@ -134,6 +133,21 @@ data:
               type: deluge
               url: https://deluge.{{ host }}
               password: {{ deluge_webui_password }}
+        - Jellyfin:
+            href: https://media.{{ parent_host }}
+            ping: http://{{ jellyfin_tailscale_ip }}:8096/health
+            description: Media streaming
+            icon: jellyfin.png
+            widget:
+              type: jellyfin
+              url: http://{{ jellyfin_tailscale_ip }}:8096
+              key: {{ jellyfin_api_key }}
+              enableBlocks: true
+        - Kavita:
+            href: https://kavita.{{ host }}
+            ping: https://kavita.{{ host }}
+            description: E-book reader
+            icon: kavita.png
 
     - Observability:
         - Uptime Kuma:
@@ -152,6 +166,17 @@ data:
             href: https://arete.grafana.net
             icon: grafana.png
             description: Application stats and logs
+      
+    - Admin:
+        - Shell:
+            href: https://shell.{{ host }}
+            icon: shell.png
+            description: Admin shell access
+        - Wazuh:
+            href: https://wazuh.{{ host }}
+            icon: wazuh.png
+            description: Open source XDR and SIEM
+
   widgets.yaml: |
     - kubernetes:
         cluster:
