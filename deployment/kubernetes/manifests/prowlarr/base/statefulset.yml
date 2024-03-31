@@ -17,7 +17,7 @@ spec:
         fsGroup: 1000
       containers:
       - name: prowlarr
-        image: lscr.io/linuxserver/prowlarr:1.11.4
+        image: lscr.io/linuxserver/prowlarr:latest
         env:
         - name: PUID
           value: "1000"
@@ -60,4 +60,4 @@ spec:
       resources:
         requests:
           storage: 1Gi
-      storageClassName: freenas-nfs-csi
+      storageClassName: freenas-iscsi-csi

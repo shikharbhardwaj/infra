@@ -158,6 +158,16 @@ spec:
             name: kavita
             port: 
               number: 5000
+  - host: "truecommand.{{ host }}"
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: truecommand
+            port: 
+              number: 80
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: Middleware
