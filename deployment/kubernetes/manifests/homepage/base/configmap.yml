@@ -148,6 +148,15 @@ data:
             ping: https://kavita.{{ host }}
             description: E-book reader
             icon: kavita.png
+        - Immich:
+            href: https://photos.{{ parent_host }}
+            ping: https://photos.{{ parent_host }}
+            description: Photo library
+            icon: immich.png
+            widget:
+              type: immich
+              url: https://photos.{{ parent_host }}
+              api_key: {{ immich_api_key }}
 
     - Observability:
         - Uptime Kuma:
@@ -201,3 +210,27 @@ data:
         units: metric
         cache: 5
   docker.yaml: ""
+  custom.css: |
+    @media(min-width: 500px) {
+    .services-list.flex.flex-col {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+    }
+    
+    .services-list.flex.flex-col .service {
+        grid-column: span 2;
+    }
+    
+    .services-list.flex.flex-col .service > div {
+        height: 100%;
+    }
+    
+    .services-list.flex.flex-col .service > .mb-2 {
+        margin-bottom: 0 !important;
+    }
+    
+    .services-list.flex.flex-col #col-small.service {
+        grid-column: span 1;
+    }
+    }
