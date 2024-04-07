@@ -47,4 +47,4 @@ spec:
       resources:
         requests:
           storage: 1Gi
-      storageClassName: freenas-nfs-csi
+      storageClassName: freenas-iscsi-csi
