@@ -40,6 +40,14 @@ spec:
         volumeMounts:
         - name: config
           mountPath: /data
+        livenessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - 'touch "/data/health.txt"'
+          initialDelaySeconds: 10
+          periodSeconds: 30
   volumeClaimTemplates:
   - metadata:
       name: config
