@@ -10,7 +10,8 @@ storageClasses:
   parameters:
     fsType: ext4
 
-volumeSnapshotClasses: []
+volumeSnapshotClasses:
+- name: freenas-iscsi-snapshots
 
 driver:
   config:
@@ -23,8 +24,8 @@ driver:
       apiKey: "{{ truenas_api_key }}"
       allowInsecure: true
     zfs:
-      datasetParentName: pool0/winnipeg/a/vols
-      detachedSnapshotsDatasetParentName: pool0/winnipeg/a/snaps
+      datasetParentName: main-pool/live/winnipeg/a/vols
+      detachedSnapshotsDatasetParentName: main-pool/live/winnipeg/a/snaps
       datasetEnableQuotas: true
       datasetEnableReservation: false
       datasetPermissionsMode: "0777"
@@ -47,3 +48,8 @@ driver:
       extentBlocksize: 512
       extentRpm: "7200"
       extentAvailThreshold: 0
+
+    _private:
+      csi:
+        volume:
+          idTemplate: {% raw %} '{{ parameters.[csi.storage.k8s.io/pvc/namespace] }}-{{ parameters.[csi.storage.k8s.io/pvc/name] }}' {% endraw %}
