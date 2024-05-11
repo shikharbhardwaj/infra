@@ -20,6 +20,6 @@ spec:
     volumeHandle: media-pv
     volumeAttributes:
       server: "{{ truenas_ip }}"
-      share: "/mnt/pool0/baykal/media"
+      share: "/mnt/main-pool/live/baykal/media"
       node_attach_driver: nfs
       provisioner_driver: node-manual

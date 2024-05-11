@@ -9,3 +9,5 @@
 mountsraspi
 
 backups/inflight
+
+deployment/kubernetes/out/*

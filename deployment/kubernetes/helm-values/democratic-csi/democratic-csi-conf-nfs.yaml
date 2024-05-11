@@ -20,7 +20,8 @@ storageClasses:
     node-publish-secret:
     controller-expand-secret:
 
-volumeSnapshotClasses: []
+volumeSnapshotClasses:
+- name: freenas-nfs-snapshots
 
 driver:
   config:
@@ -33,9 +34,9 @@ driver:
       apiKey: "{{ truenas_api_key }}"
       allowInsecure: true
     zfs:
-      datasetParentName: pool0/vostok/a/vols
-      detachedSnapshotsDatasetParentName: pool0/vostok/a/snaps
-      datasetEnableQuotas: true
+      datasetParentName: main-pool/live/vostok/a/vols
+      detachedSnapshotsDatasetParentName: main-pool/live/vostok/a/snaps
+      datasetEnableQuotas: false
       datasetEnableReservation: false
       datasetPermissionsMode: "0777"
       datasetPermissionsUser: 1000
@@ -49,3 +50,8 @@ driver:
       shareMaprootGroup: kubeuser
       shareMapallUser: ""
       shareMapallGroup: ""
+
+    _private:
+      csi:
+        volume:
+          idTemplate: {% raw %} '{{ parameters.[csi.storage.k8s.io/pvc/namespace] }}-{{ parameters.[csi.storage.k8s.io/pvc/name] }}' {% endraw %}

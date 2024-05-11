@@ -22,3 +22,9 @@ helm upgrade --install --values out/dst.yml --namespace democratic-csi --create-
 ```
 helm upgrade --install --values out/dst.yml --namespace democratic-csi --create-namespace freenas-api-iscsi democratic-csi/democratic-csi
 ```
+
+4. Helm install snapshot controller
+
+```
+helm upgrade --install --namespace kube-system --create-namespace snapshot-controller democratic-csi/snapshot-controller
+```

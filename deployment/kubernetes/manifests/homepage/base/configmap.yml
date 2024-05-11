@@ -181,10 +181,10 @@ data:
             href: https://shell.{{ host }}
             icon: shell.png
             description: Admin shell access
-        - Wazuh:
-            href: https://wazuh.{{ host }}
-            icon: wazuh.png
-            description: Open source XDR and SIEM
+        # - Wazuh:
+        #     href: https://wazuh.{{ host }}
+        #     icon: wazuh.png
+        #     description: Open source XDR and SIEM
 
   widgets.yaml: |
     - kubernetes:

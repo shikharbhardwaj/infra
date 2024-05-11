@@ -1,0 +1,50 @@
+csiDriver:
+  name: "org.democratic-csi.iscsi-truenas"
+
+storageClasses:
+- name: truenas-iscsi-csi
+  defaultClass: false
+  reclaimPolicy: Delete
+  volumeBindingMode: Immediate
+  allowVolumeExpansion: true
+  parameters:
+    fsType: ext4
+
+volumeSnapshotClasses:
+- name: truenas-iscsi-snapshots
+
+driver:
+  config:
+    driver: freenas-api-iscsi
+    instance_id: truenas
+    httpConnection:
+      protocol: https
+      host: "{{ truenas_ip }}"
+      port: 443
+      apiKey: "{{ truenas_api_key }}"
+      allowInsecure: true
+    zfs:
+      datasetParentName: main-pool/live/winnipeg/a/vols
+      detachedSnapshotsDatasetParentName: main-pool/live/winnipeg/a/snaps
+      datasetEnableQuotas: true
+      datasetEnableReservation: false
+      datasetPermissionsMode: "0777"
+      datasetPermissionsUser: 1000
+      datasetPermissionsGroup: 1000
+    iscsi:
+      targetPortal: "{{ truenas_ip }}"
+
+      namePrefix: csi-
+      nameSuffix: "-main-pool"
+
+      targetGroups:
+        - targetGroupPortalGroup: 1
+          targetGroupInitiatorGroup: 1
+          targetGroupAuthType: None
+
+      extentInsecureTpc: true
+      extentXenCompat: false
+      extentDisablePhysicalBlocksize: true
+      extentBlocksize: 512
+      extentRpm: "7200"
+      extentAvailThreshold: 0

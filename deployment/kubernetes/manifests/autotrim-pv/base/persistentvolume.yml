@@ -20,6 +20,6 @@ spec:
     volumeHandle: autotrim-pv
     volumeAttributes:
       server: "{{ truenas_ip }}"
-      share: "/mnt/pool0/baykal"
+      share: "/mnt/main-pool/live/baykal"
       node_attach_driver: nfs
       provisioner_driver: node-manual
