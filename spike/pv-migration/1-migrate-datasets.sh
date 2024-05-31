@@ -25,4 +25,4 @@ while IFS=$'\t' read -r namespace pv pvc; do
         echo "Error executing ZFS send | recv for ${pvc}"
     fi
 
-done < nfs-pvc-list.txt
+done < pvc-list.txt

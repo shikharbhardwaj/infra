@@ -1,0 +1,15 @@
+cluster:
+  storage:
+    storageClass: freenas-iscsi-csi
+
+containerSecurityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+
+podSecurityContext:
+  fsGroup: 1000
+
+resources:
+  requests:
+    cpu: 200m
+    memory: 256Mi
