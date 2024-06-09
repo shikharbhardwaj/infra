@@ -8,6 +8,25 @@ nextcloud:
     runAsUser: 1000
     runAsGroup: 1000
     fsGroup: 1000
+  configs:
+    preview.conf.php: |-
+      <?php
+      $CONFIG = array (
+        'enabledPreviewProviders' => [
+          'OC\Preview\BMP',
+          'OC\Preview\GIF',
+          'OC\Preview\JPEG',
+          'OC\Preview\Krita',
+          'OC\Preview\MarkDown',
+          'OC\Preview\MP3',
+          'OC\Preview\OpenDocument',
+          'OC\Preview\PNG',
+          'OC\Preview\TXT',
+          'OC\Preview\XBitmap',
+          'OC\Preview\HEIC',
+        ]
+      );
+
 
 internalDatabase:
   enabled: false
