@@ -9,7 +9,7 @@ nextcloud:
     runAsGroup: 1000
     fsGroup: 1000
   configs:
-    preview.conf.php: |-
+    preview.config.php: |-
       <?php
       $CONFIG = array (
         'enabledPreviewProviders' => [
