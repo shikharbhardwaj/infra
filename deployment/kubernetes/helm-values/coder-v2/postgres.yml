@@ -1,0 +1,11 @@
+auth:
+  username: "coder"
+  password: "{{ postgres_coder_pass }}"
+  database: "coder"
+
+primary:
+  persistence:
+    storageClass: freenas-nfs-csi
+    size: 10Gi
+  podSecurityContext:
+    enabled: false

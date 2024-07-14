@@ -1,0 +1,36 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+      traefik.ingress.kubernetes.io/router.middlewares: dev-https-redirect@kubernetescrd
+  name: coder-ingress
+  namespace: coder-v2
+  labels:
+    name: coder-ingress
+spec:
+  rules:
+  - host: code.{{ host }}
+    http:
+      paths:
+      - backend:
+          service:
+            name: coder
+            port:
+              number: 80
+        path: /
+        pathType: Prefix
+  tls:
+  - hosts:
+    - "code.{{ host }}"
+    secretName: tenzing-dev-cert-tls
+
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: https-redirect
+  namespace: coder-v2
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
