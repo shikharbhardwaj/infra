@@ -1,0 +1,36 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+      traefik.ingress.kubernetes.io/router.middlewares: dev-https-redirect@kubernetescrd
+  name: grafana-ingress
+  namespace: observability
+  labels:
+    name: grafana-ingress
+spec:
+  tls:
+  - hosts:
+    - "grafana.{{ host }}"
+    secretName: tenzing-dev-cert-tls
+  rules:
+  - host: grafana.{{ host }}
+    http:
+      paths:
+      - backend:
+          service:
+            name: lgtm-distributed-grafana
+            port:
+              number: 80
+        path: /
+        pathType: Prefix
+
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: https-redirect
+  namespace: observability
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true

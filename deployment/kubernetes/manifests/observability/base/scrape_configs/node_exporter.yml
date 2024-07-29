@@ -1,0 +1,17 @@
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMPodScrape
+metadata:
+  name: node-exporter
+  namespace: monitoring-system
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: prometheus-node-exporter
+  podMetricsEndpoints:
+    - port: metrics
+      path: /metrics
+      relabelConfigs:
+        - sourceLabels:
+            - "__meta_kubernetes_pod_node_name"
+          action: replace
+          targetLabel: instance

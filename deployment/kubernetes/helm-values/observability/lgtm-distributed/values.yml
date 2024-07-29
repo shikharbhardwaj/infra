@@ -1,0 +1,43 @@
+grafana:
+  enabled: true
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+      - name: Loki
+        uid: loki
+        type: loki
+        url: http://lgtm-distributed-loki-gateway
+        isDefault: false
+      - name: Victoriametrics
+        uid: prom
+        type: prometheus
+        url: http://vmsingle-victoria-metrics-k8s-stack:8429
+        isDefault: true
+      - name: Tempo
+        uid: tempo
+        type: tempo
+        url: http://lgtm-distributed-tempo-query-frontend:3100
+        isDefault: false
+        jsonData:
+          tracesToLogsV2:
+            datasourceUid: loki
+          lokiSearch:
+            datasourceUid: loki
+          tracesToMetrics:
+            datasourceUid: prom
+          serviceMap:
+            datasourceUid: prom
+
+
+
+loki:
+  enabled: true
+  # TODO: Configure persistent loki storage.
+  # storage:
+  #   type: s3
+  #   s3:
+  #     s3: http://{{ minio_kube_user }}:{{ minio_kube_passwd }}@minio.dev.svc.cluster.local.:9000/loki
+  #     s3ForcePathStyle: true
+
+mimir:
+  enabled: false
