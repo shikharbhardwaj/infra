@@ -6,7 +6,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: py310
+  IMAGE_NAME: ${{ github.repository_owner }}/py310
 
 jobs:
   push_to_registry:
