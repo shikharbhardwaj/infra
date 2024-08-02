@@ -27,5 +27,5 @@ function findConfigFiles(dir) {
         }
     });
 }
-const deploymentDir = path.basename(__dirname);
+const deploymentDir = path.resolve(__dirname, '..');
 findConfigFiles(deploymentDir);
