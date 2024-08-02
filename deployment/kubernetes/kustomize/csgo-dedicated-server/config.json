@@ -1,0 +1,6 @@
+{
+    "name": "csgo-dedicated-server",
+    "type": "k8s-kustomize",
+    "environment": "dev",
+    "status": "live"
+}
