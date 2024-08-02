@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: custom-stats-exporter
+spec:
+  selector:
+    matchLabels:
+      app: custom-stats-exporter
+  template:
+    metadata:
+      labels:
+        app: custom-stats-exporter
+    spec:
+      containers:
+        - name: custom-stats-exporter
+          image: ghcr.io/shikharbhardwaj/py310:0.04
+          env:
+            - name: TRUENAS_BASE_URL
+              value: "https://{{ truenas_host }}"
+            - name: TRUENAS_API_TOKEN
+              value: "{{ truenas_api_key }}"
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          ports:
+            - containerPort: 9080
+              name: metrics
+          volumeMounts:
+            - name: custom-stats-exporter-script
+              mountPath: /app/script
+          command: ["poetry", "run", "python", "/app/script/main.py"]
+      volumes:
+      - name: custom-stats-exporter-script
+        configMap:
+          name: custom-stats-exporter-script

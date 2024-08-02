@@ -1,0 +1,9 @@
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMStaticScrape
+metadata:
+  name: graphite-exporter
+spec:
+  jobName: truenas
+  targetEndpoints:
+    - targets: ["{{ orion_ip }}:9108/metrics"]
+      honorLabels: true

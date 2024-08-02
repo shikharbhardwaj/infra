@@ -1,0 +1,15 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: custom-stats-exporter
+  labels:
+    app: custom-stats-exporter
+spec:
+  selector:
+    app: custom-stats-exporter
+  ports:
+  - port: 9080
+    name: metrics
+    targetPort: metrics
+

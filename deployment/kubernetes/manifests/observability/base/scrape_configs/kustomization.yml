@@ -1,0 +1,6 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - node_exporter.yml
+  - graphite_exporter.yml
+  - custom-stats-exporter.yml

@@ -1,0 +1,11 @@
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMServiceScrape
+metadata:
+  name: custom-stats-exporter
+spec:
+  selector:
+    matchLabels:
+      app: custom-stats-exporter
+  endpoints:
+  - port: metrics
+    path: /metrics
