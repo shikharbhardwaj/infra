@@ -1,0 +1,6 @@
+{
+    "name": "postgres-mlflow",
+    "type": "k8s-kustomize",
+    "environment": "dev",
+    "status": "live"
+}

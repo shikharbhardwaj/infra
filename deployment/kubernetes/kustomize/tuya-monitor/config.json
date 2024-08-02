@@ -1,0 +1,6 @@
+{
+    "name": "tuya-monitor",
+    "type": "k8s-kustomize",
+    "environment": "dev",
+    "status": "live"
+}

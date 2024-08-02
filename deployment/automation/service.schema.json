@@ -23,5 +23,6 @@
       "description": "The status of the service",
       "enum": ["live", "deprecated"]
     }
-  }
+  },
+  "required": ["name", "type", "environment", "status"]
 }

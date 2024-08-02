@@ -1,0 +1,6 @@
+{
+    "name": "deluge",
+    "type": "k8s-kustomize",
+    "environment": "dev",
+    "status": "live"
+}
