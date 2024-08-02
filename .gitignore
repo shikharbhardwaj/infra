@@ -12,3 +12,4 @@ backups/inflight
 
 # Ignore all output folders.
 **/out/*
+node_modules/
