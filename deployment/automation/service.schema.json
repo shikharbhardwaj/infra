@@ -1,6 +1,5 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/shikharbhardwaj/infra/service.schema.json",
   "title": "Service",
   "description": "A service deployed on this infrastructure",
   "type": "object",

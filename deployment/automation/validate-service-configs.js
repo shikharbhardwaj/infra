@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const Ajv = require('ajv');
 
-const ajv = new Ajv();
+const ajv = new Ajv2020();
 const schemaPath  = path.join(__dirname, 'service.schema.json');
 const schema = JSON.parse(fs.readFileSync(schemaPath, 'utf8'));
 
