@@ -10,4 +10,5 @@ mountsraspi
 
 backups/inflight
 
-deployment/kubernetes/out/*
+# Ignore all output folders.
+**/out/*

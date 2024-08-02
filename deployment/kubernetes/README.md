@@ -1,8 +1,9 @@
 ## Kubernetes deployment manifests
 
 This directory is the home for the Kubernetes manifests for various apps hosted
-in the homelab cluster. Given below are some frequently used commands (FUCs)
-which are useful for creating/updating apps deployed using these.
+in the homelab cluster, managed via Kustomize. Given below are some frequently
+used commands (FUCs) which are useful for creating/updating apps deployed using
+these.
 
 ### Overview
 

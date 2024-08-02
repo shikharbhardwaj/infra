@@ -1,0 +1,6 @@
+{
+    "name": "example-service",
+    "type": "k8s-kustomize",
+    "environment": "dev",
+    "status": "in-use"
+}

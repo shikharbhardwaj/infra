@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/shikharbhardwaj/infra/service.schema.json",
+  "title": "Service",
+  "description": "A service deployed on this infrastructure",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The name of the service"
+    },
+    "type": {
+      "type": "string",
+      "description": "The type of the service",
+      "enum": ["k8s-kustomize", "k8s-helm"]
+    },
+    "environment": {
+      "type": "string",
+      "description": "The environment in which the service is deployed"
+    },
+    "status": {
+      "type": "string",
+      "description": "The status of the service",
+      "enum": ["live", "deprecated"]
+    }
+  }
+}
