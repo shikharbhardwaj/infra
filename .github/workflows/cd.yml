@@ -21,9 +21,14 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Generate Kubeconfig and Certs
+        run: |
+            echo ${{ secrets.KUBECONFIG }} > ${{ github.workspace }}/out/deploy.kubeconfig
+
       - name: Deploy
         env:
             ANSIBLE_PASSWORD: ${{ secrets.ANSIBLE_PASSWORD }}
+            KUBECONFIG: ${{ github.workspace }}/out/deploy.kubeconfig
         run: |
             ./deployment/automation/deploy.sh 
             
