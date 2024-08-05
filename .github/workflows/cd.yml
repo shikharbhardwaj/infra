@@ -23,7 +23,7 @@ jobs:
 
       - name: Generate Kubeconfig and Certs
         run: |
-          echo ${{ secrets.KUBECONFIG }} > ${{ github.workspace }}/out/deploy.kubeconfig
+          echo "${{ secrets.KUBECONFIG }}" > ${{ github.workspace }}/out/deploy.kubeconfig
 
       - name: Deploy
         env:
