@@ -23,7 +23,7 @@ jobs:
 
       - name: Generate Kubeconfig and Certs
         run: |
-          mkdir -p ${{ github.workspace }}/out/deploy.kubeconfig
+          mkdir -p ${{ github.workspace }}/out
           echo "${{ secrets.KUBECONFIG }}" > ${{ github.workspace }}/out/deploy.kubeconfig
 
       - name: Deploy
