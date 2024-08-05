@@ -1,5 +1,9 @@
 #!/bin/bash
 
-# Keychain query fields.
-# LABEL is the value you put for "Keychain Item Name" in Keychain.app.
-bw get password Ansible
+# If ANSIBLE_PASSWORD is not set, get it from bitwarden.
+if [ -z "$ANSIBLE_PASSWORD" ]; then
+    bw get password Ansible
+else
+    echo "$ANSIBLE_PASSWORD"
+    exit 0
+fi
