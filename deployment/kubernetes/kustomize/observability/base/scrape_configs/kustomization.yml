@@ -4,3 +4,4 @@ resources:
   - node_exporter.yml
   - graphite_exporter.yml
   - custom-stats-exporter.yml
+  - openwrt.yml
