@@ -1,0 +1,10 @@
+# VMStaticScrape for OpenWRT
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMStaticScrape
+metadata:
+  name: openwrt
+spec:
+  jobName: openwrt
+  targetEndpoints:
+    - targets: ["{{ openwrt_ip }}:9100/metrics"]
+      honorLabels: true
