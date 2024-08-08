@@ -10,3 +10,8 @@ repos:
       - jsonschema==4.23.0
     types: [json]
     files: ^.*config\.json$
+  - id: generate-kustomize-configs
+    name: Generate Kustomize Configs
+    entry: deployment/automation/test-gen-configs.sh
+    language: script
+    files: ^deployment/kubernetes/.*\.yml$

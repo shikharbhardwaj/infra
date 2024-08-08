@@ -10,3 +10,6 @@ substitute:
 
 edit-secrets:
 	cd tools && ansible-vault edit group_vars/all/vault.yml
+
+gen-config:
+	cd kustomize/$(app)/overlays/$(variant) && kubectl kustomize | $(current_dir)/tools/substitute
