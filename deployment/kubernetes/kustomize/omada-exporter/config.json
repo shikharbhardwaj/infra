@@ -1,0 +1,6 @@
+{
+    "name": "omada-exporter",
+    "type": "k8s-kustomize",
+    "environment": "dev",
+    "status": "live"
+}

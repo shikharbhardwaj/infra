@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "omada-exporter"
+spec:
+  selector:
+    matchLabels:
+      app: "omada-exporter"
+  template:
+    metadata:
+      labels:
+        app: "omada-exporter"
+    spec:
+      containers:
+      - name: "omada-exporter"
+        image: "ghcr.io/charlie-haley/omada_exporter:0.13.1"
+        ports:
+        - containerPort: 9202
+        env:
+        - name: OMADA_HOST
+          value: "https://omada.{{ parent_host }}"
+        envFrom:
+        - secretRef:
+            name: omada-exporter-secrets
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
