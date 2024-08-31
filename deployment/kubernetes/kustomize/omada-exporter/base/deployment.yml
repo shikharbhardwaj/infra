@@ -13,7 +13,7 @@ spec:
     spec:
       containers:
       - name: "omada-exporter"
-        image: "ghcr.io/shikharbhardwaj/omada_exporter:412ee7b"
+        image: "ghcr.io/shikharbhardwaj/omada_exporter:306963d"
         ports:
         - containerPort: 9202
         env:
