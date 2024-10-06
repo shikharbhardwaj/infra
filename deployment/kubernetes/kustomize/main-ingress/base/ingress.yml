@@ -168,6 +168,16 @@ spec:
             name: truecommand
             port: 
               number: 80
+  - host: "paperless.{{ host }}"
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: paperless-ngx
+            port: 
+              number: 8000
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: Middleware

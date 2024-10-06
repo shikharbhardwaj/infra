@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: paperless-pvc
+  namespace: paperless
+spec:
+  storageClassName: ""
+  volumeName: paperless-pv
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+     storage: 500Gi

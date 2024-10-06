@@ -70,6 +70,15 @@ data:
             ping: https://vault.{{ parent_host }}
             description: Password manager
             icon: bitwarden.png
+        - Paperless:
+            href: https://paperless.{{ host }}
+            ping: https://paperless.{{ host }}
+            description: Document management
+            icon: paperless.png
+            widget:
+              type: paperlessngx
+              url: https://paperless.{{ host }}
+              key: {{ paperless_api_key }}
         - MLFlow:
             href: https://mlflow.{{ host }}
             ping: https://mlflow.{{ host }}

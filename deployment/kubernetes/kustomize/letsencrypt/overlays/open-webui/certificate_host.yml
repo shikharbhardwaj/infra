@@ -1,0 +1,7 @@
+kind: Certificate
+metadata:
+  name: tenzing-dev-cert
+spec:
+  dnsNames:
+    - "open-webui.{{ host }}"
+    - "chat.{{ parent_host }}"

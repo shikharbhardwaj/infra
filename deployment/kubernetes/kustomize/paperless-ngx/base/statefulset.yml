@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: "paperless-ngx"
+spec:
+  replicas: 1
+  serviceName: "paperless-ngx"
+  selector:
+    matchLabels:
+      app: "paperless-ngx"
+  template:
+    metadata:
+      labels:
+        app: "paperless-ngx"
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+      - name: "paperless-ngx"
+        image: "ghcr.io/paperless-ngx/paperless-ngx:2.12"
+        env:
+        - name: "PAPERLESS_CONSUMPTION_DIR"
+          value: "/documents/consume"
+        - name: "PAPERLESS_EMPTY_TRASH_DIR"
+          value: "/documents/trash"
+        - name: "PAPERLESS_MEDIA_ROOT"
+          value: "/documents/paperless"
+        - name: "PAPERLESS_DATA_DIR"
+          value: "/data"
+        - name: "PAPERLESS_URL"
+          value: "https://paperless.{{ host }}"
+        - name: "PAPERLESS_REDIS"
+          value: "redis://localhost:6379"
+        - name: "PAPERLESS_DBSSLMODE"
+          value: "disable"
+        - name: PAPERLESS_CONSUMER_POLLING
+          value: "60"
+        envFrom:
+        - secretRef:
+            name: "paperless-ngx-secret"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "200m"
+        ports:
+        - containerPort: 8000
+          name: http
+        volumeMounts:
+        - name: "documents-store"
+          mountPath: "/documents"
+        - name: "data-store"
+          mountPath: "/data"
+      - name: "gotenberg"
+        image: "docker.io/gotenberg/gotenberg:8.7"
+        command:
+        - "gotenberg"
+        - "--chromium-disable-javascript=true"
+        - "--chromium-allow-list=file:///tmp/.*"
+      - name: "tika"
+        image: "docker.io/apache/tika:latest"
+      - name: "redis"
+        image: docker.io/library/redis:7
+        volumeMounts:
+        - name: "redis-store"
+          mountPath: "/data"
+      volumes:
+        - name: "documents-store"
+          persistentVolumeClaim:
+            claimName: "paperless-pvc"
+  volumeClaimTemplates:
+  - metadata:
+      name: data-store
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: "1Gi"
+      storageClassName: freenas-iscsi-csi
+  - metadata:
+      name: redis-store
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: "1Gi"
+      storageClassName: freenas-iscsi-csi
+

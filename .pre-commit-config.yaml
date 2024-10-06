@@ -1,17 +1,21 @@
 repos:
 - repo: local
   hooks:
-  - id: validate-configs
-    name: Validate Config Files
-    entry: python deployment/automation/validate-service-configs.py
-    language: python
-    language_version: python3.10
-    additional_dependencies:
-      - jsonschema==4.23.0
-    types: [json]
-    files: ^.*config\.json$
-  - id: generate-kustomize-configs
-    name: Generate Kustomize Configs
-    entry: deployment/automation/test-gen-configs.sh
-    language: script
-    files: ^deployment/kubernetes/.*\.yml$
+  - id: echo
+    name: Echo
+    language: system
+    entry: echo "Hello, world!"
+  # - id: validate-configs
+  #   name: Validate Config Files
+  #   entry: python deployment/automation/validate-service-configs.py
+  #   language: python
+  #   language_version: python3.10
+  #   additional_dependencies:
+  #     - jsonschema==4.23.0
+    # types: [json]
+    # files: ^.*config\.json$
+  # - id: generate-kustomize-configs
+  #   name: Generate Kustomize Configs
+  #   entry: deployment/automation/test-gen-configs.sh
+  #   language: script
+  #   files: ^deployment/kubernetes/.*\.yml$

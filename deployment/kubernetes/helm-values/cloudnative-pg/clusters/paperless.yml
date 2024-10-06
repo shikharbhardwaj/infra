@@ -1,0 +1,21 @@
+# Example of PostgreSQL cluster
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: paperless
+  namespace: cloudnative-pg
+spec:
+  instances: 1
+  primaryUpdateStrategy: unsupervised
+
+  # Require 1Gi of space
+  storage:
+    size: 1Gi
+    storageClass: freenas-iscsi-csi
+  
+  bootstrap:
+    initdb:
+      database: paperless
+      owner: paperless
+      secret: 
+        name: paperless-db-url
