@@ -1,0 +1,20 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: linkwarden
+  namespace: cloudnative-pg
+spec:
+  instances: 1
+  primaryUpdateStrategy: unsupervised
+
+  # Require 1Gi of space
+  storage:
+    size: 1Gi
+    storageClass: freenas-iscsi-csi
+  
+  bootstrap:
+    initdb:
+      database: linkwarden
+      owner: linkwarden
+      secret: 
+        name: linkwarden-db-url
