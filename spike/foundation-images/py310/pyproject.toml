@@ -2,7 +2,7 @@
 name = "py310"
 version = "0.1.0"
 description = ""
-authors = ["shikharbhardwaj <shikharbhardwaj68@gmail.com>"]
+authors = ["shikharbhardwaj <email@example.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
