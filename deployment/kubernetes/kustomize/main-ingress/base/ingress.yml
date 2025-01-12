@@ -178,6 +178,16 @@ spec:
             name: paperless-ngx
             port: 
               number: 8000
+  - host: "linkwarden.{{ host }}"
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: linkwarden
+            port: 
+              number: 3000
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: Middleware

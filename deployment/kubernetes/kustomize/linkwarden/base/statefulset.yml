@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: "linkwarden"
+spec:
+  selector:
+    matchLabels:
+      app: "linkwarden"
+  serviceName: "linkwarden"
+  template:
+    metadata:
+      labels:
+        app: "linkwarden"
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+      - name: "linkwarden"
+        image: "ghcr.io/linkwarden/linkwarden:v2.9.0"
+        envFrom:
+          - secretRef:
+              name: linkwarden-env
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: linkwarden-db-url
+              key: url
+        ports:
+          - containerPort: 3000
+            name: web
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        volumeMounts:
+          - mountPath: "/data/data"
+            name: data
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
+      storageClassName: freenas-nfs-csi
