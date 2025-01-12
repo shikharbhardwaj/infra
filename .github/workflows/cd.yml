@@ -25,6 +25,11 @@ jobs:
         run: |
           mkdir -p ${{ github.workspace }}/out
           echo "${{ secrets.KUBECONFIG }}" > ${{ github.workspace }}/out/deploy.kubeconfig
+        
+      - uses: azure/setup-kubectl@v4
+        with:
+            version: 'v1.31.1'
+        id: install
 
       - name: Deploy
         env:
