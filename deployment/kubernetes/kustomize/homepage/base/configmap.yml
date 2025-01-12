@@ -166,6 +166,15 @@ data:
               type: immich
               url: https://photos.{{ parent_host }}
               key: {{ immich_api_key }}
+        - Linkwarden:
+            href: https://linkwarden.{{ host }}
+            ping: https://linkwarden.{{ host }}
+            description: Bookmark manager
+            icon: linkwarden.png
+            widget:
+              type: linkwarden
+              url: https://linkwarden.{{ host }}
+              key: {{ linkwarden_access_token }}
 
     - Observability:
         - Uptime Kuma:
