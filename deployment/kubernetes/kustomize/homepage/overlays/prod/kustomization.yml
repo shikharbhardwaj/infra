@@ -3,4 +3,9 @@ kind: Kustomization
 resources:
 - ../../base
 - clusterrolebinding.yml
-namespace: dev
+namespace: prod
+patches:
+  - path: configmap.yml
+    target:
+      name: homepage
+      kind: ConfigMap

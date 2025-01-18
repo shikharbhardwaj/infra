@@ -1,0 +1,30 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+      traefik.ingress.kubernetes.io/router.middlewares: dev-https-redirect@kubernetescrd
+  name: main-ingress
+  labels:
+    name: main-ingress
+spec:
+  tls:
+  - hosts:
+    - "{{ prod_host }}"
+    - "*.{{ prod_host }}"
+    secretName: tenzing-dev-cert-tls
+  defaultBackend:
+    service:
+      name: homepage
+      port:
+        number: 3000
+  rules:
+  - host: "lab.{{ prod_host }}"
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: homepage
+            port: 
+              number: 3000

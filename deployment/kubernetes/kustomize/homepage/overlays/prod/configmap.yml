@@ -1,0 +1,208 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: homepage
+  namespace: default
+  labels:
+    app.kubernetes.io/name: homepage
+data:
+  kubernetes.yaml: |
+    mode: cluster
+  settings.yaml: |
+    background: https://images.unsplash.com/photo-1608764937749-8797e2b350f0?q=80&w=2560&auto=format&fit=crop
+    layout:
+      Media:
+        style: row
+        columns: 4
+  bookmarks.yaml: |
+    - General:
+        - WindowSwap:
+            - abbr: WS
+              href: https://www.window-swap.com/Window
+  services.yaml: |
+    - Infrastructure:
+        - Proxmox:
+            href: https://phoenix.artemis.{{ parent_host }}
+            icon: proxmox.png
+            description: VM cluster
+            widget:
+              type: proxmox
+              url: https://phoenix.artemis.{{ parent_host }}
+              username: {{ proxmox_api_username }}
+              password: {{ proxmox_api_token }}
+        - Portainer:
+            href: https://portainer.artemis.{{ parent_host }}
+            icon: portainer.png
+            description: Docker containers on DigitalOcean droplet
+            widget:
+              type: portainer
+              url: https://{{ artemis_tailscale_ip }}:9443
+              env: 2
+              key: {{ portainer_api_token }}
+        - TrueNAS:
+            href: https://{{ truenas_host }}
+            icon: truenas.png
+            description: NAS
+            widget:
+              type: truenas
+              url: https://{{ truenas_host }}
+              key: {{ truenas_api_key }}
+        - Omada:
+            href: https://omada.{{ parent_host }}
+            icon: omada.png
+            description: Networking infra
+            widget:
+              type: omada
+              url: https://omada.{{ parent_host }}
+              username: {{ omada_user_name }}
+              password: {{ omada_user_pass }}
+              site: Homelab
+              fields: ["activeUser", "alerts", "connectedGateways"]
+
+    - Services:
+        - Nextcloud:
+            href: https://nextcloud.{{ host }}
+            ping: https://nextcloud.{{ host }}/status.php
+            description: File sharing
+            icon: nextcloud.png
+        - Bitwarden:
+            href: https://vault.{{ parent_host }}
+            ping: https://vault.{{ parent_host }}
+            description: Password manager
+            icon: bitwarden.png
+        - Paperless:
+            href: https://paperless.{{ host }}
+            ping: https://paperless.{{ host }}
+            description: Document management
+            icon: paperless.png
+            widget:
+              type: paperlessngx
+              url: https://paperless.{{ host }}
+              key: {{ paperless_api_key }}
+        - MLFlow:
+            href: https://mlflow.{{ host }}
+            ping: https://mlflow.{{ host }}
+            description: ML experiment and model organization
+            icon: https://mlflow.{{ host }}/static-files/favicon.ico
+        - Argo CD:
+            href: https://argocd.{{ host }}
+            ping: https://argocd.{{ host }}
+            description: Continuous Deployment
+            icon: argocd.png
+        - Coder:
+            href: https://coder.{{ host }}
+            ping: https://coder.{{ host }}
+            description: Remote dev
+            icon: coder.png
+        - Label Studio:
+            href: https://labelstudio.{{ host }}
+            ping: https://labelstudio.{{ host }}
+            description: Annotation and labelling project organization
+            icon: https://labelstudio.{{ host }}/favicon.ico
+        - MinIO:
+            href: https://minio.{{ host }}
+            ping: https://minio.{{ host }}
+            description: Object storage
+            icon: minio.png
+
+    - Media:
+        - Kavita:
+            href: https://kavita.{{ host }}
+            ping: https://kavita.{{ host }}
+            description: E-book reader
+            icon: kavita.png
+        - Immich:
+            href: https://photos.{{ parent_host }}
+            ping: https://photos.{{ parent_host }}
+            description: Photo library
+            icon: immich.png
+            widget:
+              type: immich
+              url: https://photos.{{ parent_host }}
+              key: {{ immich_api_key }}
+        - Linkwarden:
+            href: https://linkwarden.{{ host }}
+            ping: https://linkwarden.{{ host }}
+            description: Bookmark manager
+            icon: linkwarden.png
+            widget:
+              type: linkwarden
+              url: https://linkwarden.{{ host }}
+              key: {{ linkwarden_access_token }}
+
+    - Observability:
+        - Uptime Kuma:
+            href: https://status.{{ parent_host }}
+            icon: uptime-kuma.png
+            description: Service uptime
+            widget:
+              type: uptimekuma
+              url: https://status.{{ parent_host }}
+              slug: overall
+        - Netdata:
+            href: https://app.netdata.cloud/spaces/shikharbhardwa-space/rooms/all-nodes/home
+            icon: netdata.png
+            description: Hardware monitoring
+        - Grafana:
+            href: https://arete.grafana.net
+            icon: grafana.png
+            description: Application stats and logs
+      
+    - Admin:
+        - Shell:
+            href: https://shell.{{ host }}
+            icon: shell.png
+            description: Admin shell access
+        # - Wazuh:
+        #     href: https://wazuh.{{ host }}
+        #     icon: wazuh.png
+        #     description: Open source XDR and SIEM
+
+  widgets.yaml: |
+    - kubernetes:
+        cluster:
+          show: true
+          cpu: true
+          memory: true
+          showLabel: true
+          label: "Cluster: tenzing"
+        nodes:
+          show: true
+          cpu: true
+          memory: true
+          showLabel: true
+    - search:
+        provider: duckduckgo
+        target: _blank
+    - openmeteo:
+        label: Delhi
+        latitude: 28.7
+        longitude: 77.1
+        timezone: Asia/Kolkata
+        units: metric
+        cache: 5
+  docker.yaml: ""
+  custom.css: |
+    @media(min-width: 500px) {
+    .services-list.flex.flex-col {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+    }
+    
+    .services-list.flex.flex-col .service {
+        grid-column: span 2;
+    }
+    
+    .services-list.flex.flex-col .service > div {
+        height: 100%;
+    }
+    
+    .services-list.flex.flex-col .service > .mb-2 {
+        margin-bottom: 0 !important;
+    }
+    
+    .services-list.flex.flex-col #col-small.service {
+        grid-column: span 1;
+    }
+    }
