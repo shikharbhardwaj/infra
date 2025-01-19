@@ -18,11 +18,15 @@ spec:
         fsGroup: 1000
       containers:
       - name: "linkwarden"
-        image: "ghcr.io/linkwarden/linkwarden:v2.9.0"
+        image: "ghcr.io/shikharbhardwaj/linkwarden:latest"
         envFrom:
           - secretRef:
               name: linkwarden-env
         env:
+        - name: PLAYWRIGHT_BROWSERS_PATH
+          value: /data/data/.cache/ms-playwright
+        - name: PDF_MAX_BUFFER
+          value: "100"
         - name: DATABASE_URL
           valueFrom:
             secretKeyRef:
