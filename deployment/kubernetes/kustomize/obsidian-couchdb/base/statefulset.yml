@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: "obsidian-couchdb"
+spec:
+  serviceName: "obsidian-couchdb"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: "obsidian-couchdb"
+  template:
+    metadata:
+      labels:
+        app: "obsidian-couchdb"
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+      - name: "obsidian-couchdb"
+        image: "couchdb:3.4.2"
+        envFrom:
+          - secretRef:
+              name: obsidian-couchdb-creds
+        ports:
+        - containerPort: 5984
+        volumeMounts:
+        - mountPath: "/opt/couchdb/data"
+          name: data
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 10Gi

@@ -188,6 +188,16 @@ spec:
             name: linkwarden
             port: 
               number: 3000
+  - host: "obsidian-couchdb.{{ host }}"
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: obsidian-couchdb
+            port: 
+              number: 5984
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: Middleware

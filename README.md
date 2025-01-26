@@ -8,6 +8,10 @@ Repo containing IaC for my homelab machines.
 
 ![Preview image](/files/assets/images/preview.png)
 
+### Network overview
+
+![Network overview](/docs/diagrams/homelab-network-v3.excalidraw.png)
+
 ### Dependencies
 
 #### bitwarden CLI with local vault
