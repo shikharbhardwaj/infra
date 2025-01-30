@@ -1,0 +1,11 @@
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMServiceScrape
+metadata:
+  name: shelly-plug-monitor
+spec:
+  selector:
+    matchLabels:
+      app: shelly-plug-monitor
+  endpoints:
+  - port: stats
+    path: /metrics
