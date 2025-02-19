@@ -1,0 +1,39 @@
+#cloud-config
+
+package_update: true
+package_upgrade: true
+
+packages:
+  - qemu-guest-agent
+  - vim-tiny
+  - cifs-utils
+  - nfs-common
+  - open-iscsi
+  - lsscsi
+  - sg3-utils
+  - multipath-tools
+  - scsitools
+
+runcmd:
+    # democratic-csi setup
+    - |
+      sudo tee /etc/multipath.conf <<-'EOF'
+       defaults {
+            user_friendly_names yes
+            find_multipaths yes
+        }
+      EOF
+    - sudo systemctl enable multipath-tools.service
+    - sudo service multipath-tools restart
+    - sudo systemctl status multipath-tools
+    - sudo systemctl enable open-iscsi.service
+    - sudo service open-iscsi start
+    - sudo systemctl status open-iscsi
+    # Tailscale setup
+    - ['sh', '-c', 'curl -fsSL https://tailscale.com/install.sh | sh']
+    - ['sh', '-c', "echo 'net.ipv4.ip_forward = 1' | sudo tee -a /etc/sysctl.d/99-tailscale.conf && echo 'net.ipv6.conf.all.forwarding = 1' | sudo tee -a /etc/sysctl.d/99-tailscale.conf && sudo sysctl -p /etc/sysctl.d/99-tailscale.conf" ]
+    - ['tailscale', 'up', '--auth-key=tskey-auth-<ACTUAL_KEY>']
+    # Qemu guest agent
+    - systemctl start qemu-guest-agent
+    - reboot
+# Taken from https://forum.proxmox.com/threads/combining-custom-cloud-init-with-auto-generated.59008/page-3#post-428772
