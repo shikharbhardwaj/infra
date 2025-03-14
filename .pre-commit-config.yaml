@@ -1,10 +1,11 @@
 repos:
 - repo: local
   hooks:
-  - id: echo
-    name: Echo
-    language: system
-    entry: echo "Hello, world!"
+  - id: check-kustomize-configs
+    name: Check Kustomize Config Files
+    language: script
+    entry: deployment/automation/check-kustomize-configs.sh
+    pass_filenames: false
   # - id: validate-configs
   #   name: Validate Config Files
   #   entry: python deployment/automation/validate-service-configs.py
