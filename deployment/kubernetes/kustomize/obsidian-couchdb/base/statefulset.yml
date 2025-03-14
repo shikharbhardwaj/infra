@@ -28,6 +28,8 @@ spec:
         volumeMounts:
         - mountPath: "/opt/couchdb/data"
           name: data
+        - mountPath: "/opt/couchdb/etc/local.d"
+          name: config
         resources:
           limits:
             memory: "128Mi"
@@ -36,7 +38,16 @@ spec:
   - metadata:
       name: data
     spec:
+      storageClassName: freenas-iscsi-csi
       accessModes: ["ReadWriteOnce"]
       resources:
         requests:
           storage: 10Gi
+  - metadata:
+      name: config
+    spec:
+      storageClassName: freenas-nfs-csi
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 1Gi
