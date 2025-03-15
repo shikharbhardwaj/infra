@@ -17,11 +17,38 @@
       "type": "string",
       "description": "The environment in which the service is deployed"
     },
+    "environments": {
+      "type": "array",
+      "description": "The environments in which the service is deployed",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name of the environment"
+          },
+          "status": {
+            "type": "string",
+            "description": "The status of the service in this environment",
+            "enum": ["live", "deprecated"]
+          }
+        },
+        "required": ["name", "status"]
+      }
+    },
     "status": {
       "type": "string",
       "description": "The status of the service",
       "enum": ["live", "deprecated"]
     }
   },
-  "required": ["name", "type", "environment", "status"]
+  "required": ["name", "type"],
+  "oneOf": [
+    {
+      "required": ["environment", "status"]
+    },
+    {
+      "required": ["environments"]
+    }
+  ]
 }

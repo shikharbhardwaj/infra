@@ -16,9 +16,19 @@ for config in all_configs:
     with open(config, 'r') as file:
         data = json.load(file)
 
-    if data['status'] == 'live':
-        service_path = config.parent
+    service_path = config.parent
+    variant_path = service_path / 'overlays'
+    
+    # Handle both old and new config formats
+    if 'environments' in data:
+        # New format with multiple environments
+        for env in data['environments']:
+            if env['status'] == 'live':
+                env_name = env['name']
+                for variant in variant_path.glob(env_name):
+                    print(f'{service_path.name} {variant.name}')
+    elif 'status' in data and data['status'] == 'live':
+        # Old format with single environment
         accepted_variants = data['environment']
-        variant_path = service_path / 'overlays'
         for variant in variant_path.glob(accepted_variants):
             print(f'{service_path.name} {variant.name}')

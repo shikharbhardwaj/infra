@@ -1,6 +1,10 @@
 {
     "name": "heimdall",
     "type": "k8s-kustomize",
-    "environment": "dev",
-    "status": "deprecated"
+    "environments": [
+        {
+            "name": "dev",
+            "status": "deprecated"
+        }
+    ]
 }

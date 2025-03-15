@@ -1,6 +1,14 @@
 {
     "name": "homepage",
     "type": "k8s-kustomize",
-    "environment": "dev",
-    "status": "live"
+    "environments": [
+        {
+            "name": "dev",
+            "status": "live"
+        },
+        {
+            "name": "prod",
+            "status": "live"
+        }
+    ]
 }

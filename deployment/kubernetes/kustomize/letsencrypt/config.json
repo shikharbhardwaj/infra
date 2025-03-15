@@ -1,6 +1,10 @@
 {
     "name": "letsencrypt",
     "type": "k8s-kustomize",
-    "environment": "[!wazuh]*",
-    "status": "live"
+    "environments": [
+        {
+            "name": "[!wazuh]*",
+            "status": "live"
+        }
+    ]
 }

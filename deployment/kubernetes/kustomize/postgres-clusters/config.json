@@ -1,6 +1,10 @@
 {
     "name": "postgres-clusters",
     "type": "k8s-kustomize",
-    "environment": "cloudnative-pg",
-    "status": "live"
+    "environments": [
+        {
+            "name": "cloudnative-pg",
+            "status": "live"
+        }
+    ]
 }
