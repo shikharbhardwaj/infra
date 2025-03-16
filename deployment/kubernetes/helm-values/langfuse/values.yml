@@ -1,0 +1,48 @@
+global:
+  defaultStorageClass: freenas-nfs-csi
+
+langfuse:
+  additionalEnv: # TODO: This has to be manually applied, open a bug upstream.
+    - name: NEXTAUTH_URL
+      value: "https://langfuse.{{ host }}"
+
+  salt:
+    secretKeyRef:
+      name: langfuse
+      key: salt
+
+  nextauth:
+    secret:
+      secretKeyRef:
+        name: langfuse
+        key: nextauth-secret
+
+postgresql:
+  deploy: false
+  auth:
+    existingSecret: langfuse-db-url
+    database: "langfuse"
+  host: "langfuse-rw.cloudnative-pg.svc.cluster.local"
+
+s3:
+  deploy: false
+  bucket: "langfuse"
+  endpoint: "https://minio-api.{{ host }}"
+  accessKeyId:
+    secretKeyRef:
+      name: langfuse
+      key: s3-access-key
+  secretAccessKey:
+    secretKeyRef:
+      name: langfuse
+      key: s3-secret-key
+
+clickhouse:
+  auth:
+    existingSecret: langfuse
+    existingSecretKey: clickhouse-password
+
+redis:
+  auth:
+    existingSecret: langfuse
+    existingSecretPasswordKey: redis-password
