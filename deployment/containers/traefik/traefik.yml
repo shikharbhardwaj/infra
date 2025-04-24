@@ -1,0 +1,31 @@
+entryPoints:
+  web:
+    address: ":80"
+  websecure:
+    address: ":443"
+
+api:
+  dashboard: true
+  insecure: true
+
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+    useBindPortIP: true
+  file:
+    filename: /etc/traefik/dynamic.yml
+    watch: true
+
+certificatesResolvers:
+  cloudflare:
+    acme:
+      storage: /letsencrypt/acme.json
+      dnschallenge:
+        provider: cloudflare
+
+
+log:
+  level: INFO
+
+accessLog: {}

@@ -1,0 +1,33 @@
+[Unit]
+Description=Traefik Reverse Proxy
+Wants=network.target
+After=network.target
+
+[Container]
+ContainerName=traefik
+Image=docker.io/traefik:v3.3
+
+Network=web
+
+SecurityLabelType=container_runtime_t
+
+# Publish ports for HTTP, HTTPS, and dashboard
+PublishPort=80:80
+PublishPort=443:443
+PublishPort=8080:8080
+
+# Mount static and dynamic configuration files from host
+Volume=/home/ubuntu/infra/deployment/containers/traefik/traefik.yml:/etc/traefik/traefik.yml:Z
+Volume=/home/ubuntu/infra/deployment/containers/traefik/dynamic.yml:/etc/traefik/dynamic.yml:Z
+Volume=/home/ubuntu/infra/deployment/containers/traefik/acme.json:/letsencrypt/acme.json:Z
+
+Volume=/run/user/%U/podman/podman.sock:/var/run/docker.sock:z
+
+EnvironmentFile=/home/ubuntu/infra/deployment/containers/traefik/.env
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target
+
