@@ -12,6 +12,7 @@ import subprocess
 
 # --- Configuration ---
 TARGET_BASE_DIR = pathlib.Path.home() / "containers"
+SYSTEMD_CONFIG_DIR = pathlib.Path.home() / ".config" / "containers" / "systemd"
 SECRET_PLACEHOLDER_PATTERN = re.compile(r"\{\{\s*(\w+)\s*\}\}")
 DEFAULT_SECRETS_FILE = "secrets.yml"
 
@@ -220,6 +221,24 @@ def main():
                         except Exception as e:
                              logger.error(f"Failed processing file {source_file}: {e}")
                              sys.exit(1)
+                    
+                    # Create symlinks for container files to systemd directory
+                    if file_name.endswith('.container'):
+                        # Ensure systemd directory exists
+                        SYSTEMD_CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+                        
+                        systemd_link = SYSTEMD_CONFIG_DIR / file_name
+                        # Remove existing symlink if it exists
+                        if systemd_link.exists() or systemd_link.is_symlink():
+                            systemd_link.unlink()
+                        
+                        # Create new symlink
+                        logger.info(f"    Creating symlink: {systemd_link} -> {target_file}")
+                        try:
+                            os.symlink(target_file, systemd_link)
+                        except Exception as e:
+                            logger.error(f"Failed to create symlink for {file_name}: {e}")
+                            sys.exit(1)
 
     if not found_containers:
         logger.info("No container subdirectories found.")
