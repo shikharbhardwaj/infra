@@ -22,23 +22,14 @@ data:
   services.yaml: |
     - Infrastructure:
         - Proxmox:
-            href: https://phoenix.artemis.{{ parent_host }}
+            href: https://phoenix.tyr.{{ parent_host }}
             icon: proxmox.png
             description: VM cluster
             widget:
               type: proxmox
-              url: https://phoenix.artemis.{{ parent_host }}
+              url: https://phoenix.tyr.{{ parent_host }}
               username: {{ proxmox_api_username }}
               password: {{ proxmox_api_token }}
-        - Portainer:
-            href: https://portainer.artemis.{{ parent_host }}
-            icon: portainer.png
-            description: Docker containers on DigitalOcean droplet
-            widget:
-              type: portainer
-              url: https://{{ artemis_tailscale_ip }}:9443
-              env: 2
-              key: {{ portainer_api_token }}
         - TrueNAS:
             href: https://{{ truenas_host }}
             icon: truenas.png
