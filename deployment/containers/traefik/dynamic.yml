@@ -1,10 +1,26 @@
 http:
   routers:
-    my-router:
+    phoenix:
       rule: "Host(`phoenix.{{ oci_host }}`)"
       entryPoints:
         - websecure
       service: phoenix
+      tls:
+        certResolver: cloudflare
+
+    media:
+      rule: "Host(`media.{{ oci_parent_host }}`)"
+      entryPoints:
+        - websecure
+      service: media
+      tls:
+        certResolver: cloudflare
+
+    photos:
+      rule: "Host(`photos.{{ oci_parent_host }}`)"
+      entryPoints:
+        - websecure
+      service: photos
       tls:
         certResolver: cloudflare
 
@@ -14,6 +30,15 @@ http:
         servers:
           - url: "https://{{ thor_tailscale_ip }}:8006"
         serversTransport: insecure-transport
+    media:
+      loadBalancer:
+        servers:
+          - url: "http://{{ jellyfin_tailscale_ip }}:8096"
+    photos:
+      loadBalancer:
+        servers:
+          - url: "https://immich.{{ tenzing_host }}"
+
 
   serversTransports:
     insecure-transport:

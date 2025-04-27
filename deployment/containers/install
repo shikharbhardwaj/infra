@@ -105,6 +105,11 @@ def main():
         help="Path to the secrets.yml file."
     )
     parser.add_argument(
+        "--restart", "-r",
+        action="store_true",
+        help="Restart containers"
+    )
+    parser.add_argument(
         "--verbose", "-v",
         action="store_true",
         help="Enable verbose (debug) logging"
@@ -144,9 +149,11 @@ def main():
     # --- Process Container Subdirectories ---
     logger.info(f"Searching for container directories in: {script_dir}")
     found_containers = False
+    containers = []
     for item in script_dir.iterdir():
         if item.is_dir() and not item.name.startswith('.'): # Basic check for container dir
             container_name = item.name
+            containers.append(container_name)
             source_dir = item
             target_dir = TARGET_BASE_DIR / container_name
             found_containers = True
@@ -242,6 +249,26 @@ def main():
 
     if not found_containers:
         logger.info("No container subdirectories found.")
+    else:
+        # Reload systemd to recognize new services
+        logger.info("Reloading systemd to recognize new services...")
+        try:
+            subprocess.run(['systemctl', '--user', 'daemon-reload'], check=True)
+            logger.info("Systemd reloaded successfully.")
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Failed to reload systemd: {e}")
+            sys.exit(1)
+        
+        if args.restart:
+            for container in containers:
+                logger.info(f"Restart container: {container}")
+                try:
+                    subprocess.run(['systemctl', '--user', 'restart', container], check=True)
+                    logger.info(f"Container {container} restarted successfully.")
+                except subprocess.CalledProcessError as e:
+                    logger.error(f"Failed to restart container {container}: {e}")
+                    sys.exit(1)
+
 
     logger.info("Installation complete.")
 
