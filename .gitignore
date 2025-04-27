@@ -16,3 +16,6 @@ node_modules/
 
 # Ignore virtualenvs.
 **/venv/*
+
+# Ignore any secrets.
+**/secrets.yml

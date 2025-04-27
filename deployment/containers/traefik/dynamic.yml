@@ -1,0 +1,20 @@
+http:
+  routers:
+    my-router:
+      rule: "Host(`phoenix.{{ oci_host }}`)"
+      entryPoints:
+        - websecure
+      service: phoenix
+      tls:
+        certResolver: cloudflare
+
+  services:
+    phoenix:
+      loadBalancer:
+        servers:
+          - url: "https://{{ thor_tailscale_ip }}:8006"
+        serversTransport: insecure-transport
+
+  serversTransports:
+    insecure-transport:
+      insecureSkipVerify: true

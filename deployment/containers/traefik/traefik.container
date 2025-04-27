@@ -1,11 +1,11 @@
 [Unit]
 Description=Traefik Reverse Proxy
 Wants=network.target
-After=network.target
 
 [Container]
 ContainerName=traefik
 Image=docker.io/traefik:v3.3
+AutoUpdate=registry
 
 Network=web
 
@@ -17,13 +17,14 @@ PublishPort=443:443
 PublishPort=8080:8080
 
 # Mount static and dynamic configuration files from host
-Volume=/home/ubuntu/infra/deployment/containers/traefik/traefik.yml:/etc/traefik/traefik.yml:Z
-Volume=/home/ubuntu/infra/deployment/containers/traefik/dynamic.yml:/etc/traefik/dynamic.yml:Z
-Volume=/home/ubuntu/infra/deployment/containers/traefik/acme.json:/letsencrypt/acme.json:Z
+Volume=%h/containers/traefik/traefik.yml:/etc/traefik/traefik.yml:Z
+Volume=%h/containers/traefik/dynamic.yml:/etc/traefik/dynamic.yml:Z
+Volume=%h/containers/traefik/acme.json:/letsencrypt/acme.json:Z
 
 Volume=/run/user/%U/podman/podman.sock:/var/run/docker.sock:z
 
-EnvironmentFile=/home/ubuntu/infra/deployment/containers/traefik/.env
+# Add secret for Cloudflare DNS API
+Secret=cf_dns_api_token,type=env,target=CF_DNS_API_TOKEN
 
 [Service]
 Restart=always

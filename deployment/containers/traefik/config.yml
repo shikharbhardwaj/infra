@@ -1,0 +1,2 @@
+podman_secrets:
+- cf_dns_api_token

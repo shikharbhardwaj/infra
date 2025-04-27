@@ -1,0 +1,29 @@
+[Unit]
+Description=Uptime Kuma
+Wants=network.target
+After=network.target
+
+[Container]
+ContainerName=uptime-kuma
+Image=docker.io/louislam/uptime-kuma:1-alpine
+AutoUpdate=registry
+
+Network=web
+
+PublishPort=3001:3001
+
+Volume=%h/containers/uptime-kuma/data:/app/data
+
+Label=traefik.enable=true
+Label=traefik.http.routers.uptime_kuma.rule=Host(`status.{{ oci_host }}`)
+Label=traefik.http.routers.uptime_kuma.entryPoints=websecure
+Label=traefik.http.routers.uptime_kuma.tls=true
+Label=traefik.http.routers.uptime_kuma.tls.certresolver=cloudflare
+Label=traefik.http.services.uptime_kuma.loadbalancer.server.port=3001
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target
+

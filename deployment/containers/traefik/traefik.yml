@@ -1,8 +1,14 @@
 entryPoints:
   web:
     address: ":80"
+    forwardedHeaders:
+      trustedIPs:
+        - "10.0.0.0/16"
   websecure:
     address: ":443"
+    forwardedHeaders:
+      trustedIPs:
+        - "10.0.0.0/16"
 
 api:
   dashboard: true
@@ -28,4 +34,12 @@ certificatesResolvers:
 log:
   level: INFO
 
-accessLog: {}
+accessLog:
+  format: json
+  fields:
+    defaultMode: keep
+    headers:
+      defaultMode: keep
+      names:
+        X-Forwarded-For: keep
+        Cf-Connecting-Ip: keep

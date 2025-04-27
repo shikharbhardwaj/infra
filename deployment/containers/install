@@ -1,0 +1,230 @@
+#!/usr/bin/env python3
+
+import argparse
+import logging
+import os
+import pathlib
+import re
+import shutil
+import sys
+import yaml
+import subprocess
+
+# --- Configuration ---
+TARGET_BASE_DIR = pathlib.Path.home() / "containers"
+SECRET_PLACEHOLDER_PATTERN = re.compile(r"\{\{\s*(\w+)\s*\}\}")
+DEFAULT_SECRETS_FILE = "secrets.yml"
+
+# --- Set up logging ---
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)-4s] %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+# --- Helper Functions ---
+
+def substitute_secrets(content: str, secrets: dict) -> str:
+    """Substitutes {{ secret_name }} placeholders in content."""
+    def replace_match(match):
+        secret_name = match.group(1)
+        if secret_name in secrets:
+            return str(secrets[secret_name])
+        else:
+            # Keep the placeholder if the secret is not found, log a warning
+            logger.warning(f"Secret '{secret_name}' not found in secrets file.")
+            return match.group(0) # Return the original placeholder
+
+    return SECRET_PLACEHOLDER_PATTERN.sub(replace_match, content)
+
+def is_likely_text_file(file_path: pathlib.Path) -> bool:
+    """Tries to detect if a file is likely text-based (UTF-8)."""
+    try:
+        # Try reading a small chunk to detect encoding errors early
+        with open(file_path, 'r', encoding='utf-8') as f:
+            f.read(1024) # Read first 1KB
+        return True
+    except UnicodeDecodeError:
+        return False
+    except Exception as e:
+        # Handle other potential read errors if necessary
+        logger.warning(f"Could not read file {file_path} to check if text: {e}")
+        return False # Assume binary if unsure
+
+def create_podman_secrets(container_name: str, podman_secrets: list, secrets: dict):
+    """Creates podman secrets for specified secret names."""
+    for secret_name in podman_secrets:
+        if secret_name not in secrets:
+            logger.error(f"Required secret '{secret_name}' for container '{container_name}' not found in secrets file.")
+            sys.exit(1)
+        
+        # Check if secret already exists in podman
+        check_cmd = ["podman", "secret", "inspect", secret_name]
+        try:
+            process = subprocess.run(check_cmd, capture_output=True, text=True)
+            secret_exists = process.returncode == 0
+        except Exception as e:
+            logger.error(f"Failed to check if secret '{secret_name}' exists: {e}")
+            sys.exit(1)
+        
+        # If secret exists, remove it first (to update)
+        if secret_exists:
+            logger.debug(f"Removing existing secret '{secret_name}'")
+            try:
+                subprocess.run(["podman", "secret", "rm", secret_name], check=True)
+            except subprocess.CalledProcessError as e:
+                logger.error(f"Failed to remove existing secret '{secret_name}': {e}")
+                sys.exit(1)
+        
+        # Create the secret
+        logger.info(f"Creating podman secret: {secret_name}")
+        try:
+            # Use echo to pass the secret value to podman
+            create_cmd = ["podman", "secret", "create", secret_name, "-"]
+            process = subprocess.Popen(create_cmd, stdin=subprocess.PIPE, text=True)
+            process.communicate(input=str(secrets[secret_name]))
+            if process.returncode != 0:
+                logger.error(f"Failed to create secret '{secret_name}'")
+                sys.exit(1)
+        except Exception as e:
+            logger.error(f"Error creating secret '{secret_name}': {e}")
+            sys.exit(1)
+
+# --- Main Logic ---
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Installs container configurations, substituting secrets.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument(
+        "--secrets",
+        type=pathlib.Path,
+        default=DEFAULT_SECRETS_FILE,
+        help="Path to the secrets.yml file."
+    )
+    parser.add_argument(
+        "--verbose", "-v",
+        action="store_true",
+        help="Enable verbose (debug) logging"
+    )
+    args = parser.parse_args()
+    
+    # Set logging level based on verbosity
+    if args.verbose:
+        logger.setLevel(logging.DEBUG)
+
+    script_dir = pathlib.Path(__file__).parent.resolve()
+    secrets_path = args.secrets
+
+    # --- Load Secrets ---
+    secrets = {}
+    if secrets_path.exists():
+        logger.info(f"Loading secrets from: {secrets_path}")
+        try:
+            with open(secrets_path, 'r') as f:
+                secrets = yaml.safe_load(f)
+                if not isinstance(secrets, dict):
+                    logger.error(f"Secrets file {secrets_path} must contain a YAML dictionary (key-value pairs).")
+                    sys.exit(1)
+        except yaml.YAMLError as e:
+            logger.error(f"Error parsing secrets file {secrets_path}: {e}")
+            sys.exit(1)
+        except IOError as e:
+            logger.error(f"Could not read secrets file {secrets_path}: {e}")
+            sys.exit(1)
+    else:
+        logger.info(f"Secrets file not found at {secrets_path}. Proceeding without secret substitution.")
+
+    # --- Ensure Target Base Directory Exists ---
+    logger.info(f"Ensuring target base directory exists: {TARGET_BASE_DIR}")
+    TARGET_BASE_DIR.mkdir(parents=True, exist_ok=True)
+
+    # --- Process Container Subdirectories ---
+    logger.info(f"Searching for container directories in: {script_dir}")
+    found_containers = False
+    for item in script_dir.iterdir():
+        if item.is_dir() and not item.name.startswith('.'): # Basic check for container dir
+            container_name = item.name
+            source_dir = item
+            target_dir = TARGET_BASE_DIR / container_name
+            found_containers = True
+
+            logger.info(f"Processing container '{container_name}':")
+            logger.debug(f"  Source: {source_dir}")
+            logger.debug(f"  Target: {target_dir}")
+
+            # --- Read container's config.yml if it exists ---
+            config_file = source_dir / "config.yml"
+            if config_file.exists():
+                try:
+                    with open(config_file, 'r') as f:
+                        config = yaml.safe_load(f)
+                    
+                    # Process podman_secrets configuration
+                    if config and isinstance(config, dict) and 'podman_secrets' in config:
+                        podman_secrets_list = config.get('podman_secrets', [])
+                        if podman_secrets_list and isinstance(podman_secrets_list, list):
+                            if secrets:
+                                create_podman_secrets(container_name, podman_secrets_list, secrets)
+                            else:
+                                logger.error(f"Container '{container_name}' requires secrets but no secrets file was loaded.")
+                                sys.exit(1)
+                except yaml.YAMLError as e:
+                    logger.error(f"Error parsing config file {config_file}: {e}")
+                    sys.exit(1)
+                except IOError as e:
+                    logger.error(f"Could not read config file {config_file}: {e}")
+                    sys.exit(1)
+
+            target_dir.mkdir(parents=True, exist_ok=True)
+
+            # --- Walk Source Directory and Copy/Substitute ---
+            for root, dirs, files in os.walk(source_dir):
+                source_root = pathlib.Path(root)
+                relative_path = source_root.relative_to(source_dir)
+                target_root = target_dir / relative_path
+
+                # Create directories
+                for dir_name in dirs:
+                    source_subdir = source_root / dir_name
+                    target_subdir = target_root / dir_name
+                    if not target_subdir.exists():
+                         logger.info(f"    Creating dir:  {target_subdir.relative_to(TARGET_BASE_DIR)}")
+                         target_subdir.mkdir()
+                    # Preserve permissions on directories if needed (more complex)
+
+                # Copy/Substitute files
+                for file_name in files:
+                    source_file = source_root / file_name
+                    target_file = target_root / file_name
+                    relative_file_path = target_file.relative_to(TARGET_BASE_DIR)
+
+                    if not secrets or not is_likely_text_file(source_file):
+                        # Copy binary files or if no secrets are loaded
+                        logger.info(f"    Copying:     {relative_file_path}")
+                        shutil.copy2(source_file, target_file) # copy2 preserves metadata
+                    else:
+                        # Read, substitute, and write text files
+                        logger.info(f"    Substituting: {relative_file_path}")
+                        try:
+                            with open(source_file, 'r', encoding='utf-8') as sf:
+                                content = sf.read()
+                            
+                            substituted_content = substitute_secrets(content, secrets)
+
+                            with open(target_file, 'w', encoding='utf-8') as tf:
+                                tf.write(substituted_content)
+                            # Preserve permissions after writing
+                            shutil.copymode(source_file, target_file)
+                        except Exception as e:
+                             logger.error(f"Failed processing file {source_file}: {e}")
+                             sys.exit(1)
+
+    if not found_containers:
+        logger.info("No container subdirectories found.")
+
+    logger.info("Installation complete.")
+
+if __name__ == "__main__":
+    main()
