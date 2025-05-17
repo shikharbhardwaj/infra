@@ -31,7 +31,28 @@ Tdarr is a distributed transcoding system for automating media library transcode
    - Server data: {{ include "tdarr.fullname" . }}-server
    - Configs: {{ include "tdarr.fullname" . }}-configs
    - Logs: {{ include "tdarr.fullname" . }}-logs
+   {{- if .Values.persistence.volumes }}
+   {{- range .Values.persistence.volumes }}
+   {{- if eq .name "media" }}
+   {{- if .existingClaim }}
+   - Media: {{ .existingClaim }} (existing PVC)
+   {{- else }}
+   - Media: {{ include "tdarr.fullname" $ }}-media
+   {{- end }}
+   {{- end }}
+   {{- end }}
+   {{- else }}
    - Media: {{ include "tdarr.fullname" . }}-media
+   {{- end }}
    - Transcode Cache: {{ include "tdarr.fullname" . }}-transcode-cache
+
+   Note: You can use existing PVCs by setting the 'existingClaim' property in the values.yaml file.
+   For example, to use an existing PVC for media storage:
+   
+   persistence:
+     volumes:
+       - name: media
+         mountPath: /media
+         existingClaim: "your-existing-pvc-name"
 
 For more information on using Tdarr, visit: https://docs.tdarr.io/

@@ -113,26 +113,31 @@ persistence:
       size: 1Gi
       storageClass: ""
       accessMode: ReadWriteOnce
+      # existingClaim: "" # Use an existing PVC instead of creating a new one
     - name: configs
       mountPath: /app/configs
       size: 1Gi
       storageClass: ""
       accessMode: ReadWriteOnce
+      # existingClaim: "" # Use an existing PVC instead of creating a new one
     - name: logs
       mountPath: /app/logs
       size: 1Gi
       storageClass: ""
       accessMode: ReadWriteOnce
+      # existingClaim: "" # Use an existing PVC instead of creating a new one
     - name: media
       mountPath: /media
       size: 10Gi
       storageClass: ""
       accessMode: ReadWriteOnce
+      existingClaim: "" # Use an existing PVC instead of creating a new one
     - name: transcode-cache
       mountPath: /temp
       size: 10Gi
       storageClass: ""
       accessMode: ReadWriteOnce
+      # existingClaim: "" # Use an existing PVC instead of creating a new one
 
 livenessProbe:
   httpGet:

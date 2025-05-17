@@ -91,7 +91,7 @@ spec:
         {{- range .Values.persistence.volumes }}
         - name: {{ .name }}
           persistentVolumeClaim:
-            claimName: {{ include "tdarr.fullname" $ }}-{{ .name }}
+            claimName: {{ if .existingClaim }}{{ .existingClaim }}{{ else }}{{ include "tdarr.fullname" $ }}-{{ .name }}{{ end }}
         {{- end }}
         {{- end }}
         {{- with .Values.volumes }}

@@ -1,5 +1,6 @@
 {{- if .Values.persistence.enabled }}
 {{- range .Values.persistence.volumes }}
+{{- if not .existingClaim }}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -20,5 +21,6 @@ spec:
   resources:
     requests:
       storage: {{ .size | default "1Gi" }}
+{{- end }}
 {{- end }}
 {{- end }}
