@@ -1,0 +1,6 @@
+kind: Certificate
+metadata:
+  name: tenzing-dev-cert
+spec:
+  dnsNames:
+    - "tdarr.{{ host }}"

@@ -1,6 +1,6 @@
 {{- if .Values.ingress.enabled -}}
 {{- $fullName := include "tdarr.fullname" . -}}
-{{- $svcPort := .Values.service.port -}}
+{{- $webUIPort := .Values.service.webUI.port -}}
 {{- if and .Values.ingress.className (not (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion)) }}
   {{- if not (hasKey .Values.ingress.annotations "kubernetes.io/ingress.class") }}
   {{- $_ := set .Values.ingress.annotations "kubernetes.io/ingress.class" .Values.ingress.className}}
@@ -18,10 +18,11 @@ metadata:
   name: {{ $fullName }}
   labels:
     {{- include "tdarr.labels" . | nindent 4 }}
-  {{- with .Values.ingress.annotations }}
   annotations:
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
+    {{- if .Values.ingress.annotations }}
+    {{- toYaml .Values.ingress.annotations | nindent 4 }}
+    {{- end }}
+    traefik.ingress.kubernetes.io/router.middlewares: {{ .Release.Namespace }}-https-redirect@kubernetescrd
 spec:
   {{- if and .Values.ingress.className (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion) }}
   ingressClassName: {{ .Values.ingress.className }}
@@ -35,6 +36,13 @@ spec:
         {{- end }}
       secretName: {{ .secretName }}
     {{- end }}
+  {{- end }}
+  {{- if .Values.ingress.defaultBackend }}
+  defaultBackend:
+    service:
+      name: {{ .Values.ingress.defaultBackend.service.name }}
+      port:
+        number: {{ .Values.ingress.defaultBackend.service.port.number }}
   {{- end }}
   rules:
     {{- range .Values.ingress.hosts }}
@@ -51,11 +59,23 @@ spec:
               service:
                 name: {{ $fullName }}
                 port:
-                  number: {{ $svcPort }}
+                  number: {{ $webUIPort }}
               {{- else }}
               serviceName: {{ $fullName }}
-              servicePort: {{ $svcPort }}
+              servicePort: {{ $webUIPort }}
               {{- end }}
           {{- end }}
     {{- end }}
+{{- end }}
+---
+{{- if .Values.ingress.enabled -}}
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: https-redirect
+  namespace: {{ .Release.Namespace }}
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
 {{- end }}
