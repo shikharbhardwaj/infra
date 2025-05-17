@@ -1,0 +1,37 @@
+Thank you for installing {{ .Chart.Name }}.
+
+Tdarr is a distributed transcoding system for automating media library transcode/remux management.
+
+1. Get the Tdarr Web UI URL by running these commands:
+{{- if .Values.ingress.enabled }}
+{{- range $host := .Values.ingress.hosts }}
+  {{- range .paths }}
+  http{{ if $.Values.ingress.tls }}s{{ end }}://{{ $host.host }}{{ .path }}
+  {{- end }}
+{{- end }}
+{{- else if contains "NodePort" .Values.service.type }}
+  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "tdarr.fullname" . }})
+  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+{{- else if contains "LoadBalancer" .Values.service.type }}
+     NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+           You can watch the status of by running 'kubectl get --namespace {{ .Release.Namespace }} svc -w {{ include "tdarr.fullname" . }}'
+  export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "tdarr.fullname" . }} --template "{{"{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}"}}")
+  echo http://$SERVICE_IP:{{ .Values.service.webUI.port }}
+{{- else if contains "ClusterIP" .Values.service.type }}
+  export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "tdarr.name" . }},app.kubernetes.io/instance={{ .Release.Name }}" -o jsonpath="{.items[0].metadata.name}")
+  echo "Visit http://127.0.0.1:{{ .Values.service.webUI.port }} to use the Tdarr Web UI"
+  kubectl --namespace {{ .Release.Namespace }} port-forward $POD_NAME {{ .Values.service.webUI.port }}:{{ .Values.service.webUI.targetPort }}
+{{- end }}
+
+2. Tdarr Server is available at port {{ .Values.service.server.port }}
+
+3. Persistence Information:
+   The following persistent volumes have been configured:
+   - Server data: {{ include "tdarr.fullname" . }}-server
+   - Configs: {{ include "tdarr.fullname" . }}-configs
+   - Logs: {{ include "tdarr.fullname" . }}-logs
+   - Media: {{ include "tdarr.fullname" . }}-media
+   - Transcode Cache: {{ include "tdarr.fullname" . }}-transcode-cache
+
+For more information on using Tdarr, visit: https://docs.tdarr.io/

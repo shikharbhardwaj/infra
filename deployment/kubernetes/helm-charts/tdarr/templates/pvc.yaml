@@ -1,0 +1,24 @@
+{{- if .Values.persistence.enabled }}
+{{- range .Values.persistence.volumes }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "tdarr.fullname" $ }}-{{ .name }}
+  labels:
+    {{- include "tdarr.labels" $ | nindent 4 }}
+spec:
+  accessModes:
+    - {{ .accessMode | default "ReadWriteOnce" }}
+  {{- if .storageClass }}
+  {{- if (eq "-" .storageClass) }}
+  storageClassName: ""
+  {{- else }}
+  storageClassName: {{ .storageClass }}
+  {{- end }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .size | default "1Gi" }}
+{{- end }}
+{{- end }}

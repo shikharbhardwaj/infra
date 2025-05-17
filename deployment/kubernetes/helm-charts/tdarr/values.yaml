@@ -1,0 +1,182 @@
+# Default values for tdarr.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: ghcr.io/haveagitgat/tdarr
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Automatically mount a ServiceAccount's API credentials?
+  automount: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  fsGroup: 1000
+
+securityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+
+# Tdarr environment variables
+env:
+  # Server settings
+  serverIP: "0.0.0.0"
+  serverPort: 8266
+  webUIPort: 8265
+  internalNode: true
+  inContainer: true
+  ffmpegVersion: 7
+  nodeName: "MyInternalNode"
+  
+  # System settings
+  TZ: "UTC"
+  PUID: 1000
+  PGID: 1000
+  
+  # GPU settings (optional)
+  NVIDIA_DRIVER_CAPABILITIES: "all"
+  NVIDIA_VISIBLE_DEVICES: "all"
+
+# Service configuration
+service:
+  type: ClusterIP
+  webUI:
+    port: 8265
+    targetPort: 8265
+  server:
+    port: 8266
+    targetPort: 8266
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+# Persistence configuration
+persistence:
+  enabled: true
+  # Global storage class for all volumes
+  # Can be overridden per volume
+  storageClass: ""
+  volumes:
+    - name: server
+      mountPath: /app/server
+      size: 1Gi
+      storageClass: ""
+      accessMode: ReadWriteOnce
+    - name: configs
+      mountPath: /app/configs
+      size: 1Gi
+      storageClass: ""
+      accessMode: ReadWriteOnce
+    - name: logs
+      mountPath: /app/logs
+      size: 1Gi
+      storageClass: ""
+      accessMode: ReadWriteOnce
+    - name: media
+      mountPath: /media
+      size: 10Gi
+      storageClass: ""
+      accessMode: ReadWriteOnce
+    - name: transcode-cache
+      mountPath: /temp
+      size: 10Gi
+      storageClass: ""
+      accessMode: ReadWriteOnce
+
+livenessProbe:
+  httpGet:
+    path: /
+    port: 8265
+  initialDelaySeconds: 60
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 6
+  successThreshold: 1
+
+readinessProbe:
+  httpGet:
+    path: /
+    port: 8265
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 6
+  successThreshold: 1
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+# Additional volumes on the output Deployment definition.
+volumes: []
+# - name: foo
+#   secret:
+#     secretName: mysecret
+#     optional: false
+
+# Additional volumeMounts on the output Deployment definition.
+volumeMounts: []
+# - name: foo
+#   mountPath: "/etc/foo"
+#   readOnly: true
+
+# GPU support
+gpu:
+  nvidia:
+    enabled: false
+    # For Kubernetes >= 1.10
+    runtime: "nvidia"
+    # For Kubernetes < 1.10
+    # runtime: "nvidia-docker"
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
