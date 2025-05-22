@@ -1,5 +1,5 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: {{ include "tdarr.fullname" . }}
   labels:
@@ -8,6 +8,7 @@ spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
   {{- end }}
+  serviceName: {{ include "tdarr.fullname" . }}
   selector:
     matchLabels:
       {{- include "tdarr.selectorLabels" . | nindent 6 }}
@@ -89,9 +90,11 @@ spec:
       volumes:
         {{- if .Values.persistence.enabled }}
         {{- range .Values.persistence.volumes }}
+        {{- if .existingClaim }}
         - name: {{ .name }}
           persistentVolumeClaim:
-            claimName: {{ if .existingClaim }}{{ .existingClaim }}{{ else }}{{ include "tdarr.fullname" $ }}-{{ .name }}{{ end }}
+            claimName: {{ .existingClaim }}
+        {{- end }}
         {{- end }}
         {{- end }}
         {{- with .Values.volumes }}
@@ -112,3 +115,33 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+  {{- if .Values.persistence.enabled }}
+  volumeClaimTemplates:
+    {{- range .Values.persistence.volumes }}
+    {{- if not .existingClaim }}
+    - metadata:
+        name: {{ .name }}
+        labels:
+          {{- include "tdarr.labels" $ | nindent 10 }}
+      spec:
+        accessModes:
+          - {{ .accessMode | default "ReadWriteOnce" }}
+        {{- if .storageClass }}
+        {{- if (eq "-" .storageClass) }}
+        storageClassName: ""
+        {{- else }}
+        storageClassName: {{ .storageClass }}
+        {{- end }}
+        {{- else if $.Values.persistence.storageClass }}
+        {{- if (eq "-" $.Values.persistence.storageClass) }}
+        storageClassName: ""
+        {{- else }}
+        storageClassName: {{ $.Values.persistence.storageClass }}
+        {{- end }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .size | default "1Gi" }}
+    {{- end }}
+    {{- end }}
+  {{- end }}

@@ -1,0 +1,10 @@
+{
+    "name": "media-pv",
+    "type": "k8s-kustomize",
+    "environments": [
+        {
+            "name": "tdarr",
+            "status": "live"
+        }
+    ]
+}
