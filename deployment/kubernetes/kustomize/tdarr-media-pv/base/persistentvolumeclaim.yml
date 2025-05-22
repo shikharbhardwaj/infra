@@ -2,12 +2,12 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: media-pvc
+  name: tdarr-media-pvc
 spec:
   accessModes:
     - ReadWriteMany
   resources:
     requests:
       storage: 500Gi
-  volumeName: media-pv
+  volumeName: tdarr-media-pv
   storageClassName: ""

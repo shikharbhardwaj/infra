@@ -32,13 +32,11 @@ Tdarr is a distributed transcoding system for automating media library transcode
    - Configs: {{ include "tdarr.fullname" . }}-configs
    - Logs: {{ include "tdarr.fullname" . }}-logs
    {{- if .Values.persistence.volumes }}
-   {{- range .Values.persistence.volumes }}
-   {{- if eq .name "media" }}
-   {{- if .existingClaim }}
-   - Media: {{ .existingClaim }} (existing PVC)
+   {{- if .Values.persistence.volumes.media }}
+   {{- if .Values.persistence.volumes.media.existingClaim }}
+   - Media: {{ .Values.persistence.volumes.media.existingClaim }} (existing PVC)
    {{- else }}
    - Media: {{ include "tdarr.fullname" $ }}-media
-   {{- end }}
    {{- end }}
    {{- end }}
    {{- else }}
@@ -51,7 +49,7 @@ Tdarr is a distributed transcoding system for automating media library transcode
    
    persistence:
      volumes:
-       - name: media
+       media:
          mountPath: /media
          existingClaim: "your-existing-pvc-name"
 

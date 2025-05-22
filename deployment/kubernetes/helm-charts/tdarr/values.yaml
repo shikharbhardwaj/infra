@@ -108,31 +108,33 @@ persistence:
   # Can be overridden per volume
   storageClass: ""
   volumes:
-    - name: server
+    # Map of volumes where the key is the volume name
+    # This allows overriding individual volumes without respecifying all volumes
+    server:
       mountPath: /app/server
       size: 1Gi
       storageClass: ""
       accessMode: ReadWriteOnce
       # existingClaim: "" # Use an existing PVC instead of creating a new one
-    - name: configs
+    configs:
       mountPath: /app/configs
       size: 1Gi
       storageClass: ""
       accessMode: ReadWriteOnce
       # existingClaim: "" # Use an existing PVC instead of creating a new one
-    - name: logs
+    logs:
       mountPath: /app/logs
       size: 1Gi
       storageClass: ""
       accessMode: ReadWriteOnce
       # existingClaim: "" # Use an existing PVC instead of creating a new one
-    - name: media
+    media:
       mountPath: /media
       size: 10Gi
       storageClass: ""
       accessMode: ReadWriteOnce
       existingClaim: "" # Use an existing PVC instead of creating a new one
-    - name: transcode-cache
+    transcode-cache:
       mountPath: /temp
       size: 10Gi
       storageClass: ""

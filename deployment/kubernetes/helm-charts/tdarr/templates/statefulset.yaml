@@ -79,9 +79,9 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
             {{- if .Values.persistence.enabled }}
-            {{- range .Values.persistence.volumes }}
-            - name: {{ .name }}
-              mountPath: {{ .mountPath }}
+            {{- range $name, $volume := .Values.persistence.volumes }}
+            - name: {{ $name }}
+              mountPath: {{ $volume.mountPath }}
             {{- end }}
             {{- end }}
             {{- with .Values.volumeMounts }}
@@ -89,11 +89,11 @@ spec:
             {{- end }}
       volumes:
         {{- if .Values.persistence.enabled }}
-        {{- range .Values.persistence.volumes }}
-        {{- if .existingClaim }}
-        - name: {{ .name }}
+        {{- range $name, $volume := .Values.persistence.volumes }}
+        {{- if $volume.existingClaim }}
+        - name: {{ $name }}
           persistentVolumeClaim:
-            claimName: {{ .existingClaim }}
+            claimName: {{ $volume.existingClaim }}
         {{- end }}
         {{- end }}
         {{- end }}
@@ -117,20 +117,20 @@ spec:
       {{- end }}
   {{- if .Values.persistence.enabled }}
   volumeClaimTemplates:
-    {{- range .Values.persistence.volumes }}
-    {{- if not .existingClaim }}
+    {{- range $name, $volume := .Values.persistence.volumes }}
+    {{- if not $volume.existingClaim }}
     - metadata:
-        name: {{ .name }}
+        name: {{ $name }}
         labels:
           {{- include "tdarr.labels" $ | nindent 10 }}
       spec:
         accessModes:
-          - {{ .accessMode | default "ReadWriteOnce" }}
-        {{- if .storageClass }}
-        {{- if (eq "-" .storageClass) }}
+          - {{ $volume.accessMode | default "ReadWriteOnce" }}
+        {{- if $volume.storageClass }}
+        {{- if (eq "-" $volume.storageClass) }}
         storageClassName: ""
         {{- else }}
-        storageClassName: {{ .storageClass }}
+        storageClassName: {{ $volume.storageClass }}
         {{- end }}
         {{- else if $.Values.persistence.storageClass }}
         {{- if (eq "-" $.Values.persistence.storageClass) }}
@@ -141,7 +141,7 @@ spec:
         {{- end }}
         resources:
           requests:
-            storage: {{ .size | default "1Gi" }}
+            storage: {{ $volume.size | default "1Gi" }}
     {{- end }}
     {{- end }}
   {{- end }}
