@@ -1,0 +1,41 @@
+[Unit]
+Description=Crafty Controller - Minecraft Server Management
+Wants=network.target
+After=network.target
+
+[Container]
+ContainerName=crafty
+Image=docker.io/craftycontrol/crafty-4:latest
+AutoUpdate=registry
+
+Network=web
+
+# Default ports for Crafty Controller and Minecraft servers
+PublishPort=8123:8123
+PublishPort=8443:8443
+PublishPort=19132:19132/udp
+PublishPort=25500-25600:25500-25600
+
+# Mount volumes for persistent data
+Volume=%h/containers/crafty/backups:/crafty/backups:Z
+Volume=%h/containers/crafty/logs:/crafty/logs:Z
+Volume=%h/containers/crafty/servers:/crafty/servers:Z
+Volume=%h/containers/crafty/config:/crafty/app/config:Z
+Volume=%h/containers/crafty/import:/crafty/import:Z
+
+# Traefik labels for reverse proxy
+Label=traefik.enable=true
+Label=traefik.http.routers.crafty.rule=Host(`crafty.{{ oci_parent_host }}`)
+Label=traefik.http.routers.crafty.entryPoints=websecure
+Label=traefik.http.routers.crafty.tls=true
+Label=traefik.http.routers.crafty.tls.certresolver=cloudflare
+Label=traefik.http.services.crafty.loadbalancer.server.port=8000
+
+# Environment variables
+Environment=TZ=UTC
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target
