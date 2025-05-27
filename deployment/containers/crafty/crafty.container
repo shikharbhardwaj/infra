@@ -5,7 +5,7 @@ After=network.target
 
 [Container]
 ContainerName=crafty
-Image=docker.io/craftycontrol/crafty-4:latest
+Image=docker.io/arcadiatechnology/crafty-4:4.4.9
 AutoUpdate=registry
 
 Network=web
@@ -25,11 +25,13 @@ Volume=%h/containers/crafty/import:/crafty/import:Z
 
 # Traefik labels for reverse proxy
 Label=traefik.enable=true
-Label=traefik.http.routers.crafty.rule=Host(`crafty.{{ oci_parent_host }}`)
+Label=traefik.http.routers.crafty.rule=Host(`crafty.{{ oci_host }}`)
 Label=traefik.http.routers.crafty.entryPoints=websecure
 Label=traefik.http.routers.crafty.tls=true
 Label=traefik.http.routers.crafty.tls.certresolver=cloudflare
-Label=traefik.http.services.crafty.loadbalancer.server.port=8000
+Label=traefik.http.services.crafty.loadbalancer.server.port=8443
+Label=traefik.http.services.crafty.loadbalancer.server.scheme=https
+Label=traefik.http.services.crafty.loadbalancer.serversTransport=insecure-transport@file
 
 # Environment variables
 Environment=TZ=UTC
