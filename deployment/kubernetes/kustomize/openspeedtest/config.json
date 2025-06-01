@@ -1,8 +1,10 @@
 {
     "name": "openspeedtest",
     "type": "k8s-kustomize",
-    "environments": {
-        "name": "dev",
-        "status": "live"
-    }
+    "environments": [
+        {
+            "name": "dev",
+            "status": "live"
+        }
+    ]
 }
