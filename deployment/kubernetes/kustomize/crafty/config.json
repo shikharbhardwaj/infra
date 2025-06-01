@@ -1,0 +1,10 @@
+{
+    "name": "crafty",
+    "type": "k8s-kustomize",
+    "environments": [
+        {
+            "name": "dev",
+            "status": "deprecated"
+        }
+    ]
+}

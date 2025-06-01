@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: crafty
+spec:
+  selector:
+    matchLabels:
+      app: crafty
+  serviceName: crafty
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: crafty
+    spec:
+      containers:
+      - name: crafty
+        image: docker.io/arcadiatechnology/crafty-4:4.4.9
+        env:
+          - name: TZ
+            value: UTC
+        ports:
+        - containerPort: 8123
+          name: web
+        - containerPort: 8443
+          name: websecure
+        - containerPort: 19132
+          name: bedrock
+          protocol: UDP
+        resources:
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        volumeMounts:
+        - name: backups
+          mountPath: /crafty/backups
+        - name: logs
+          mountPath: /crafty/logs
+        - name: servers
+          mountPath: /crafty/servers
+        - name: config
+          mountPath: /crafty/app/config
+        - name: import
+          mountPath: /crafty/import
+  volumeClaimTemplates:
+  - metadata:
+      name: backups
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 10Gi
+      storageClassName: freenas-nfs-csi
+  - metadata:
+      name: logs
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 2Gi
+      storageClassName: freenas-nfs-csi
+  - metadata:
+      name: servers
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 20Gi
+      storageClassName: freenas-nfs-csi
+  - metadata:
+      name: config
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
+      storageClassName: freenas-nfs-csi
+  - metadata:
+      name: import
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 5Gi
+      storageClassName: freenas-nfs-csi
