@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openspeedtest
+spec:
+  selector:
+    matchLabels:
+      app: openspeedtest
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: openspeedtest
+    spec:
+      containers:
+      - name: openspeedtest
+        image: openspeedtest/latest
+        ports:
+        - containerPort: 3000
+          name: http
+        - containerPort: 3001
+          name: https
+        resources:
+          limits:
+            memory: "512Mi"
+            cpu: "500m"

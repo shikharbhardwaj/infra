@@ -198,6 +198,26 @@ spec:
             name: obsidian-couchdb
             port: 
               number: 5984
+  - host: "crafty.{{ host }}"
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: crafty
+            port: 
+              number: 8443
+  - host: "speedtest.{{ host }}"
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: openspeedtest
+            port: 
+              number: 3000
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: Middleware
