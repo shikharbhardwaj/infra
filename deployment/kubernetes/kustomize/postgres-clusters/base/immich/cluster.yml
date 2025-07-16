@@ -1,0 +1,50 @@
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: immich
+  namespace: cloudnative-pg
+spec:
+
+  backup:
+    barmanObjectStore:
+      destinationPath: s3://{{ cnpg_backup_bucket }}/immich
+      endpointURL: https://{{ cnpg_backup_s3_endpoint }}
+    s3Credentials:
+      accessKeyId:
+        name: aws-creds
+        key: ACCESS_KEY_ID
+      secretAccessKey:
+        name: aws-creds
+        key: ACCESS_SECRET_KEY
+    retentionPolicy: "30d"
+
+  instances: 1
+  primaryUpdateStrategy: unsupervised
+
+  imageName: ghcr.io/tensorchord/cloudnative-pgvecto.rs:16.5-v0.3.0@sha256:be3f025d79aa1b747817f478e07e71be43236e14d00d8a9eb3914146245035ba
+
+  storage:
+    size: 4Gi
+    storageClass: freenas-iscsi-csi
+  
+  managed:
+    roles:
+    - name: immich
+      superuser: true
+      login: true
+  
+  bootstrap:
+    initdb:
+      database: immich
+      owner: immich
+      secret: 
+        name: immich-db-url
+      postInitSQL:
+        - CREATE EXTENSION IF NOT EXISTS vectors CASCADE;
+        - CREATE EXTENSION IF NOT EXISTS cube CASCADE;
+        - CREATE EXTENSION IF NOT EXISTS earthdistance CASCADE;
+  
+  postgresql:
+    shared_preload_libraries:
+      - "vectors.so"

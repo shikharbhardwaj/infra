@@ -20,7 +20,7 @@ spec:
           service:
             name: immich-server
             port:
-              number: 3001
+              name: http
         path: /
         pathType: Prefix
   - host: "photos.{{ parent_host }}"
@@ -30,7 +30,7 @@ spec:
           service:
             name: immich-server
             port:
-              number: 3001
+              name: http
         path: /
         pathType: Prefix
 
