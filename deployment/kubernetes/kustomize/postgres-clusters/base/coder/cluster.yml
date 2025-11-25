@@ -10,7 +10,7 @@ spec:
 
   # Require 1Gi of space
   storage:
-    size: 1Gi
+    size: 2Gi
     storageClass: freenas-iscsi-csi
   
   bootstrap:

@@ -6,6 +6,7 @@ resources:
 - ./linkwarden
 - ./langfuse
 - ./immich
+- ./nextcloud
 - ./secret.yml
 - ./role.yml
 namespace: cloudnative-pg

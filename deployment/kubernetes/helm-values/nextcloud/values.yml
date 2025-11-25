@@ -34,14 +34,15 @@ internalDatabase:
 externalDatabase:
   enabled: true
   type: postgresql
-  host: nextcloud-postgresql:5432
+  host: nextcloud-rw.cloudnative-pg.svc.cluster.local:5432
   password: "{{ postgres_nextcloud_pass }}"
 
 global:
   postgresql:
+    enabled: false
     auth:
       password: "{{ postgres_nextcloud_pass }}"
-      postgressPassword: "{{ postgres_nextcloud_pass }}"
+      postgresPassword: "{{ postgres_nextcloud_pass }}"
 
 postgresql:
   enabled: true
@@ -51,11 +52,12 @@ postgresql:
     persistence:
       enabled: true
       storageClass: freenas-nfs-csi
-      size: 10Gi
+      size: 20Gi
 
 persistence:
   enabled: true
   storageClass: freenas-iscsi-csi
+  size: 16Gi
   nextcloudData:
     enabled: true
     storageClass: freenas-iscsi-csi
