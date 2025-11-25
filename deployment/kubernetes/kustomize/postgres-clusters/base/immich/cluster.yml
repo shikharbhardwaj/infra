@@ -25,6 +25,7 @@ spec:
         compression: gzip
         encryption: AES256
     retentionPolicy: "7d"
+    target: primary
 
   storage:
     size: 8Gi

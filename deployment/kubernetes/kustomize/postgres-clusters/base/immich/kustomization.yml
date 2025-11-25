@@ -4,3 +4,4 @@ kind: Kustomization
 resources:
 - secret.yml
 - cluster.yml
+- scheduled-backup.yml
