@@ -1,0 +1,45 @@
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: nextcloud-prod
+  namespace: cloudnative-pg
+spec:
+  instances: 1
+  primaryUpdateStrategy: unsupervised
+
+  imageName: ghcr.io/cloudnative-pg/postgresql:17-minimal-trixie
+
+  backup:
+    barmanObjectStore:
+      destinationPath: "s3://{{ cnpg_backup_bucket }}/nextcloud-prod"
+      s3Credentials:
+        accessKeyId:
+          name: aws-creds
+          key: ACCESS_KEY_ID
+        secretAccessKey:
+          name: aws-creds
+          key: ACCESS_SECRET_KEY
+      endpointURL: "https://{{ cnpg_backup_s3_endpoint }}"
+      wal:
+        compression: gzip
+        encryption: AES256
+    retentionPolicy: "7d"
+    target: primary
+
+  storage:
+    size: 10Gi
+    storageClass: freenas-iscsi-csi
+
+  managed:
+    roles:
+    - name: nextcloud-prod
+      superuser: true
+      login: true
+
+  bootstrap:
+    initdb:
+      database: nextcloud_prod
+      owner: nextcloud-prod
+      secret:
+        name: nextcloud-prod-db-url
