@@ -1,0 +1,127 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: fio-iscsi-benchmark-pvc
+  namespace: default
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: freenas-iscsi-csi
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: fio-iscsi-benchmark
+  namespace: default
+spec:
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels:
+        app: fio-benchmark
+        storage-type: iscsi
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: fio
+        image: ljishen/fio:latest
+        command:
+        - /bin/sh
+        - -c
+        - |
+          echo "==================================="
+          echo "Storage Benchmark - iSCSI"
+          echo "==================================="
+          echo ""
+
+          echo "Running Random Read/Write (4K blocks)..."
+          fio --name=randrw \
+              --ioengine=libaio \
+              --iodepth=16 \
+              --rw=randrw \
+              --bs=4k \
+              --direct=1 \
+              --size=2G \
+              --numjobs=4 \
+              --runtime=60 \
+              --group_reporting \
+              --filename=/data/test-randrw
+
+          echo ""
+          echo "Running Sequential Read..."
+          fio --name=seqread \
+              --ioengine=libaio \
+              --iodepth=16 \
+              --rw=read \
+              --bs=1M \
+              --direct=1 \
+              --size=2G \
+              --numjobs=1 \
+              --runtime=60 \
+              --group_reporting \
+              --filename=/data/test-seqread
+
+          echo ""
+          echo "Running Sequential Write..."
+          fio --name=seqwrite \
+              --ioengine=libaio \
+              --iodepth=16 \
+              --rw=write \
+              --bs=1M \
+              --direct=1 \
+              --size=2G \
+              --numjobs=1 \
+              --runtime=60 \
+              --group_reporting \
+              --filename=/data/test-seqwrite
+
+          echo ""
+          echo "Running Random Read (4K blocks)..."
+          fio --name=randread \
+              --ioengine=libaio \
+              --iodepth=64 \
+              --rw=randread \
+              --bs=4k \
+              --direct=1 \
+              --size=2G \
+              --numjobs=4 \
+              --runtime=60 \
+              --group_reporting \
+              --filename=/data/test-randread
+
+          echo ""
+          echo "Running Random Write (4K blocks)..."
+          fio --name=randwrite \
+              --ioengine=libaio \
+              --iodepth=64 \
+              --rw=randwrite \
+              --bs=4k \
+              --direct=1 \
+              --size=2G \
+              --numjobs=4 \
+              --runtime=60 \
+              --group_reporting \
+              --filename=/data/test-randwrite
+
+          echo ""
+          echo "==================================="
+          echo "iSCSI Benchmark Complete"
+          echo "==================================="
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: fio-iscsi-benchmark-pvc
