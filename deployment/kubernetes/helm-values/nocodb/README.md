@@ -27,4 +27,6 @@ parameters:
     value: <placeholder>
   - name: extraSecretEnvs.NC_DB
     value: <placeholder>
+  - name: postgresql.image.repository
+    repository: bitnamilegacy/postgresql
 ```
