@@ -1,0 +1,10 @@
+{
+    "name": "nextcloud-prod-pv",
+    "type": "k8s-kustomize",
+    "environments": [
+        {
+            "name": "dev",
+            "status": "deprecated"
+        }
+    ]
+}
