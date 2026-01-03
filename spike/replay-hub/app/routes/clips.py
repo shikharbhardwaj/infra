@@ -28,32 +28,32 @@ async def index(request: Request):
         for month in months:
             # List files from the proxies subdirectory within each month
             proxy_dir = f"{month}/proxies"
-            files = webdav_client.list_files(proxy_dir, pattern="*.mp4", exclude_proxy=False)
+
+            # OPTIMIZATION: List all files once (including .metadata.json files)
+            # This way we can check for metadata existence without extra requests
+            all_files = webdav_client.list_files(proxy_dir, pattern="", exclude_proxy=False)
+
+            # Separate video files and metadata files
+            video_files = [f for f in all_files if f.endswith('.mp4')]
+            metadata_files = set(f for f in all_files if f.endswith('.metadata.json'))
 
             clips = []
-            for filename in files:
+            for filename in video_files:
                 # Full path includes the proxies subdirectory
                 video_path = f"{proxy_dir}/{filename}"
-                metadata_dict = webdav_client.read_metadata(video_path)
-                has_metadata = metadata_dict is not None
 
-                # Check for proxy
-                proxy_path = webdav_client.get_proxy_path(video_path)
-                has_proxy = webdav_client.file_exists(proxy_path)
+                # Check if metadata exists (fast - no WebDAV request)
+                metadata_filename = f"{filename}.metadata.json"
+                has_metadata = metadata_filename in metadata_files
 
-                # Parse metadata if exists
-                metadata = None
-                if metadata_dict:
-                    try:
-                        metadata = ClipMetadata(**metadata_dict)
-                    except Exception as e:
-                        logger.error(f"Error parsing metadata for {video_path}: {e}")
+                # Since all files are proxies, has_proxy is always True
+                has_proxy = True
 
                 clip_info = ClipInfo(
                     month=month,
                     filename=filename,
                     webdav_path=video_path,
-                    metadata=metadata,
+                    metadata=None,  # Don't load metadata content on index (lazy load)
                     has_metadata=has_metadata,
                     has_proxy=has_proxy
                 )
