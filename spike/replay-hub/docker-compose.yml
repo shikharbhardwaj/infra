@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  replay-hub:
+    build: .
+    container_name: replay-hub
+    ports:
+      - "8080:8080"
+    environment:
+      # WebDAV Configuration
+      - WEBDAV_URL=${WEBDAV_URL}
+      - WEBDAV_USERNAME=${WEBDAV_USERNAME}
+      - WEBDAV_PASSWORD=${WEBDAV_PASSWORD}
+      - WEBDAV_ROOT_PATH=${WEBDAV_ROOT_PATH:-replays/}
+
+      # Application Configuration
+      - APP_HOST=0.0.0.0
+      - APP_PORT=8080
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+
+      # Optional Configuration
+      - CLIPS_PER_PAGE=${CLIPS_PER_PAGE:-24}
+      - USE_PROXY_VIDEOS=${USE_PROXY_VIDEOS:-true}
+      - PROXY_SUFFIX=${PROXY_SUFFIX:-_proxy}
+
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+    # Optional: Mount for development hot-reload
+    # volumes:
+    #   - ./app:/app/app:ro
