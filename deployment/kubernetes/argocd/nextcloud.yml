@@ -1,0 +1,63 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nextcloud
+  namespace: argocd
+spec:
+  project: nextcloud
+  source:
+    repoURL: https://nextcloud.github.io/helm/
+    targetRevision: 8.7.0
+    helm:
+      parameters:
+        - name: externalDatabase.database
+          value: nextcloud_prod
+        - name: externalDatabase.enabled
+          value: 'true'
+        - name: externalDatabase.existingSecret.enabled
+          value: 'true'
+        - name: externalDatabase.existingSecret.passwordKey
+          value: password
+        - name: externalDatabase.existingSecret.usernameKey
+          value: username
+        - name: externalDatabase.host
+          value: nextcloud-prod-rw.cloudnative-pg.svc.cluster.local
+        - name: externalDatabase.type
+          value: postgresql
+        - name: externalDatabase.user
+          value: nextcloud-prod
+        - name: internalDatabase.enabled
+          value: 'false'
+        - name: persistence.enabled
+          value: 'true'
+      values: |-
+
+
+        externalDatabase:
+          existingSecret:
+            secretName: nextcloud-prod-db-url
+
+        persistence:
+          enabled: true
+          storageClass: freenas-iscsi-csi
+          nextcloudData:
+            enabled: true
+            existingClaim: nextcloud-prod-data-pvc
+            subPath: ""
+
+        nextcloud:
+          podSecurityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+
+        livenessProbe:
+          initialDelaySeconds: 1200
+          failureThreshold: 30
+    chart: nextcloud
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: nextcloud-prod
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true

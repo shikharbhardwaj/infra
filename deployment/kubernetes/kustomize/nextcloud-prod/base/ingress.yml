@@ -3,54 +3,55 @@ kind: Ingress
 metadata:
   annotations:
       traefik.ingress.kubernetes.io/router.middlewares: immich-large-upload@kubernetescrd,dev-https-redirect@kubernetescrd
-  name: immich-ingress
-  namespace: immich
+  name: nextcloud-ingress
   labels:
-    name: immich-ingress
+    name: nextcloud-ingress
 spec:
   tls:
   - hosts:
-    - "immich.{{ host }}"
+    - "drive.{{ parent_host }}"
+    - "drive.{{ host }}"
     secretName: tenzing-dev-cert-tls
+  defaultBackend:
+    service:
+      name: nextcloud
+      port:
+        number: 80
   rules:
-  - host: "immich.{{ host }}"
+  - host: "drive.{{ parent_host }}"
     http:
       paths:
       - backend:
           service:
-            name: immich-server
+            name: nextcloud
             port:
               name: http
         path: /
         pathType: Prefix
-  - host: "photos.{{ parent_host }}"
+  - host: "drive.{{ host }}"
     http:
       paths:
       - backend:
           service:
-            name: immich-server
+            name: nextcloud
             port:
               name: http
         path: /
         pathType: Prefix
-
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: Middleware
 metadata:
   name: https-redirect
-  namespace: immich
 spec:
   redirectScheme:
     scheme: https
     permanent: true
-
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: Middleware
 metadata:
   name: large-upload
-  namespace: immich
 spec:
   buffering:
     maxRequestBodyBytes: 10737418240

@@ -1,0 +1,85 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nextcloud-prod
+  namespace: argocd
+spec:
+  project: default
+
+  source:
+    chart: nextcloud
+    repoURL: https://nextcloud.github.io/helm
+    targetRevision: 8.5.10
+    helm:
+      values: |
+        image:
+          repository: ghcr.io/shikharbhardwaj/nextcloud
+          tag: 26.0.3-apache
+
+        nextcloud:
+          host: nextcloud-prod.{{ host }}
+          podSecurityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+          configs:
+            preview.config.php: |-
+              <?php
+              $CONFIG = array (
+                'enabledPreviewProviders' => [
+                  'OC\Preview\BMP',
+                  'OC\Preview\GIF',
+                  'OC\Preview\JPEG',
+                  'OC\Preview\Krita',
+                  'OC\Preview\MarkDown',
+                  'OC\Preview\MP3',
+                  'OC\Preview\OpenDocument',
+                  'OC\Preview\PNG',
+                  'OC\Preview\TXT',
+                  'OC\Preview\XBitmap',
+                  'OC\Preview\HEIC',
+                ]
+              );
+
+        internalDatabase:
+          enabled: false
+
+        externalDatabase:
+          enabled: true
+          type: postgresql
+          host: nextcloud-prod-rw.cloudnative-pg.svc.cluster.local:5432
+          database: nextcloud_prod
+          user: nextcloud-prod
+          existingSecret:
+            enabled: true
+            secretName: nextcloud-prod-db-url
+            usernameKey: username
+            passwordKey: password
+            hostKey: host
+            databaseKey: dbname
+
+        global:
+          postgresql:
+            enabled: false
+
+        postgresql:
+          enabled: false
+
+        persistence:
+          enabled: true
+          existingClaim: nextcloud-prod-data-pvc
+          nextcloudData:
+            enabled: true
+            existingClaim: nextcloud-prod-data-pvc
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: nextcloud-prod
+
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: false
+    syncOptions:
+      - CreateNamespace=true
