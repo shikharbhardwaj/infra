@@ -77,19 +77,35 @@ async def clip_detail(request: Request, month: str, subpath: str):
     try:
         # URL decode the path (handles spaces and special characters)
         from urllib.parse import unquote
+        logger.info(f"Detail - Raw: month='{month}', subpath='{subpath}'")
         month = unquote(month)
         subpath = unquote(subpath)
+        logger.info(f"Detail - Decoded: month='{month}', subpath='{subpath}'")
 
         # subpath will be "proxies/filename.mp4"
         video_path = f"{month}/{subpath}"
+        logger.info(f"Detail - Full path: '{video_path}'")
 
         # Extract just the filename for display
         import os
         filename = os.path.basename(subpath)
 
         # Check if video exists
+        logger.info(f"Detail - Checking exists: '{video_path}'")
         if not webdav_client.file_exists(video_path):
-            raise HTTPException(status_code=404, detail="Clip not found")
+            logger.error(f"Detail - NOT FOUND: '{video_path}'")
+
+            # Let's list what IS in that directory to help debug
+            import os as os_module
+            dir_path = os_module.dirname(video_path)
+            logger.error(f"Detail - Listing directory: '{dir_path}'")
+            try:
+                files = webdav_client.list_files(dir_path, pattern="", exclude_proxy=False)
+                logger.error(f"Detail - Files in directory: {files[:10]}")
+            except Exception as e:
+                logger.error(f"Detail - Error listing directory: {e}")
+
+            raise HTTPException(status_code=404, detail=f"Clip not found: {video_path}")
 
         # Load metadata
         metadata_dict = webdav_client.read_metadata(video_path)
