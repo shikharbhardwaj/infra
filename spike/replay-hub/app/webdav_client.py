@@ -1,0 +1,215 @@
+"""WebDAV client wrapper for Nextcloud storage operations."""
+
+import io
+import json
+import logging
+from typing import Optional, List
+from webdav3.client import Client
+
+from app.config import settings
+
+logger = logging.getLogger(__name__)
+
+
+class WebDAVClient:
+    """Wrapper for WebDAV operations on Nextcloud storage."""
+
+    def __init__(self):
+        """Initialize WebDAV client with configured credentials."""
+        self.client = Client({
+            'webdav_hostname': settings.webdav_url,
+            'webdav_login': settings.webdav_username,
+            'webdav_password': settings.webdav_password,
+        })
+        self.root_path = settings.webdav_root_path
+        logger.info(f"Initialized WebDAV client for {settings.webdav_url}")
+
+    def _full_path(self, path: str) -> str:
+        """Convert relative path to full WebDAV path."""
+        if path.startswith("/"):
+            path = path[1:]
+        return f"{self.root_path}{path}"
+
+    def list_directories(self, path: str = "") -> List[str]:
+        """
+        List directories in a given path.
+
+        Args:
+            path: Relative path from root (default: root)
+
+        Returns:
+            List of directory names (without trailing /)
+        """
+        full_path = self._full_path(path)
+        try:
+            items = self.client.list(full_path)
+            # Filter directories (end with /) and remove current directory
+            dirs = [item.rstrip('/') for item in items if item.endswith('/') and item != './']
+            logger.debug(f"Found {len(dirs)} directories in {full_path}")
+            return dirs
+        except Exception as e:
+            logger.error(f"Error listing directories in {full_path}: {e}")
+            return []
+
+    def list_files(self, path: str = "", pattern: str = "*.mp4", exclude_proxy: bool = True) -> List[str]:
+        """
+        List files matching pattern in a given path.
+
+        Args:
+            path: Relative path from root
+            pattern: File pattern to match (default: *.mp4)
+            exclude_proxy: Exclude proxy files (_proxy.mp4) (default: True)
+
+        Returns:
+            List of filenames
+        """
+        full_path = self._full_path(path)
+        try:
+            items = self.client.list(full_path)
+            # Filter files (don't end with /)
+            files = [item for item in items if not item.endswith('/') and item != './']
+
+            # Apply pattern filter
+            if pattern:
+                ext = pattern.replace("*", "")
+                files = [f for f in files if f.endswith(ext)]
+
+            # Exclude proxy files if requested
+            if exclude_proxy and settings.use_proxy_videos:
+                proxy_suffix = f"{settings.proxy_suffix}.mp4"
+                files = [f for f in files if not f.endswith(proxy_suffix)]
+
+            logger.debug(f"Found {len(files)} files in {full_path}")
+            return files
+        except Exception as e:
+            logger.error(f"Error listing files in {full_path}: {e}")
+            return []
+
+    def read_file(self, path: str) -> bytes:
+        """
+        Read file content from WebDAV.
+
+        Args:
+            path: Relative path to file
+
+        Returns:
+            File content as bytes
+        """
+        full_path = self._full_path(path)
+        try:
+            buffer = io.BytesIO()
+            self.client.download_from(buffer, full_path)
+            content = buffer.getvalue()
+            logger.debug(f"Read {len(content)} bytes from {full_path}")
+            return content
+        except Exception as e:
+            logger.error(f"Error reading file {full_path}: {e}")
+            raise
+
+    def write_file(self, path: str, content: bytes):
+        """
+        Write file content to WebDAV.
+
+        Args:
+            path: Relative path to file
+            content: File content as bytes
+        """
+        full_path = self._full_path(path)
+        try:
+            buffer = io.BytesIO(content)
+            self.client.upload_to(buffer, full_path)
+            logger.info(f"Wrote {len(content)} bytes to {full_path}")
+        except Exception as e:
+            logger.error(f"Error writing file {full_path}: {e}")
+            raise
+
+    def file_exists(self, path: str) -> bool:
+        """
+        Check if file exists.
+
+        Args:
+            path: Relative path to file
+
+        Returns:
+            True if file exists, False otherwise
+        """
+        full_path = self._full_path(path)
+        try:
+            exists = self.client.check(full_path)
+            logger.debug(f"File {full_path} exists: {exists}")
+            return exists
+        except Exception as e:
+            logger.error(f"Error checking file existence {full_path}: {e}")
+            return False
+
+    def get_metadata_path(self, video_path: str) -> str:
+        """
+        Get metadata file path for a video.
+
+        Args:
+            video_path: Path to video file
+
+        Returns:
+            Path to metadata JSON file
+        """
+        return f"{video_path}.metadata.json"
+
+    def get_proxy_path(self, video_path: str) -> str:
+        """
+        Get proxy video path for a video.
+
+        Args:
+            video_path: Path to video file (e.g., "2024-11/clip.mp4")
+
+        Returns:
+            Path to proxy video file
+        """
+        # Replace .mp4 with _proxy.mp4
+        if video_path.endswith('.mp4'):
+            return video_path[:-4] + f"{settings.proxy_suffix}.mp4"
+        return video_path + settings.proxy_suffix
+
+    def read_metadata(self, video_path: str) -> Optional[dict]:
+        """
+        Read metadata JSON for a video.
+
+        Args:
+            video_path: Relative path to video file
+
+        Returns:
+            Metadata dict or None if not found
+        """
+        metadata_path = self.get_metadata_path(video_path)
+        if not self.file_exists(metadata_path):
+            logger.debug(f"No metadata found for {video_path}")
+            return None
+
+        try:
+            content = self.read_file(metadata_path)
+            metadata = json.loads(content.decode('utf-8'))
+            logger.debug(f"Loaded metadata for {video_path}")
+            return metadata
+        except Exception as e:
+            logger.error(f"Error reading metadata for {video_path}: {e}")
+            return None
+
+    def write_metadata(self, video_path: str, metadata: dict):
+        """
+        Write metadata JSON for a video.
+
+        Args:
+            video_path: Relative path to video file
+            metadata: Metadata dictionary to save
+        """
+        metadata_path = self.get_metadata_path(video_path)
+        try:
+            content = json.dumps(metadata, indent=2, default=str).encode('utf-8')
+            self.write_file(metadata_path, content)
+            logger.info(f"Saved metadata for {video_path}")
+        except Exception as e:
+            logger.error(f"Error writing metadata for {video_path}: {e}")
+            raise
+
+
+# Global WebDAV client instance
+webdav_client = WebDAVClient()
