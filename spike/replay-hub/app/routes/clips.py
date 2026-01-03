@@ -26,7 +26,7 @@ async def index(request: Request):
         # Get clips for each month
         clips_by_month = {}
         for month in months:
-            files = webdav_client.list_files(month, pattern="*.mp4", exclude_proxy=True)
+            files = webdav_client.list_files(month, pattern="*.mp4", exclude_proxy=False)
 
             clips = []
             for filename in files:
@@ -117,10 +117,15 @@ async def stream_video(month: str, filename: str):
     try:
         video_path = f"{month}/{filename}"
 
-        # Try proxy first if available
-        use_proxy = webdav_client.file_exists(webdav_client.get_proxy_path(video_path))
-        if use_proxy:
-            video_path = webdav_client.get_proxy_path(video_path)
+        # Only try proxy if the file itself is not already a proxy
+        from app.config import settings
+        is_already_proxy = filename.endswith(f"{settings.proxy_suffix}.mp4")
+
+        if not is_already_proxy:
+            # Try proxy first if available
+            proxy_path = webdav_client.get_proxy_path(video_path)
+            if webdav_client.file_exists(proxy_path):
+                video_path = proxy_path
 
         # Check if video exists
         if not webdav_client.file_exists(video_path):
