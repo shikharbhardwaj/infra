@@ -17,6 +17,11 @@ router = APIRouter()
 async def get_metadata(month: str, filename: str):
     """Retrieve metadata for a clip."""
     try:
+        # URL decode the path (handles spaces and special characters)
+        from urllib.parse import unquote
+        month = unquote(month)
+        filename = unquote(filename)
+
         video_path = f"{month}/{filename}"
         metadata_dict = webdav_client.read_metadata(video_path)
 
@@ -36,6 +41,11 @@ async def get_metadata(month: str, filename: str):
 async def save_metadata(month: str, filename: str, metadata: Dict[str, Any]):
     """Save or update metadata for a clip."""
     try:
+        # URL decode the path (handles spaces and special characters)
+        from urllib.parse import unquote
+        month = unquote(month)
+        filename = unquote(filename)
+
         video_path = f"{month}/{filename}"
 
         # Check if video exists
