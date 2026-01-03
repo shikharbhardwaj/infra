@@ -27,7 +27,7 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 {% for clip in clips %}
-                <a href="/clips/{{ clip.month }}/{{ clip.filename }}"
+                <a href="/clips/{{ clip.webdav_path }}"
                    class="clip-card group bg-white rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-200 overflow-hidden"
                    data-filename="{{ clip.filename|lower }}"
                    data-metadata="{{ clip.metadata.metadata if clip.metadata else {} | tojson }}">
