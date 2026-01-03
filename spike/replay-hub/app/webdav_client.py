@@ -22,25 +22,34 @@ class WebDAVClient:
             'webdav_password': settings.webdav_password,
         })
         self.root_path = settings.webdav_root_path
-        logger.info(f"Initialized WebDAV client for {settings.webdav_url}")
+        logger.info(f"Initialized WebDAV client")
+        logger.info(f"  URL: {settings.webdav_url}")
+        logger.info(f"  Username: {settings.webdav_username}")
+        logger.info(f"  Root path: '{settings.webdav_root_path}'")
 
     def _full_path(self, path: str) -> str:
         """Convert relative path to full WebDAV path."""
+        original_path = path
         if path.startswith("/"):
             path = path[1:]
 
         # Handle empty root_path
         if not self.root_path or self.root_path == "/":
-            return path if path else "/"
+            result = path if path else "/"
+            logger.debug(f"Path conversion: '{original_path}' -> '{result}' (root_path empty or /)")
+            return result
 
         # Ensure root_path doesn't end with / unless it's just /
         root = self.root_path.rstrip('/')
 
         # Combine root and path
         if path:
-            return f"{root}/{path}"
+            result = f"{root}/{path}"
         else:
-            return root
+            result = root
+
+        logger.debug(f"Path conversion: '{original_path}' + root '{self.root_path}' -> '{result}'")
+        return result
 
     def list_directories(self, path: str = "") -> List[str]:
         """
@@ -53,14 +62,18 @@ class WebDAVClient:
             List of directory names (without trailing /)
         """
         full_path = self._full_path(path)
+        logger.info(f"Listing directories at path='{path}' -> full_path='{full_path}'")
         try:
             items = self.client.list(full_path)
+            logger.debug(f"Raw items from WebDAV: {items}")
             # Filter directories (end with /) and remove current directory
             dirs = [item.rstrip('/') for item in items if item.endswith('/') and item != './']
-            logger.debug(f"Found {len(dirs)} directories in {full_path}")
+            logger.info(f"Found {len(dirs)} directories in '{full_path}': {dirs}")
             return dirs
         except Exception as e:
-            logger.error(f"Error listing directories in {full_path}: {e}")
+            logger.error(f"Error listing directories in '{full_path}': {e}")
+            logger.error(f"  Input path: '{path}'")
+            logger.error(f"  Root path: '{self.root_path}'")
             return []
 
     def list_files(self, path: str = "", pattern: str = "*.mp4", exclude_proxy: bool = True) -> List[str]:
@@ -76,8 +89,10 @@ class WebDAVClient:
             List of filenames
         """
         full_path = self._full_path(path)
+        logger.info(f"Listing files at path='{path}' -> full_path='{full_path}'")
         try:
             items = self.client.list(full_path)
+            logger.debug(f"Raw items from WebDAV: {items}")
             # Filter files (don't end with /)
             files = [item for item in items if not item.endswith('/') and item != './']
 
@@ -91,10 +106,13 @@ class WebDAVClient:
                 proxy_suffix = f"{settings.proxy_suffix}.mp4"
                 files = [f for f in files if not f.endswith(proxy_suffix)]
 
-            logger.debug(f"Found {len(files)} files in {full_path}")
+            logger.info(f"Found {len(files)} files in '{full_path}': {files[:5]}{'...' if len(files) > 5 else ''}")
             return files
         except Exception as e:
-            logger.error(f"Error listing files in {full_path}: {e}")
+            logger.error(f"Error listing files in '{full_path}': {e}")
+            logger.error(f"  Input path: '{path}'")
+            logger.error(f"  Root path: '{self.root_path}'")
+            logger.error(f"  Pattern: '{pattern}'")
             return []
 
     def read_file(self, path: str) -> bytes:
