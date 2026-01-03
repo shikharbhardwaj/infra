@@ -5,7 +5,7 @@ metadata:
   name: nextcloud-prod-data-pv
 spec:
   capacity:
-    storage: 100Gi
+    storage: 500Gi
   accessModes:
     - ReadWriteMany
   persistentVolumeReclaimPolicy: Retain
@@ -20,6 +20,6 @@ spec:
     volumeHandle: nextcloud-prod-data-pv
     volumeAttributes:
       server: "{{ truenas_ip }}"
-      share: "/mnt/main-pool/live/baykal/drive"
+      share: "/mnt/main-pool/live/baykal"
       node_attach_driver: nfs
       provisioner_driver: node-manual

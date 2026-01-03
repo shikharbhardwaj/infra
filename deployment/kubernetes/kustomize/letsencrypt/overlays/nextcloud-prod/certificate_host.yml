@@ -1,0 +1,7 @@
+kind: Certificate
+metadata:
+  name: tenzing-dev-cert
+spec:
+  dnsNames:
+    - "drive.{{ parent_host }}"
+    - "drive.{{ host }}"

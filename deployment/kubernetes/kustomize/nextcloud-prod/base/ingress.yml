@@ -1,0 +1,60 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+      traefik.ingress.kubernetes.io/router.middlewares: immich-large-upload@kubernetescrd,dev-https-redirect@kubernetescrd
+  name: nextcloud-ingress
+  labels:
+    name: nextcloud-ingress
+spec:
+  tls:
+  - hosts:
+    - "drive.{{ parent_host }}"
+    - "drive.{{ host }}"
+    secretName: tenzing-dev-cert-tls
+  defaultBackend:
+    service:
+      name: nextcloud
+      port:
+        number: 80
+  rules:
+  - host: "drive.{{ parent_host }}"
+    http:
+      paths:
+      - backend:
+          service:
+            name: nextcloud
+            port:
+              name: http
+        path: /
+        pathType: Prefix
+  - host: "drive.{{ host }}"
+    http:
+      paths:
+      - backend:
+          service:
+            name: nextcloud
+            port:
+              name: http
+        path: /
+        pathType: Prefix
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: https-redirect
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: large-upload
+spec:
+  buffering:
+    maxRequestBodyBytes: 10737418240
+    maxResponseBodyBytes: 10737418240
+    memRequestBodyBytes: 10485760
+    memResponseBodyBytes: 10485760
