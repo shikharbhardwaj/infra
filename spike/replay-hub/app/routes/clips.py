@@ -75,6 +75,11 @@ async def index(request: Request):
 async def clip_detail(request: Request, month: str, subpath: str):
     """Clip detail view with video player and metadata form."""
     try:
+        # URL decode the path (handles spaces and special characters)
+        from urllib.parse import unquote
+        month = unquote(month)
+        subpath = unquote(subpath)
+
         # subpath will be "proxies/filename.mp4"
         video_path = f"{month}/{subpath}"
 
@@ -124,8 +129,16 @@ async def clip_detail(request: Request, month: str, subpath: str):
 async def stream_video(month: str, subpath: str):
     """Stream video file from WebDAV."""
     try:
+        # URL decode the path (handles spaces and special characters)
+        from urllib.parse import unquote
+        logger.info(f"Stream - Raw: month='{month}', subpath='{subpath}'")
+        month = unquote(month)
+        subpath = unquote(subpath)
+        logger.info(f"Stream - Decoded: month='{month}', subpath='{subpath}'")
+
         # subpath will be "proxies/filename.mp4"
         video_path = f"{month}/{subpath}"
+        logger.info(f"Stream - Full path: '{video_path}'")
 
         # Extract filename for proxy check
         import os
@@ -142,8 +155,10 @@ async def stream_video(month: str, subpath: str):
                 video_path = proxy_path
 
         # Check if video exists
+        logger.info(f"Stream - Checking exists: '{video_path}'")
         if not webdav_client.file_exists(video_path):
-            raise HTTPException(status_code=404, detail="Video not found")
+            logger.error(f"Stream - NOT FOUND: '{video_path}'")
+            raise HTTPException(status_code=404, detail=f"Video not found: {video_path}")
 
         # Download video
         video_data = webdav_client.read_file(video_path)
