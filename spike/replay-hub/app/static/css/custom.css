@@ -1,0 +1,51 @@
+/* Custom styles for Replay Hub */
+
+/* Smooth transitions */
+* {
+    transition-property: background-color, border-color, color, fill, stroke;
+    transition-duration: 150ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Video player custom styles */
+video {
+    max-height: 70vh;
+    background-color: #000;
+}
+
+/* Hover effects for clip cards */
+.clip-card:hover {
+    transform: translateY(-2px);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Focus ring improvements */
+button:focus,
+input:focus,
+textarea:focus {
+    outline: none;
+}
+
+/* Loading state */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}

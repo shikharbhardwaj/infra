@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}Clips - Replay Hub{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Header with search -->
+    <div class="flex justify-between items-center">
+        <h1 class="text-3xl font-bold text-gray-900">Your Clips</h1>
+        <div class="w-72">
+            <input
+                type="text"
+                id="searchInput"
+                placeholder="Search clips..."
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+        </div>
+    </div>
+
+    {% if clips_by_month %}
+        {% for month, clips in clips_by_month.items() %}
+        <section class="space-y-4" data-month="{{ month }}">
+            <h2 class="text-2xl font-semibold text-gray-800 border-b pb-2">
+                {{ month }}
+                <span class="text-sm font-normal text-gray-500 ml-2">({{ clips|length }} clips)</span>
+            </h2>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {% for clip in clips %}
+                <a href="/clips/{{ clip.month }}/{{ clip.filename }}"
+                   class="clip-card group bg-white rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-200 overflow-hidden"
+                   data-filename="{{ clip.filename|lower }}"
+                   data-metadata="{{ clip.metadata.metadata if clip.metadata else {} | tojson }}">
+
+                    <!-- Video thumbnail placeholder -->
+                    <div class="aspect-video bg-gray-800 relative">
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <svg class="w-16 h-16 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"></path>
+                            </svg>
+                        </div>
+
+                        <!-- Metadata badges -->
+                        <div class="absolute top-2 right-2 flex flex-col gap-1">
+                            {% if clip.has_proxy %}
+                            <span class="px-2 py-1 text-xs font-semibold bg-green-500 text-white rounded">WEB</span>
+                            {% endif %}
+                            {% if clip.has_metadata %}
+                            <span class="px-2 py-1 text-xs font-semibold bg-blue-500 text-white rounded">META</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Clip info -->
+                    <div class="p-4 space-y-2">
+                        <h3 class="font-medium text-gray-900 truncate group-hover:text-blue-600">
+                            {{ clip.filename.replace('.mp4', '') }}
+                        </h3>
+
+                        {% if clip.metadata and clip.metadata.metadata %}
+                        <div class="space-y-1 text-sm text-gray-600">
+                            {% if clip.metadata.metadata.get('game') %}
+                            <p class="truncate">🎮 {{ clip.metadata.metadata.game }}</p>
+                            {% endif %}
+                            {% if clip.metadata.metadata.get('map') %}
+                            <p class="truncate">🗺️ {{ clip.metadata.metadata.map }}</p>
+                            {% endif %}
+                            {% if clip.metadata.metadata.get('clip_type') %}
+                            <p class="truncate">
+                                <span class="inline-block px-2 py-0.5 text-xs rounded bg-gray-100">
+                                    {{ clip.metadata.metadata.clip_type }}
+                                </span>
+                            </p>
+                            {% endif %}
+                            {% if clip.metadata.metadata.get('rating') %}
+                            <p>
+                                {% for i in range(clip.metadata.metadata.rating) %}
+                                <span class="text-yellow-400">★</span>
+                                {% endfor %}
+                            </p>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <p class="text-sm text-gray-400 italic">No metadata</p>
+                        {% endif %}
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </section>
+        {% endfor %}
+    {% else %}
+        <div class="text-center py-12">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"></path>
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No clips found</h3>
+            <p class="mt-1 text-sm text-gray-500">Check your WebDAV configuration and make sure clips are uploaded.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Simple client-side search
+document.getElementById('searchInput').addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const cards = document.querySelectorAll('.clip-card');
+
+    cards.forEach(card => {
+        const filename = card.dataset.filename;
+        const metadata = JSON.parse(card.dataset.metadata || '{}');
+        const searchableText = [
+            filename,
+            metadata.game || '',
+            metadata.map || '',
+            metadata.description || '',
+            metadata.clip_type || '',
+            ...(metadata.tags || [])
+        ].join(' ').toLowerCase();
+
+        if (searchableText.includes(searchTerm)) {
+            card.style.display = '';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+});
+</script>
+{% endblock %}

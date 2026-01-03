@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+
+{% block title %}{{ clip.filename }} - Replay Hub{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Back button -->
+    <a href="/" class="inline-flex items-center text-sm text-gray-600 hover:text-gray-900">
+        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+        </svg>
+        Back to clips
+    </a>
+
+    <!-- Title -->
+    <h1 class="text-2xl font-bold text-gray-900">
+        {{ clip.filename.replace('.mp4', '') }}
+    </h1>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Video Player (2/3 width) -->
+        <div class="lg:col-span-2 space-y-4">
+            <div class="bg-black rounded-lg overflow-hidden shadow-lg">
+                <video
+                    id="videoPlayer"
+                    class="w-full"
+                    controls
+                    preload="metadata"
+                    src="/clips/{{ clip.month }}/{{ clip.filename }}/stream">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm p-4">
+                <dl class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <dt class="font-medium text-gray-500">File</dt>
+                        <dd class="mt-1 text-gray-900">{{ clip.filename }}</dd>
+                    </div>
+                    <div>
+                        <dt class="font-medium text-gray-500">Month</dt>
+                        <dd class="mt-1 text-gray-900">{{ clip.month }}</dd>
+                    </div>
+                    <div>
+                        <dt class="font-medium text-gray-500">Proxy Available</dt>
+                        <dd class="mt-1">
+                            {% if clip.has_proxy %}
+                            <span class="text-green-600">✓ Yes</span>
+                            {% else %}
+                            <span class="text-gray-400">✗ No</span>
+                            {% endif %}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="font-medium text-gray-500">Has Metadata</dt>
+                        <dd class="mt-1">
+                            {% if clip.has_metadata %}
+                            <span class="text-green-600">✓ Yes</span>
+                            {% else %}
+                            <span class="text-gray-400">✗ No</span>
+                            {% endif %}
+                        </dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+
+        <!-- Metadata Form (1/3 width) -->
+        <div class="lg:col-span-1">
+            <div class="bg-white rounded-lg shadow-sm p-6 sticky top-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Metadata</h2>
+
+                <form id="metadataForm" class="space-y-4">
+                    <!-- Dynamic metadata fields -->
+                    <div id="metadataFields" class="space-y-4">
+                        {% if clip.metadata and clip.metadata.metadata %}
+                            {% for key, value in clip.metadata.metadata.items() %}
+                            <div class="metadata-field">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    {{ key }}
+                                    <button type="button" onclick="removeField('{{ key }}')" class="ml-2 text-red-500 hover:text-red-700 text-xs">
+                                        ✕
+                                    </button>
+                                </label>
+                                <input
+                                    type="text"
+                                    name="{{ key }}"
+                                    value="{{ value }}"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                >
+                            </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <!-- Add new field -->
+                    <div class="pt-4 border-t">
+                        <div class="flex gap-2">
+                            <input
+                                type="text"
+                                id="newFieldKey"
+                                placeholder="Field name"
+                                class="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                            >
+                            <button
+                                type="button"
+                                onclick="addField()"
+                                class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-sm font-medium">
+                                Add Field
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Save/Cancel buttons -->
+                    <div class="pt-4 border-t space-y-2">
+                        <button
+                            type="submit"
+                            class="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium">
+                            Save Metadata
+                        </button>
+                        <div id="saveStatus" class="text-sm text-center hidden"></div>
+                    </div>
+                </form>
+
+                <!-- Metadata timestamps -->
+                {% if clip.metadata %}
+                <div class="mt-6 pt-6 border-t text-xs text-gray-500 space-y-1">
+                    <p>Created: {{ clip.metadata.created_at.strftime('%Y-%m-%d %H:%M') if clip.metadata.created_at else 'N/A' }}</p>
+                    <p>Updated: {{ clip.metadata.updated_at.strftime('%Y-%m-%d %H:%M') if clip.metadata.updated_at else 'N/A' }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const clipPath = "{{ clip.month }}/{{ clip.filename }}";
+
+function addField() {
+    const keyInput = document.getElementById('newFieldKey');
+    const key = keyInput.value.trim();
+
+    if (!key) {
+        alert('Please enter a field name');
+        return;
+    }
+
+    // Check if field already exists
+    if (document.querySelector(`input[name="${key}"]`)) {
+        alert('Field already exists');
+        return;
+    }
+
+    const fieldsContainer = document.getElementById('metadataFields');
+    const fieldDiv = document.createElement('div');
+    fieldDiv.className = 'metadata-field';
+    fieldDiv.innerHTML = `
+        <label class="block text-sm font-medium text-gray-700 mb-1">
+            ${key}
+            <button type="button" onclick="removeField('${key}')" class="ml-2 text-red-500 hover:text-red-700 text-xs">
+                ✕
+            </button>
+        </label>
+        <input
+            type="text"
+            name="${key}"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        >
+    `;
+
+    fieldsContainer.appendChild(fieldDiv);
+    keyInput.value = '';
+    keyInput.focus();
+}
+
+function removeField(key) {
+    const field = document.querySelector(`input[name="${key}"]`).closest('.metadata-field');
+    if (confirm(`Remove field "${key}"?`)) {
+        field.remove();
+    }
+}
+
+// Handle form submission
+document.getElementById('metadataForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const formData = new FormData(this);
+    const metadata = {};
+
+    for (const [key, value] of formData.entries()) {
+        if (value.trim()) {
+            metadata[key] = value.trim();
+        }
+    }
+
+    const statusDiv = document.getElementById('saveStatus');
+    statusDiv.className = 'text-sm text-center text-blue-600';
+    statusDiv.textContent = 'Saving...';
+    statusDiv.classList.remove('hidden');
+
+    try {
+        const response = await fetch(`/clips/${clipPath}/metadata`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(metadata)
+        });
+
+        if (response.ok) {
+            statusDiv.className = 'text-sm text-center text-green-600';
+            statusDiv.textContent = '✓ Saved successfully!';
+            setTimeout(() => statusDiv.classList.add('hidden'), 3000);
+        } else {
+            throw new Error('Save failed');
+        }
+    } catch (error) {
+        statusDiv.className = 'text-sm text-center text-red-600';
+        statusDiv.textContent = '✗ Error saving metadata';
+        setTimeout(() => statusDiv.classList.add('hidden'), 3000);
+    }
+});
+
+// Allow adding field with Enter key
+document.getElementById('newFieldKey').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        addField();
+    }
+});
+</script>
+{% endblock %}
