@@ -26,11 +26,14 @@ async def index(request: Request):
         # Get clips for each month
         clips_by_month = {}
         for month in months:
-            files = webdav_client.list_files(month, pattern="*.mp4", exclude_proxy=False)
+            # List files from the proxies subdirectory within each month
+            proxy_dir = f"{month}/proxies"
+            files = webdav_client.list_files(proxy_dir, pattern="*.mp4", exclude_proxy=False)
 
             clips = []
             for filename in files:
-                video_path = f"{month}/{filename}"
+                # Full path includes the proxies subdirectory
+                video_path = f"{proxy_dir}/{filename}"
                 metadata_dict = webdav_client.read_metadata(video_path)
                 has_metadata = metadata_dict is not None
 
@@ -68,11 +71,16 @@ async def index(request: Request):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/clips/{month}/{filename:path}")
-async def clip_detail(request: Request, month: str, filename: str):
+@router.get("/clips/{month}/{subpath:path}")
+async def clip_detail(request: Request, month: str, subpath: str):
     """Clip detail view with video player and metadata form."""
     try:
-        video_path = f"{month}/{filename}"
+        # subpath will be "proxies/filename.mp4"
+        video_path = f"{month}/{subpath}"
+
+        # Extract just the filename for display
+        import os
+        filename = os.path.basename(subpath)
 
         # Check if video exists
         if not webdav_client.file_exists(video_path):
@@ -87,9 +95,10 @@ async def clip_detail(request: Request, month: str, filename: str):
             except Exception as e:
                 logger.error(f"Error parsing metadata for {video_path}: {e}")
 
-        # Check for proxy
-        proxy_path = webdav_client.get_proxy_path(video_path)
-        has_proxy = webdav_client.file_exists(proxy_path)
+        # Check for proxy (though the file itself is already a proxy)
+        from app.config import settings
+        is_already_proxy = filename.endswith(f"{settings.proxy_suffix}.mp4")
+        has_proxy = is_already_proxy
 
         clip_info = ClipInfo(
             month=month,
@@ -111,11 +120,16 @@ async def clip_detail(request: Request, month: str, filename: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/clips/{month}/{filename:path}/stream")
-async def stream_video(month: str, filename: str):
+@router.get("/clips/{month}/{subpath:path}/stream")
+async def stream_video(month: str, subpath: str):
     """Stream video file from WebDAV."""
     try:
-        video_path = f"{month}/{filename}"
+        # subpath will be "proxies/filename.mp4"
+        video_path = f"{month}/{subpath}"
+
+        # Extract filename for proxy check
+        import os
+        filename = os.path.basename(subpath)
 
         # Only try proxy if the file itself is not already a proxy
         from app.config import settings
