@@ -102,9 +102,10 @@ class WebDAVClient:
                 files = [f for f in files if f.endswith(ext)]
 
             # Exclude proxy files if requested
-            if exclude_proxy and settings.use_proxy_videos:
+            if exclude_proxy:
                 proxy_suffix = f"{settings.proxy_suffix}.mp4"
                 files = [f for f in files if not f.endswith(proxy_suffix)]
+                logger.debug(f"Excluded proxy files with suffix '{proxy_suffix}'")
 
             logger.info(f"Found {len(files)} files in '{full_path}': {files[:5]}{'...' if len(files) > 5 else ''}")
             return files
