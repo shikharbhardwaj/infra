@@ -28,7 +28,19 @@ class WebDAVClient:
         """Convert relative path to full WebDAV path."""
         if path.startswith("/"):
             path = path[1:]
-        return f"{self.root_path}{path}"
+
+        # Handle empty root_path
+        if not self.root_path or self.root_path == "/":
+            return path if path else "/"
+
+        # Ensure root_path doesn't end with / unless it's just /
+        root = self.root_path.rstrip('/')
+
+        # Combine root and path
+        if path:
+            return f"{root}/{path}"
+        else:
+            return root
 
     def list_directories(self, path: str = "") -> List[str]:
         """
