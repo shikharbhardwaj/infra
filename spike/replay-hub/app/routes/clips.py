@@ -29,21 +29,31 @@ async def index(request: Request):
             # List files from the proxies subdirectory within each month
             proxy_dir = f"{month}/proxies"
 
-            # OPTIMIZATION: List all files once (including .metadata.json files)
-            # This way we can check for metadata existence without extra requests
-            all_files = webdav_client.list_files(proxy_dir, pattern="", exclude_proxy=False)
+            # OPTIMIZATION: List all files once
+            # List proxy videos
+            proxy_files = webdav_client.list_files(proxy_dir, pattern="", exclude_proxy=False)
+            video_files = [f for f in proxy_files if f.endswith('.mp4')]
 
-            # Separate video files and metadata files
-            video_files = [f for f in all_files if f.endswith('.mp4')]
-            metadata_files = set(f for f in all_files if f.endswith('.metadata.json'))
+            # List metadata files from the metadata folder
+            metadata_dir = f"{month}/metadata"
+            metadata_files = set()
+            try:
+                metadata_list = webdav_client.list_files(metadata_dir, pattern="", exclude_proxy=False)
+                metadata_files = set(f for f in metadata_list if f.endswith('.metadata.json'))
+            except Exception:
+                # Metadata folder might not exist yet
+                pass
 
             clips = []
             for filename in video_files:
                 # Full path includes the proxies subdirectory
                 video_path = f"{proxy_dir}/{filename}"
 
+                # Get display name (strip _proxy suffix)
+                display_name = webdav_client.get_display_name(filename)
+
                 # Check if metadata exists (fast - no WebDAV request)
-                metadata_filename = f"{filename}.metadata.json"
+                metadata_filename = f"{display_name}.metadata.json"
                 has_metadata = metadata_filename in metadata_files
 
                 # Since all files are proxies, has_proxy is always True
@@ -51,7 +61,7 @@ async def index(request: Request):
 
                 clip_info = ClipInfo(
                     month=month,
-                    filename=filename,
+                    filename=display_name,  # Use display name instead of proxy filename
                     webdav_path=video_path,
                     metadata=None,  # Don't load metadata content on index (lazy load)
                     has_metadata=has_metadata,
@@ -68,76 +78,6 @@ async def index(request: Request):
         )
     except Exception as e:
         logger.error(f"Error loading index: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.get("/clips/{month}/{subpath:path}")
-async def clip_detail(request: Request, month: str, subpath: str):
-    """Clip detail view with video player and metadata form."""
-    try:
-        # URL decode the path (handles spaces and special characters)
-        from urllib.parse import unquote
-        logger.info(f"Detail - Raw: month='{month}', subpath='{subpath}'")
-        month = unquote(month)
-        subpath = unquote(subpath)
-        logger.info(f"Detail - Decoded: month='{month}', subpath='{subpath}'")
-
-        # subpath will be "proxies/filename.mp4"
-        video_path = f"{month}/{subpath}"
-        logger.info(f"Detail - Full path: '{video_path}'")
-
-        # Extract just the filename for display
-        import os
-        filename = os.path.basename(subpath)
-
-        # Check if video exists
-        logger.info(f"Detail - Checking exists: '{video_path}'")
-        if not webdav_client.file_exists(video_path):
-            logger.error(f"Detail - NOT FOUND: '{video_path}'")
-
-            # Let's list what IS in that directory to help debug
-            import os as os_module
-            dir_path = os_module.dirname(video_path)
-            logger.error(f"Detail - Listing directory: '{dir_path}'")
-            try:
-                files = webdav_client.list_files(dir_path, pattern="", exclude_proxy=False)
-                logger.error(f"Detail - Files in directory: {files[:10]}")
-            except Exception as e:
-                logger.error(f"Detail - Error listing directory: {e}")
-
-            raise HTTPException(status_code=404, detail=f"Clip not found: {video_path}")
-
-        # Load metadata
-        metadata_dict = webdav_client.read_metadata(video_path)
-        metadata = None
-        if metadata_dict:
-            try:
-                metadata = ClipMetadata(**metadata_dict)
-            except Exception as e:
-                logger.error(f"Error parsing metadata for {video_path}: {e}")
-
-        # Check for proxy (though the file itself is already a proxy)
-        from app.config import settings
-        is_already_proxy = filename.endswith(f"{settings.proxy_suffix}.mp4")
-        has_proxy = is_already_proxy
-
-        clip_info = ClipInfo(
-            month=month,
-            filename=filename,
-            webdav_path=video_path,
-            metadata=metadata,
-            has_metadata=metadata is not None,
-            has_proxy=has_proxy
-        )
-
-        return templates.TemplateResponse(
-            "clip_detail.html",
-            {"request": request, "clip": clip_info}
-        )
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error loading clip detail: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -191,4 +131,74 @@ async def stream_video(month: str, subpath: str):
         raise
     except Exception as e:
         logger.error(f"Error streaming video: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/clips/{month}/{subpath:path}")
+async def clip_detail(request: Request, month: str, subpath: str):
+    """Clip detail view with video player and metadata form."""
+    try:
+        # URL decode the path (handles spaces and special characters)
+        from urllib.parse import unquote
+        import os
+        logger.info(f"Detail - Raw: month='{month}', subpath='{subpath}'")
+        month = unquote(month)
+        subpath = unquote(subpath)
+        logger.info(f"Detail - Decoded: month='{month}', subpath='{subpath}'")
+
+        # subpath will be "proxies/filename_proxy.mp4"
+        video_path = f"{month}/{subpath}"
+        logger.info(f"Detail - Full path: '{video_path}'")
+
+        # Extract just the filename and get display name (strip _proxy suffix)
+        proxy_filename = os.path.basename(subpath)
+        filename = webdav_client.get_display_name(proxy_filename)
+
+        # Check if video exists
+        logger.info(f"Detail - Checking exists: '{video_path}'")
+        if not webdav_client.file_exists(video_path):
+            logger.error(f"Detail - NOT FOUND: '{video_path}'")
+
+            # Let's list what IS in that directory to help debug
+            dir_path = os.path.dirname(video_path)
+            logger.error(f"Detail - Listing directory: '{dir_path}'")
+            try:
+                files = webdav_client.list_files(dir_path, pattern="", exclude_proxy=False)
+                logger.error(f"Detail - Files in directory: {files[:10]}")
+            except Exception as e:
+                logger.error(f"Detail - Error listing directory: {e}")
+
+            raise HTTPException(status_code=404, detail=f"Clip not found: {video_path}")
+
+        # Load metadata
+        metadata_dict = webdav_client.read_metadata(video_path)
+        metadata = None
+        if metadata_dict:
+            try:
+                metadata = ClipMetadata(**metadata_dict)
+            except Exception as e:
+                logger.error(f"Error parsing metadata for {video_path}: {e}")
+
+        # Check for proxy (though the file itself is already a proxy)
+        from app.config import settings
+        is_already_proxy = filename.endswith(f"{settings.proxy_suffix}.mp4")
+        has_proxy = is_already_proxy
+
+        clip_info = ClipInfo(
+            month=month,
+            filename=filename,
+            webdav_path=video_path,
+            metadata=metadata,
+            has_metadata=metadata is not None,
+            has_proxy=has_proxy
+        )
+
+        return templates.TemplateResponse(
+            "clip_detail.html",
+            {"request": request, "clip": clip_info}
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error loading clip detail: {e}")
         raise HTTPException(status_code=500, detail=str(e))

@@ -124,32 +124,46 @@ Configure the application via environment variables in `.env`:
 
 ## WebDAV Storage Structure
 
-Organize your clips in WebDAV storage as follows:
+Organize your clips in WebDAV storage with the following structure:
 
 ```
-replays/
+shadowplay/
 ├── 2024-11/
-│   ├── Counter-strike Global Offensive 2024.11.15 - 12.45.23.mp4
-│   ├── Counter-strike Global Offensive 2024.11.15 - 12.45.23.mp4.metadata.json
-│   ├── Counter-strike Global Offensive 2024.11.18 - 18.32.11.mp4
-│   └── Counter-strike Global Offensive 2024.11.18 - 18.32.11.mp4.metadata.json
+│   ├── proxies/                                                    # Web-optimized videos
+│   │   ├── Counter-strike 2 2024.11.15 - 12.45.23_proxy.mp4
+│   │   └── Counter-strike 2 2024.11.18 - 18.32.11_proxy.mp4
+│   └── metadata/                                                   # Metadata files
+│       ├── Counter-strike 2 2024.11.15 - 12.45.23.mp4.metadata.json
+│       └── Counter-strike 2 2024.11.18 - 18.32.11.mp4.metadata.json
 ├── 2024-12/
+│   ├── proxies/
+│   └── metadata/
 └── 2025-01/
+    ├── proxies/
+    └── metadata/
 ```
 
-### Proxy Videos (Optional)
+**Key Points:**
+- **Proxy videos** are stored in `{month}/proxies/` with `_proxy` suffix (e.g., `clip_proxy.mp4`)
+- **Metadata** is stored in `{month}/metadata/` without the `_proxy` suffix (e.g., `clip.mp4.metadata.json`)
+- The UI automatically hides the `_proxy` suffix for cleaner display
+- Proxies are used for streaming, but displayed as original filenames
 
-For better web streaming performance, create proxy videos:
+### Optional: Original High-Quality Videos
+
+You can optionally keep original videos in the month directory root:
 
 ```
-replays/
+shadowplay/
 ├── 2024-11/
-│   ├── clip.mp4                    # Original high-quality video
-│   ├── clip_proxy.mp4              # Web-optimized proxy
-│   └── clip.mp4.metadata.json
+│   ├── Counter-strike 2 2024.11.15 - 12.45.23.mp4       # Original (optional)
+│   ├── proxies/
+│   │   └── Counter-strike 2 2024.11.15 - 12.45.23_proxy.mp4
+│   └── metadata/
+│       └── Counter-strike 2 2024.11.15 - 12.45.23.mp4.metadata.json
 ```
 
-The application will automatically use proxy videos when available.
+The application only uses files from the `proxies/` folder for streaming.
 
 ## Metadata Format
 
@@ -248,6 +262,14 @@ uv run mypy app/
 
 The `scripts/` directory contains helper tools:
 
+- **`migrate_metadata.py`** - Migrate metadata from old structure (proxies folder) to new structure (metadata folder)
+  ```bash
+  # Dry run (see what would be migrated)
+  uv run python scripts/migrate_metadata.py
+
+  # Actually perform migration
+  uv run python scripts/migrate_metadata.py --apply
+  ```
 - `arrange.py` - Organize clips by month (to be integrated)
 - `encode.py` - Generate proxy videos (to be integrated)
 

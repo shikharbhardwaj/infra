@@ -137,9 +137,26 @@ class WebDAVClient:
             logger.error(f"Error reading file {full_path}: {e}")
             raise
 
+    def ensure_directory(self, path: str):
+        """
+        Ensure a directory exists, creating it if necessary.
+
+        Args:
+            path: Relative path to directory
+        """
+        full_path = self._full_path(path)
+        try:
+            if not self.client.check(full_path):
+                self.client.mkdir(full_path)
+                logger.info(f"Created directory: {full_path}")
+        except Exception as e:
+            logger.error(f"Error ensuring directory {full_path}: {e}")
+            raise
+
     def write_file(self, path: str, content: bytes):
         """
         Write file content to WebDAV.
+        Automatically creates parent directory if it doesn't exist.
 
         Args:
             path: Relative path to file
@@ -147,6 +164,12 @@ class WebDAVClient:
         """
         full_path = self._full_path(path)
         try:
+            # Ensure parent directory exists
+            import os
+            parent_dir = os.path.dirname(path)
+            if parent_dir:
+                self.ensure_directory(parent_dir)
+
             buffer = io.BytesIO(content)
             self.client.upload_to(buffer, full_path)
             logger.info(f"Wrote {len(content)} bytes to {full_path}")
@@ -177,13 +200,50 @@ class WebDAVClient:
         """
         Get metadata file path for a video.
 
+        Metadata is stored in a 'metadata/' folder at the same level as 'proxies/'.
+        For example:
+            video_path: "2024-11/proxies/clip_proxy.mp4"
+            metadata: "2024-11/metadata/clip.mp4.metadata.json"
+
         Args:
-            video_path: Path to video file
+            video_path: Path to video file (e.g., "2024-11/proxies/clip_proxy.mp4")
 
         Returns:
             Path to metadata JSON file
         """
-        return f"{video_path}.metadata.json"
+        import os
+
+        # Extract components: "2024-11/proxies/clip_proxy.mp4"
+        parts = video_path.split('/')
+
+        if len(parts) >= 3 and parts[-2] == 'proxies':
+            # Structure: month/proxies/filename
+            month = '/'.join(parts[:-2])  # "2024-11"
+            filename = parts[-1]  # "clip_proxy.mp4"
+
+            # Strip _proxy suffix from filename
+            if filename.endswith(f"{settings.proxy_suffix}.mp4"):
+                filename = filename[:-len(f"{settings.proxy_suffix}.mp4")] + ".mp4"
+
+            # Build metadata path: month/metadata/filename.metadata.json
+            return f"{month}/metadata/{filename}.metadata.json"
+        else:
+            # Fallback: old behavior (store metadata alongside video)
+            return f"{video_path}.metadata.json"
+
+    def get_display_name(self, filename: str) -> str:
+        """
+        Get display name for a video file (strip _proxy suffix).
+
+        Args:
+            filename: Video filename (e.g., "clip_proxy.mp4")
+
+        Returns:
+            Display name without proxy suffix (e.g., "clip.mp4")
+        """
+        if filename.endswith(f"{settings.proxy_suffix}.mp4"):
+            return filename[:-len(f"{settings.proxy_suffix}.mp4")] + ".mp4"
+        return filename
 
     def get_proxy_path(self, video_path: str) -> str:
         """
