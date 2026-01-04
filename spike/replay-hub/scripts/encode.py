@@ -61,9 +61,51 @@ def get_output_path(input_path, suffix='_proxy'):
     return proxies_dir / output_filename
 
 
+def get_thumbnail_path(input_path, suffix='_proxy'):
+    """Generate output path for thumbnail in thumbnails subfolder."""
+    stem = input_path.stem
+    thumbnail_filename = f"{stem}{suffix}.jpg"
+    thumbnails_dir = input_path.parent / 'thumbnails'
+    thumbnails_dir.mkdir(exist_ok=True)
+    return thumbnails_dir / thumbnail_filename
+
+
+def generate_thumbnail(video_path, output_path, timestamp='00:00:05'):
+    """
+    Generate a thumbnail from the video at a specific timestamp using ffmpeg.
+
+    Args:
+        video_path: Path to video file
+        output_path: Path to output thumbnail
+        timestamp: Timestamp to capture (default: 5 seconds in)
+    """
+    cmd = [
+        'ffmpeg',
+        '-ss', timestamp,  # Seek to timestamp
+        '-i', str(video_path),
+        '-vframes', '1',  # Extract 1 frame
+        '-q:v', '2',  # High quality JPEG (1-31, lower is better)
+        '-vf', 'scale=1920:-1',  # Scale to 1920 width, preserve aspect ratio
+        '-y',  # Overwrite output file
+        str(output_path)
+    ]
+
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.returncode == 0:
+            return True
+        else:
+            print(f"  ⚠ Thumbnail generation failed: {result.stderr}", file=sys.stderr)
+            return False
+    except FileNotFoundError:
+        print("  ⚠ ffmpeg not found. Skipping thumbnail generation.", file=sys.stderr)
+        return False
+
+
 def encode_video(input_path, output_path, bitrate='5000', resolution='1920:1080', framerate='60'):
     """
     Encode video using HandBrakeCLI with NVENC hardware acceleration.
+    Optimized for web streaming with fast-start enabled.
 
     Args:
         input_path: Path to input video file
@@ -81,6 +123,8 @@ def encode_video(input_path, output_path, bitrate='5000', resolution='1920:1080'
         'HandBrakeCLI',
         '-i', str(input_path),
         '-o', str(temp_output),  # Encode to temp location first
+
+        # Video encoder settings
         '--encoder', 'nvenc_h265',  # NVENC H.265 hardware encoder
         '--encoder-preset', 'medium',  # Quality preset
         '--vb', bitrate,  # Video bitrate
@@ -88,9 +132,19 @@ def encode_video(input_path, output_path, bitrate='5000', resolution='1920:1080'
         '--height', resolution.split(':')[1],  # Video height
         '--rate', framerate,  # Framerate
         '--cfr',  # Constant framerate
+
+        # Streaming optimization
+        '--optimize',  # Enable web optimization (fast-start/moov atom at beginning)
+        '--encoder-profile', 'main',  # H.265 Main profile for better compatibility
+        '--encoder-level', '4.1',  # H.265 level 4.1 (supports 1080p60)
+
+        # Audio settings
         '--all-audio',  # Copy all audio tracks
         '--aencoder', 'copy',  # Copy audio without re-encoding
+
+        # Container format
         '--format', 'av_mp4',  # Output format
+        '--align-av',  # Align audio/video timestamps for better seeking
     ]
 
     print(f"Encoding: {input_path.name}")
@@ -140,11 +194,20 @@ def process_folder(folder_path, args):
 
     for video_file in video_files:
         output_path = get_output_path(video_file, args.suffix)
+        thumbnail_path = get_thumbnail_path(video_file, args.suffix)
 
         # Skip if already encoded (resumable)
         if output_path.exists() and not args.force:
             print(f"⊘ Skipping (already exists): {video_file.name}")
             skipped_count += 1
+
+            # Still generate thumbnail if it doesn't exist
+            if not thumbnail_path.exists():
+                print(f"  Generating missing thumbnail: {thumbnail_path.name}")
+                if generate_thumbnail(video_file, thumbnail_path):
+                    print(f"  ✓ Thumbnail generated\n")
+                else:
+                    print(f"  ⚠ Thumbnail generation failed\n")
             continue
 
         success = encode_video(
@@ -157,6 +220,13 @@ def process_folder(folder_path, args):
 
         if success:
             encoded_count += 1
+
+            # Generate thumbnail from the original video
+            print(f"Generating thumbnail: {thumbnail_path.name}")
+            if generate_thumbnail(video_file, thumbnail_path):
+                print(f"✓ Thumbnail generated: {thumbnail_path.name}\n")
+            else:
+                print(f"⚠ Thumbnail generation failed (continuing anyway)\n")
         else:
             failed_count += 1
 
