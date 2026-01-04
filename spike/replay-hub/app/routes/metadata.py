@@ -6,8 +6,11 @@ from typing import Dict, Any
 from fastapi import APIRouter, HTTPException, Form
 from fastapi.responses import JSONResponse
 
-from app.webdav_client import webdav_client
+from app.file_client import FileClient
 from app.models import ClipMetadata
+
+# Create file client based on configuration
+file_client = FileClient.create()
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -23,7 +26,7 @@ async def get_metadata(month: str, filename: str):
         filename = unquote(filename)
 
         video_path = f"{month}/{filename}"
-        metadata_dict = webdav_client.read_metadata(video_path)
+        metadata_dict = file_client.read_metadata(video_path)
 
         if metadata_dict is None:
             return JSONResponse(
@@ -49,11 +52,11 @@ async def save_metadata(month: str, filename: str, metadata: Dict[str, Any]):
         video_path = f"{month}/{filename}"
 
         # Check if video exists
-        if not webdav_client.file_exists(video_path):
+        if not file_client.file_exists(video_path):
             raise HTTPException(status_code=404, detail="Clip not found")
 
         # Load existing metadata or create new
-        existing_metadata = webdav_client.read_metadata(video_path)
+        existing_metadata = file_client.read_metadata(video_path)
 
         if existing_metadata:
             # Update existing metadata
@@ -64,8 +67,8 @@ async def save_metadata(month: str, filename: str, metadata: Dict[str, Any]):
             # Create new metadata
             clip_metadata = ClipMetadata(metadata=metadata)
 
-        # Save to WebDAV
-        webdav_client.write_metadata(video_path, clip_metadata.model_dump(mode='json'))
+        # Save metadata
+        file_client.write_metadata(video_path, clip_metadata.model_dump(mode='json'))
 
         return JSONResponse(
             content={

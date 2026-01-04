@@ -32,13 +32,22 @@
                    data-filename="{{ clip.filename|lower }}"
                    data-metadata="{{ clip.metadata.metadata if clip.metadata else {} | tojson }}">
 
-                    <!-- Video thumbnail placeholder -->
+                    <!-- Video thumbnail -->
                     <div class="aspect-video bg-gray-800 relative">
+                        {% if clip.has_thumbnail %}
+                        <img
+                            src="/clips/{{ clip.month }}/{{ clip.filename }}/thumbnail"
+                            alt="{{ clip.filename }}"
+                            class="w-full h-full object-cover"
+                            loading="lazy"
+                        >
+                        {% else %}
                         <div class="absolute inset-0 flex items-center justify-center">
                             <svg class="w-16 h-16 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"></path>
                             </svg>
                         </div>
+                        {% endif %}
 
                         <!-- Metadata badges -->
                         <div class="absolute top-2 right-2 flex flex-col gap-1">
