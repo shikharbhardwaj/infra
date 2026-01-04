@@ -25,3 +25,4 @@ class ClipInfo(BaseModel):
     metadata: Optional[ClipMetadata] = None
     has_metadata: bool = False
     has_proxy: bool = False
+    has_thumbnail: bool = False

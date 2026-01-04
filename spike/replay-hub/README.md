@@ -102,16 +102,36 @@ docker run -d \
 
 Configure the application via environment variables in `.env`:
 
-### Required Settings
+### Storage Backend
+
+Choose your storage backend:
+
+| Variable | Description | Options | Default |
+|----------|-------------|---------|---------|
+| `STORAGE_BACKEND` | Storage backend type | `webdav` or `local` | `webdav` |
+
+### WebDAV Backend Settings (when STORAGE_BACKEND=webdav)
 
 | Variable | Description | Example |
 |----------|-------------|---------|
 | `WEBDAV_URL` | WebDAV endpoint URL | `https://nextcloud.example.com/remote.php/dav/files/username/` |
 | `WEBDAV_USERNAME` | WebDAV username | `myuser` |
 | `WEBDAV_PASSWORD` | WebDAV password | `mypassword` |
-| `WEBDAV_ROOT_PATH` | Root path for clips | `replays/` |
+| `WEBDAV_ROOT_PATH` | Root path for clips | `replays/` or `shadowplay` |
 
-### Optional Settings
+### Local Filesystem Backend Settings (when STORAGE_BACKEND=local)
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `LOCAL_ROOT_PATH` | Root directory for clips | `~/replay-hub-storage` |
+
+**Example local setup:**
+```bash
+STORAGE_BACKEND=local
+LOCAL_ROOT_PATH=/mnt/videos/shadowplay
+```
+
+### General Settings
 
 | Variable | Description | Default |
 |----------|-------------|---------|
@@ -262,16 +282,8 @@ uv run mypy app/
 
 The `scripts/` directory contains helper tools:
 
-- **`migrate_metadata.py`** - Migrate metadata from old structure (proxies folder) to new structure (metadata folder)
-  ```bash
-  # Dry run (see what would be migrated)
-  uv run python scripts/migrate_metadata.py
-
-  # Actually perform migration
-  uv run python scripts/migrate_metadata.py --apply
-  ```
-- `arrange.py` - Organize clips by month (to be integrated)
-- `encode.py` - Generate proxy videos (to be integrated)
+- `arrange.py` - Organize clips by month
+- `encode.py` - Generate proxy videos for web streaming
 
 ## Troubleshooting
 
