@@ -15,18 +15,20 @@ TARGET_BASE_DIR = pathlib.Path.home() / "containers"
 SYSTEMD_CONFIG_DIR = pathlib.Path.home() / ".config" / "containers" / "systemd"
 SECRET_PLACEHOLDER_PATTERN = re.compile(r"\{\{\s*(\w+)\s*\}\}")
 DEFAULT_SECRETS_FILE = "secrets.yml"
+DEFAULT_INVENTORY_FILE = None  # No default - must be explicitly specified or use --all
 
 # --- Set up logging ---
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s [%(levelname)-4s] %(message)s'
+    level=logging.INFO, format="%(asctime)s [%(levelname)-4s] %(message)s"
 )
 logger = logging.getLogger(__name__)
 
 # --- Helper Functions ---
 
+
 def substitute_secrets(content: str, secrets: dict) -> str:
     """Substitutes {{ secret_name }} placeholders in content."""
+
     def replace_match(match):
         secret_name = match.group(1)
         if secret_name in secrets:
@@ -34,31 +36,75 @@ def substitute_secrets(content: str, secrets: dict) -> str:
         else:
             # Keep the placeholder if the secret is not found, log a warning
             logger.warning(f"Secret '{secret_name}' not found in secrets file.")
-            return match.group(0) # Return the original placeholder
+            return match.group(0)  # Return the original placeholder
 
     return SECRET_PLACEHOLDER_PATTERN.sub(replace_match, content)
+
 
 def is_likely_text_file(file_path: pathlib.Path) -> bool:
     """Tries to detect if a file is likely text-based (UTF-8)."""
     try:
         # Try reading a small chunk to detect encoding errors early
-        with open(file_path, 'r', encoding='utf-8') as f:
-            f.read(1024) # Read first 1KB
+        with open(file_path, "r", encoding="utf-8") as f:
+            f.read(1024)  # Read first 1KB
         return True
     except UnicodeDecodeError:
         return False
     except Exception as e:
         # Handle other potential read errors if necessary
         logger.warning(f"Could not read file {file_path} to check if text: {e}")
-        return False # Assume binary if unsure
+        return False  # Assume binary if unsure
+
+
+def load_inventory(inventory_path: pathlib.Path, hostname: str) -> set:
+    """Loads inventory file and returns set of containers for the given hostname."""
+    if not inventory_path.exists():
+        return None
+
+    try:
+        with open(inventory_path, "r") as f:
+            inventory = yaml.safe_load(f)
+
+        if not isinstance(inventory, dict):
+            logger.error(
+                f"Inventory file {inventory_path} must contain a YAML dictionary."
+            )
+            sys.exit(1)
+
+        # Check if hostname is in inventory
+        if hostname in inventory:
+            containers = inventory[hostname]
+            if isinstance(containers, list):
+                return set(containers)
+            else:
+                logger.error(
+                    f"Containers for hostname '{hostname}' must be a list in inventory file."
+                )
+                sys.exit(1)
+        else:
+            logger.warning(
+                f"Hostname '{hostname}' not found in inventory. No containers will be installed."
+            )
+            logger.info(f"Available hosts in inventory: {', '.join(inventory.keys())}")
+            return set()
+
+    except yaml.YAMLError as e:
+        logger.error(f"Error parsing inventory file {inventory_path}: {e}")
+        sys.exit(1)
+    except IOError as e:
+        logger.error(f"Could not read inventory file {inventory_path}: {e}")
+        sys.exit(1)
+
 
 def create_podman_secrets(container_name: str, podman_secrets: list, secrets: dict):
     """Creates podman secrets for specified secret names."""
     for secret_name in podman_secrets:
         if secret_name not in secrets:
-            logger.error(f"Required secret '{secret_name}' for container '{container_name}' not found in secrets file.")
+            logger.error(
+                f"Required secret '{secret_name}' for container '{container_name}' not found in secrets file."
+            )
             sys.exit(1)
-        
+
         # Check if secret already exists in podman
         check_cmd = ["podman", "secret", "inspect", secret_name]
         try:
@@ -67,7 +113,7 @@ def create_podman_secrets(container_name: str, podman_secrets: list, secrets: di
         except Exception as e:
             logger.error(f"Failed to check if secret '{secret_name}' exists: {e}")
             sys.exit(1)
-        
+
         # If secret exists, remove it first (to update)
         if secret_exists:
             logger.debug(f"Removing existing secret '{secret_name}'")
@@ -76,7 +122,7 @@ def create_podman_secrets(container_name: str, podman_secrets: list, secrets: di
             except subprocess.CalledProcessError as e:
                 logger.error(f"Failed to remove existing secret '{secret_name}': {e}")
                 sys.exit(1)
-        
+
         # Create the secret
         logger.info(f"Creating podman secret: {secret_name}")
         try:
@@ -91,47 +137,83 @@ def create_podman_secrets(container_name: str, podman_secrets: list, secrets: di
             logger.error(f"Error creating secret '{secret_name}': {e}")
             sys.exit(1)
 
+
 # --- Main Logic ---
+
 
 def main():
     parser = argparse.ArgumentParser(
         description="Installs container configurations, substituting secrets.",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
         "--secrets",
         type=pathlib.Path,
         default=DEFAULT_SECRETS_FILE,
-        help="Path to the secrets.yml file."
+        help="Path to the secrets.yml file.",
     )
     parser.add_argument(
-        "--restart", "-r",
-        action="store_true",
-        help="Restart containers"
+        "--inventory",
+        type=pathlib.Path,
+        default=DEFAULT_INVENTORY_FILE,
+        help="Path to the inventory.yml file.",
     )
     parser.add_argument(
-        "--verbose", "-v",
+        "--all",
         action="store_true",
-        help="Enable verbose (debug) logging"
+        help="Install all containers, ignoring inventory file.",
+    )
+    parser.add_argument(
+        "--restart", "-r", action="store_true", help="Restart containers"
+    )
+    parser.add_argument(
+        "--verbose", "-v", action="store_true", help="Enable verbose (debug) logging"
     )
     args = parser.parse_args()
-    
+
     # Set logging level based on verbosity
     if args.verbose:
         logger.setLevel(logging.DEBUG)
 
     script_dir = pathlib.Path(__file__).parent.resolve()
     secrets_path = args.secrets
+    inventory_path = args.inventory
+
+    # --- Get hostname and load inventory ---
+    current_hostname = os.uname().nodename
+    logger.info(f"Current hostname: {current_hostname}")
+
+    allowed_containers = None
+    if not args.all:
+        if inventory_path is None:
+            logger.error(
+                "No inventory file specified. Either provide --inventory <path> or use --all to install all containers."
+            )
+            sys.exit(1)
+        allowed_containers = load_inventory(inventory_path, current_hostname)
+        if allowed_containers is None:
+            logger.error(f"Inventory file not found at {inventory_path}.")
+            sys.exit(1)
+        elif len(allowed_containers) == 0:
+            logger.info("No containers to install for this host.")
+        else:
+            logger.info(
+                f"Containers to install: {', '.join(sorted(allowed_containers))}"
+            )
+    else:
+        logger.info("Installing all containers (--all flag specified).")
 
     # --- Load Secrets ---
     secrets = {}
     if secrets_path.exists():
         logger.info(f"Loading secrets from: {secrets_path}")
         try:
-            with open(secrets_path, 'r') as f:
+            with open(secrets_path, "r") as f:
                 secrets = yaml.safe_load(f)
                 if not isinstance(secrets, dict):
-                    logger.error(f"Secrets file {secrets_path} must contain a YAML dictionary (key-value pairs).")
+                    logger.error(
+                        f"Secrets file {secrets_path} must contain a YAML dictionary (key-value pairs)."
+                    )
                     sys.exit(1)
         except yaml.YAMLError as e:
             logger.error(f"Error parsing secrets file {secrets_path}: {e}")
@@ -140,7 +222,9 @@ def main():
             logger.error(f"Could not read secrets file {secrets_path}: {e}")
             sys.exit(1)
     else:
-        logger.info(f"Secrets file not found at {secrets_path}. Proceeding without secret substitution.")
+        logger.info(
+            f"Secrets file not found at {secrets_path}. Proceeding without secret substitution."
+        )
 
     # --- Ensure Target Base Directory Exists ---
     logger.info(f"Ensuring target base directory exists: {TARGET_BASE_DIR}")
@@ -151,8 +235,21 @@ def main():
     found_containers = False
     containers = []
     for item in script_dir.iterdir():
-        if item.is_dir() and not item.name.startswith('.'): # Basic check for container dir
+        if item.is_dir() and not item.name.startswith(
+            "."
+        ):  # Basic check for container dir
             container_name = item.name
+
+            # Check if this container should be installed based on inventory
+            if (
+                allowed_containers is not None
+                and container_name not in allowed_containers
+            ):
+                logger.debug(
+                    f"Skipping container '{container_name}' (not in inventory for this host)"
+                )
+                continue
+
             containers.append(container_name)
             source_dir = item
             target_dir = TARGET_BASE_DIR / container_name
@@ -166,17 +263,27 @@ def main():
             config_file = source_dir / "config.yml"
             if config_file.exists():
                 try:
-                    with open(config_file, 'r') as f:
+                    with open(config_file, "r") as f:
                         config = yaml.safe_load(f)
-                    
+
                     # Process podman_secrets configuration
-                    if config and isinstance(config, dict) and 'podman_secrets' in config:
-                        podman_secrets_list = config.get('podman_secrets', [])
-                        if podman_secrets_list and isinstance(podman_secrets_list, list):
+                    if (
+                        config
+                        and isinstance(config, dict)
+                        and "podman_secrets" in config
+                    ):
+                        podman_secrets_list = config.get("podman_secrets", [])
+                        if podman_secrets_list and isinstance(
+                            podman_secrets_list, list
+                        ):
                             if secrets:
-                                create_podman_secrets(container_name, podman_secrets_list, secrets)
+                                create_podman_secrets(
+                                    container_name, podman_secrets_list, secrets
+                                )
                             else:
-                                logger.error(f"Container '{container_name}' requires secrets but no secrets file was loaded.")
+                                logger.error(
+                                    f"Container '{container_name}' requires secrets but no secrets file was loaded."
+                                )
                                 sys.exit(1)
                 except yaml.YAMLError as e:
                     logger.error(f"Error parsing config file {config_file}: {e}")
@@ -198,8 +305,10 @@ def main():
                     source_subdir = source_root / dir_name
                     target_subdir = target_root / dir_name
                     if not target_subdir.exists():
-                         logger.info(f"    Creating dir:  {target_subdir.relative_to(TARGET_BASE_DIR)}")
-                         target_subdir.mkdir()
+                        logger.info(
+                            f"    Creating dir:  {target_subdir.relative_to(TARGET_BASE_DIR)}"
+                        )
+                        target_subdir.mkdir()
                     # Preserve permissions on directories if needed (more complex)
 
                 # Copy/Substitute files
@@ -211,40 +320,46 @@ def main():
                     if not secrets or not is_likely_text_file(source_file):
                         # Copy binary files or if no secrets are loaded
                         logger.info(f"    Copying:     {relative_file_path}")
-                        shutil.copy2(source_file, target_file) # copy2 preserves metadata
+                        shutil.copy2(
+                            source_file, target_file
+                        )  # copy2 preserves metadata
                     else:
                         # Read, substitute, and write text files
                         logger.info(f"    Substituting: {relative_file_path}")
                         try:
-                            with open(source_file, 'r', encoding='utf-8') as sf:
+                            with open(source_file, "r", encoding="utf-8") as sf:
                                 content = sf.read()
-                            
+
                             substituted_content = substitute_secrets(content, secrets)
 
-                            with open(target_file, 'w', encoding='utf-8') as tf:
+                            with open(target_file, "w", encoding="utf-8") as tf:
                                 tf.write(substituted_content)
                             # Preserve permissions after writing
                             shutil.copymode(source_file, target_file)
                         except Exception as e:
-                             logger.error(f"Failed processing file {source_file}: {e}")
-                             sys.exit(1)
-                    
+                            logger.error(f"Failed processing file {source_file}: {e}")
+                            sys.exit(1)
+
                     # Create symlinks for container files to systemd directory
-                    if file_name.endswith('.container'):
+                    if file_name.endswith(".container"):
                         # Ensure systemd directory exists
                         SYSTEMD_CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-                        
+
                         systemd_link = SYSTEMD_CONFIG_DIR / file_name
                         # Remove existing symlink if it exists
                         if systemd_link.exists() or systemd_link.is_symlink():
                             systemd_link.unlink()
-                        
+
                         # Create new symlink
-                        logger.info(f"    Creating symlink: {systemd_link} -> {target_file}")
+                        logger.info(
+                            f"    Creating symlink: {systemd_link} -> {target_file}"
+                        )
                         try:
                             os.symlink(target_file, systemd_link)
                         except Exception as e:
-                            logger.error(f"Failed to create symlink for {file_name}: {e}")
+                            logger.error(
+                                f"Failed to create symlink for {file_name}: {e}"
+                            )
                             sys.exit(1)
 
     if not found_containers:
@@ -253,24 +368,26 @@ def main():
         # Reload systemd to recognize new services
         logger.info("Reloading systemd to recognize new services...")
         try:
-            subprocess.run(['systemctl', '--user', 'daemon-reload'], check=True)
+            subprocess.run(["systemctl", "--user", "daemon-reload"], check=True)
             logger.info("Systemd reloaded successfully.")
         except subprocess.CalledProcessError as e:
             logger.error(f"Failed to reload systemd: {e}")
             sys.exit(1)
-        
+
         if args.restart:
             for container in containers:
                 logger.info(f"Restart container: {container}")
                 try:
-                    subprocess.run(['systemctl', '--user', 'restart', container], check=True)
+                    subprocess.run(
+                        ["systemctl", "--user", "restart", container], check=True
+                    )
                     logger.info(f"Container {container} restarted successfully.")
                 except subprocess.CalledProcessError as e:
                     logger.error(f"Failed to restart container {container}: {e}")
                     sys.exit(1)
 
-
     logger.info("Installation complete.")
+
 
 if __name__ == "__main__":
     main()

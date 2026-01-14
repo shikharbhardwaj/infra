@@ -1,0 +1,30 @@
+# Container Inventory File
+#
+# This file specifies which containers should be installed on each host.
+# Format: hostname: [list of containers]
+#
+# The hostname must match the output of the `hostname` command.
+# To use this file:
+#   1. Copy this file to inventory.yml (or any name you prefer)
+#   2. Edit the hostnames and container lists below
+#   3. Run: ./install --inventory inventory.yml
+#
+# To install all containers regardless of inventory:
+#   ./install --all
+
+# Example configuration:
+gliese:
+    - traefik
+    - uptime-kuma
+    - crafty
+
+# Additional example hosts:
+# server-1:
+#   - traefik
+#   - uptime-kuma
+#
+# server-2:
+#   - crafty
+#
+# server-3:
+#   - traefik
