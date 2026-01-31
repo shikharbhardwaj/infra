@@ -1,0 +1,41 @@
+[Unit]
+Description=Replay Hub - Shadowplay clip annotation
+Wants=network.target
+After=network.target
+
+[Container]
+ContainerName=replay-hub
+Image=ghcr.io/shikharbhardwaj/replay-hub:latest
+AutoUpdate=registry
+
+Network=web
+
+# Mount data directory for SQLite database
+Volume=%h/containers/replay-hub/data:/app/data:Z
+
+# Storage configuration - use local storage by default
+Environment=STORAGE_BACKEND=local
+Environment=LOCAL_ROOT_PATH=/clips
+Environment=DATABASE_PATH=/app/data/metadata.db
+
+# Mount clips directory (adjust path as needed)
+Volume=%h/clips:/clips:ro
+
+# WebDAV configuration (uncomment and configure if using WebDAV)
+# Secret=webdav_url,type=env,target=WEBDAV_URL
+# Secret=webdav_username,type=env,target=WEBDAV_USERNAME
+# Secret=webdav_password,type=env,target=WEBDAV_PASSWORD
+# Environment=WEBDAV_ROOT_PATH=replays/
+
+Label=traefik.enable=true
+Label=traefik.http.routers.replay_hub.rule=Host(`clips.{{ oci_parent_host }}`)
+Label=traefik.http.routers.replay_hub.entryPoints=websecure
+Label=traefik.http.routers.replay_hub.tls=true
+Label=traefik.http.routers.replay_hub.tls.certresolver=cloudflare
+Label=traefik.http.services.replay_hub.loadbalancer.server.port=8080
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target
