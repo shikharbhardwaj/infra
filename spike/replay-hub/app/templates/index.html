@@ -17,6 +17,43 @@
         </div>
     </div>
 
+    <!-- Filters -->
+    <form id="filterForm" method="get" class="flex flex-wrap gap-4 items-center bg-white p-4 rounded-lg shadow-sm">
+        <div class="flex items-center gap-2">
+            <label for="clip_type" class="text-sm font-medium text-gray-700">Type:</label>
+            <select
+                name="clip_type"
+                id="clip_type"
+                class="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                onchange="this.form.submit()"
+            >
+                <option value="">All types</option>
+                {% for type in clip_types %}
+                <option value="{{ type }}" {% if selected_clip_type == type %}selected{% endif %}>{{ type }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <label for="min_rating" class="text-sm font-medium text-gray-700">Min rating:</label>
+            <select
+                name="min_rating"
+                id="min_rating"
+                class="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                onchange="this.form.submit()"
+            >
+                <option value="">Any</option>
+                {% for i in range(1, 6) %}
+                <option value="{{ i }}" {% if selected_min_rating == i %}selected{% endif %}>{{ '★' * i }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        {% if selected_clip_type or selected_min_rating %}
+        <a href="/" class="text-sm text-blue-600 hover:text-blue-800">Clear filters</a>
+        {% endif %}
+    </form>
+
     {% if clips_by_month %}
         {% for month, clips in clips_by_month.items() %}
         <section class="space-y-4" data-month="{{ month }}">

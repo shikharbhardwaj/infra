@@ -15,6 +15,7 @@ from fastapi.templating import Jinja2Templates
 from app.file_client import FileClient
 from app.models import ClipInfo, ClipMetadata
 from app.config import settings
+from app.database import metadata_db
 
 # Create file client based on configuration
 file_client = FileClient.create()
@@ -25,83 +26,54 @@ templates = Jinja2Templates(directory="app/templates")
 
 
 @router.get("/")
-async def index(request: Request):
+async def index(
+    request: Request,
+    clip_type: str = None,
+    min_rating: int = None
+):
     """Homepage with clip grid grouped by month."""
     try:
-        # List month directories
-        months = file_client.list_directories()
-        months.sort(reverse=True)  # Most recent first
+        # Get all months from database (fast query)
+        months = metadata_db.get_all_months()
 
-        # Get clips for each month
+        # Get clips for each month from database with optional filters
         clips_by_month = {}
         for month in months:
-            # List files from the proxies subdirectory within each month
-            proxy_dir = f"{month}/proxies"
-
-            # OPTIMIZATION: List all files once
-            # List proxy videos
-            proxy_files = file_client.list_files(proxy_dir, pattern="", exclude_proxy=False)
-            video_files = [f for f in proxy_files if f.endswith('.mp4')]
-
-            # List metadata files from the metadata folder
-            metadata_dir = f"{month}/metadata"
-            metadata_files = set()
-            try:
-                metadata_list = file_client.list_files(metadata_dir, pattern="", exclude_proxy=False)
-                metadata_files = set(f for f in metadata_list if f.endswith('.metadata.json'))
-            except Exception:
-                # Metadata folder might not exist yet
-                pass
-
-            # List thumbnail files from the thumbnails folder
-            thumbnails_dir = f"{month}/thumbnails"
-            thumbnail_files = set()
-            try:
-                thumbnail_list = file_client.list_files(thumbnails_dir, pattern="", exclude_proxy=False)
-                thumbnail_files = set(f for f in thumbnail_list if f.endswith('.jpg'))
-            except Exception:
-                # Thumbnails folder might not exist yet
-                pass
+            # Query clips from database (includes metadata status, thumbnails)
+            db_clips = metadata_db.get_clips_for_month(
+                month,
+                clip_type=clip_type,
+                min_rating=min_rating
+            )
 
             clips = []
-            for filename in video_files:
-                # Full path includes the proxies subdirectory
-                video_path = f"{proxy_dir}/{filename}"
-
-                # Get display name (strip _proxy suffix)
-                display_name = file_client.get_display_name(filename)
-
-                # Check if metadata exists (fast - no WebDAV request)
-                metadata_filename = f"{display_name}.metadata.json"
-                has_metadata = metadata_filename in metadata_files
-
-                # Check if thumbnail exists
-                # Thumbnails are named: {filename_without_ext}_proxy.jpg
-                # e.g., "Counter-strike 2 2023.07.19 - 16.23.00.02.DVR_proxy.jpg"
-                display_name_stem = Path(display_name).stem
-                thumbnail_filename = f"{display_name_stem}{settings.proxy_suffix}.jpg"
-                has_thumbnail = thumbnail_filename in thumbnail_files
-
-                # Since all files are proxies, has_proxy is always True
-                has_proxy = True
-
+            for row in db_clips:
                 clip_info = ClipInfo(
-                    month=month,
-                    filename=display_name,  # Use display name instead of proxy filename
-                    webdav_path=video_path,
-                    metadata=None,  # Don't load metadata content on index (lazy load)
-                    has_metadata=has_metadata,
-                    has_proxy=has_proxy,
-                    has_thumbnail=has_thumbnail
+                    month=row['month'],
+                    filename=row['filename'],
+                    webdav_path=row['proxy_path'],
+                    metadata=None,  # Lazy load on detail page
+                    has_metadata=bool(row['has_metadata']),
+                    has_proxy=True,
+                    has_thumbnail=bool(row['has_thumbnail'])
                 )
                 clips.append(clip_info)
 
             if clips:
                 clips_by_month[month] = clips
 
+        # Available filter options
+        clip_types = ['Clutch', 'Highlight', 'Funny', 'Fail', 'Tutorial', 'Gameplay', 'Other']
+
         return templates.TemplateResponse(
             "index.html",
-            {"request": request, "clips_by_month": clips_by_month}
+            {
+                "request": request,
+                "clips_by_month": clips_by_month,
+                "clip_types": clip_types,
+                "selected_clip_type": clip_type,
+                "selected_min_rating": min_rating
+            }
         )
     except Exception as e:
         logger.error(f"Error loading index: {e}")
@@ -269,14 +241,15 @@ async def clip_detail(request: Request, month: str, subpath: str):
 
             raise HTTPException(status_code=404, detail=f"Clip not found: {video_path}")
 
-        # Load metadata
-        metadata_dict = file_client.read_metadata(video_path)
+        # Load metadata from database
+        clip_path = f"{month}/{filename}"
+        metadata_dict = metadata_db.get_metadata(clip_path)
         metadata = None
         if metadata_dict:
             try:
                 metadata = ClipMetadata(**metadata_dict)
             except Exception as e:
-                logger.error(f"Error parsing metadata for {video_path}: {e}")
+                logger.error(f"Error parsing metadata for {clip_path}: {e}")
 
         # Check for proxy (though the file itself is already a proxy)
         from app.config import settings

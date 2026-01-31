@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     use_proxy_videos: bool = True
     proxy_suffix: str = "_proxy"
 
+    # Database Configuration
+    database_path: str = "data/metadata.db"
+
 
 # Global settings instance
 settings = Settings()
