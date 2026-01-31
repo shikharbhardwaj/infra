@@ -5,7 +5,7 @@ import logging
 import os
 import re
 from pathlib import Path
-from typing import List
+from typing import Optional
 from urllib.parse import unquote
 
 from fastapi import APIRouter, Request, HTTPException
@@ -28,11 +28,14 @@ templates = Jinja2Templates(directory="app/templates")
 @router.get("/")
 async def index(
     request: Request,
-    clip_type: str = None,
-    min_rating: int = None
+    clip_type: Optional[str] = None,
+    min_rating: Optional[str] = None
 ):
     """Homepage with clip grid grouped by month."""
     try:
+        # Convert min_rating to int if provided (empty string becomes None)
+        min_rating_int = int(min_rating) if min_rating else None
+
         # Get all months from database (fast query)
         months = metadata_db.get_all_months()
 
@@ -43,7 +46,7 @@ async def index(
             db_clips = metadata_db.get_clips_for_month(
                 month,
                 clip_type=clip_type,
-                min_rating=min_rating
+                min_rating=min_rating_int
             )
 
             clips = []
@@ -72,7 +75,7 @@ async def index(
                 "clips_by_month": clips_by_month,
                 "clip_types": clip_types,
                 "selected_clip_type": clip_type,
-                "selected_min_rating": min_rating
+                "selected_min_rating": min_rating_int
             }
         )
     except Exception as e:
