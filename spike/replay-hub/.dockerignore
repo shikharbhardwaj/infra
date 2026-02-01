@@ -27,7 +27,6 @@ htmlcov/
 .gitignore
 
 # Documentation
-README.md
 docs/
 
 # Local development
