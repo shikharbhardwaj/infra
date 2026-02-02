@@ -8,14 +8,14 @@ from pathlib import Path
 from typing import Optional
 from urllib.parse import unquote
 
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from fastapi.templating import Jinja2Templates
 
-from app.file_client import FileClient
-from app.models import ClipInfo, ClipMetadata
 from app.config import settings
 from app.database import metadata_db
+from app.file_client import FileClient
+from app.models import ClipInfo, ClipMetadata
 
 # Create file client based on configuration
 file_client = FileClient.create()
@@ -27,9 +27,7 @@ templates = Jinja2Templates(directory="app/templates")
 
 @router.get("/")
 async def index(
-    request: Request,
-    clip_type: Optional[str] = None,
-    min_rating: Optional[str] = None
+    request: Request, clip_type: Optional[str] = None, min_rating: Optional[str] = None
 ):
     """Homepage with clip grid grouped by month."""
     try:
@@ -44,21 +42,30 @@ async def index(
         for month in months:
             # Query clips from database (includes metadata status, thumbnails)
             db_clips = metadata_db.get_clips_for_month(
-                month,
-                clip_type=clip_type,
-                min_rating=min_rating_int
+                month, clip_type=clip_type, min_rating=min_rating_int
             )
 
             clips = []
             for row in db_clips:
+                # Load metadata if it exists
+                metadata = None
+                if row["has_metadata"]:
+                    clip_path = f"{row['month']}/{row['filename']}"
+                    metadata_dict = metadata_db.get_metadata(clip_path)
+                    if metadata_dict:
+                        try:
+                            metadata = ClipMetadata(**metadata_dict)
+                        except Exception as e:
+                            logger.error(f"Error parsing metadata for {clip_path}: {e}")
+
                 clip_info = ClipInfo(
-                    month=row['month'],
-                    filename=row['filename'],
-                    webdav_path=row['proxy_path'],
-                    metadata=None,  # Lazy load on detail page
-                    has_metadata=bool(row['has_metadata']),
+                    month=row["month"],
+                    filename=row["filename"],
+                    webdav_path=row["proxy_path"],
+                    metadata=metadata,
+                    has_metadata=bool(row["has_metadata"]),
                     has_proxy=True,
-                    has_thumbnail=bool(row['has_thumbnail'])
+                    has_thumbnail=bool(row["has_thumbnail"]),
                 )
                 clips.append(clip_info)
 
@@ -66,7 +73,15 @@ async def index(
                 clips_by_month[month] = clips
 
         # Available filter options
-        clip_types = ['Clutch', 'Highlight', 'Funny', 'Fail', 'Tutorial', 'Gameplay', 'Other']
+        clip_types = [
+            "Clutch",
+            "Highlight",
+            "Funny",
+            "Fail",
+            "Tutorial",
+            "Gameplay",
+            "Other",
+        ]
 
         return templates.TemplateResponse(
             "index.html",
@@ -75,8 +90,8 @@ async def index(
                 "clips_by_month": clips_by_month,
                 "clip_types": clip_types,
                 "selected_clip_type": clip_type,
-                "selected_min_rating": min_rating_int
-            }
+                "selected_min_rating": min_rating_int,
+            },
         )
     except Exception as e:
         logger.error(f"Error loading index: {e}")
@@ -112,18 +127,20 @@ async def stream_video(request: Request, month: str, subpath: str):
         logger.info(f"Stream - Checking exists: '{video_path}'")
         if not file_client.file_exists(video_path):
             logger.error(f"Stream - NOT FOUND: '{video_path}'")
-            raise HTTPException(status_code=404, detail=f"Video not found: {video_path}")
+            raise HTTPException(
+                status_code=404, detail=f"Video not found: {video_path}"
+            )
 
         # Get file size
         file_size = file_client.get_file_size(video_path)
 
         # Parse Range header
-        range_header = request.headers.get('range')
+        range_header = request.headers.get("range")
 
         # Determine range to serve
         if range_header:
             # Explicit range request from browser (e.g., seeking)
-            match = re.match(r'bytes=(\d+)-(\d*)', range_header)
+            match = re.match(r"bytes=(\d+)-(\d*)", range_header)
             if match:
                 start = int(match.group(1))
                 end = int(match.group(2)) if match.group(2) else file_size - 1
@@ -139,7 +156,9 @@ async def stream_video(request: Request, month: str, subpath: str):
             start = 0
             chunk_size = 5 * 1024 * 1024  # 5MB initial buffer
             end = min(chunk_size - 1, file_size - 1)
-            logger.info(f"Stream - Initial request, serving first {chunk_size / 1024 / 1024:.1f}MB")
+            logger.info(
+                f"Stream - Initial request, serving first {chunk_size / 1024 / 1024:.1f}MB"
+            )
 
         # Read the requested range
         chunk = file_client.read_file_range(video_path, start, end + 1)
@@ -154,7 +173,7 @@ async def stream_video(request: Request, month: str, subpath: str):
                 "Content-Range": f"bytes {start}-{end}/{file_size}",
                 "Accept-Ranges": "bytes",
                 "Content-Length": str(len(chunk)),
-            }
+            },
         )
     except HTTPException:
         raise
@@ -176,7 +195,9 @@ async def get_thumbnail(month: str, filename: str):
         # Need to strip .mp4 and add _proxy.jpg
         # Example: "Counter-strike 2 2023.07.19 - 16.23.00.02.DVR.mp4" -> "Counter-strike 2 2023.07.19 - 16.23.00.02.DVR_proxy.jpg"
         filename_stem = Path(filename).stem
-        thumbnail_path = f"{month}/thumbnails/{filename_stem}{settings.proxy_suffix}.jpg"
+        thumbnail_path = (
+            f"{month}/thumbnails/{filename_stem}{settings.proxy_suffix}.jpg"
+        )
         logger.info(f"Thumbnail - Looking for: '{thumbnail_path}'")
 
         # Check if thumbnail exists
@@ -186,7 +207,9 @@ async def get_thumbnail(month: str, filename: str):
             # Debug: list what's in the thumbnails directory
             thumbnails_dir = f"{month}/thumbnails"
             try:
-                files = file_client.list_files(thumbnails_dir, pattern="", exclude_proxy=False)
+                files = file_client.list_files(
+                    thumbnails_dir, pattern="", exclude_proxy=False
+                )
                 logger.error(f"Thumbnail - Files in {thumbnails_dir}: {files[:5]}")
             except Exception as e:
                 logger.error(f"Thumbnail - Error listing directory: {e}")
@@ -202,7 +225,7 @@ async def get_thumbnail(month: str, filename: str):
             media_type="image/jpeg",
             headers={
                 "Cache-Control": "public, max-age=3600",  # Cache for 1 hour
-            }
+            },
         )
     except HTTPException:
         raise
@@ -237,7 +260,9 @@ async def clip_detail(request: Request, month: str, subpath: str):
             dir_path = os.path.dirname(video_path)
             logger.error(f"Detail - Listing directory: '{dir_path}'")
             try:
-                files = file_client.list_files(dir_path, pattern="", exclude_proxy=False)
+                files = file_client.list_files(
+                    dir_path, pattern="", exclude_proxy=False
+                )
                 logger.error(f"Detail - Files in directory: {files[:10]}")
             except Exception as e:
                 logger.error(f"Detail - Error listing directory: {e}")
@@ -256,6 +281,7 @@ async def clip_detail(request: Request, month: str, subpath: str):
 
         # Check for proxy (though the file itself is already a proxy)
         from app.config import settings
+
         is_already_proxy = filename.endswith(f"{settings.proxy_suffix}.mp4")
         has_proxy = is_already_proxy
 
@@ -265,12 +291,11 @@ async def clip_detail(request: Request, month: str, subpath: str):
             webdav_path=video_path,
             metadata=metadata,
             has_metadata=metadata is not None,
-            has_proxy=has_proxy
+            has_proxy=has_proxy,
         )
 
         return templates.TemplateResponse(
-            "clip_detail.html",
-            {"request": request, "clip": clip_info}
+            "clip_detail.html", {"request": request, "clip": clip_info}
         )
     except HTTPException:
         raise
