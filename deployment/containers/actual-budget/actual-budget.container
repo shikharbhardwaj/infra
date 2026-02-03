@@ -1,0 +1,30 @@
+[Unit]
+Description=Actual Budget - Personal Finance Manager
+Wants=network.target
+After=network.target
+
+[Container]
+ContainerName=actual-budget
+Image=docker.io/actualbudget/actual-server:latest
+AutoUpdate=registry
+
+Network=web
+
+PublishPort=5006:5006
+
+# Mount volume for persistent data
+Volume=%h/containers/actual-budget/data:/data
+
+# Traefik labels for reverse proxy
+Label=traefik.enable=true
+Label=traefik.http.routers.actual_budget.rule=Host(`budget.{{ oci_host }}`)
+Label=traefik.http.routers.actual_budget.entryPoints=websecure
+Label=traefik.http.routers.actual_budget.tls=true
+Label=traefik.http.routers.actual_budget.tls.certresolver=cloudflare
+Label=traefik.http.services.actual_budget.loadbalancer.server.port=5006
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target
