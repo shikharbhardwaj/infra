@@ -1,13 +1,23 @@
-{% extends "base.html" %}
-
-{% block title %}{{ clip.filename }} - Replay Hub{% endblock %}
-
-{% block content %}
+{% extends "base.html" %} {% block title %}{{ clip.filename }} - Replay Hub{%
+endblock %} {% block content %}
 <div class="space-y-6">
     <!-- Back button -->
-    <a href="/" class="inline-flex items-center text-sm text-gray-600 hover:text-gray-900">
-        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+    <a
+        href="/"
+        class="inline-flex items-center text-sm text-gray-600 hover:text-gray-900"
+    >
+        <svg
+            class="w-4 h-4 mr-1"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+        >
+            <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 19l-7-7 7-7"
+            ></path>
         </svg>
         Back to clips
     </a>
@@ -25,8 +35,9 @@
                     id="videoPlayer"
                     class="w-full"
                     controls
-                    preload="metadata"
-                    src="/clips/{{ clip.webdav_path }}/stream">
+                    preload="auto"
+                    src="/clips/{{ clip.webdav_path }}/stream"
+                >
                     Your browser does not support the video tag.
                 </video>
             </div>
@@ -42,7 +53,9 @@
                         <dd class="mt-1 text-gray-900">{{ clip.month }}</dd>
                     </div>
                     <div>
-                        <dt class="font-medium text-gray-500">Proxy Available</dt>
+                        <dt class="font-medium text-gray-500">
+                            Proxy Available
+                        </dt>
                         <dd class="mt-1">
                             {% if clip.has_proxy %}
                             <span class="text-green-600">✓ Yes</span>
@@ -68,21 +81,31 @@
         <!-- Metadata Form (1/3 width) -->
         <div class="lg:col-span-1">
             <div class="bg-white rounded-lg shadow-sm p-6 sticky top-6">
-                <h2 class="text-lg font-semibold text-gray-900 mb-4">Metadata</h2>
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">
+                    Metadata
+                </h2>
 
                 <form id="metadataForm" class="space-y-4">
                     <!-- Dynamic metadata fields -->
                     <div id="metadataFields" class="space-y-4">
-                        {% set default_fields = ['map', 'rating', 'description', 'clip_type'] %}
-                        {% set existing_metadata = clip.metadata.metadata if clip.metadata and clip.metadata.metadata else {} %}
+                        {% set default_fields = ['map', 'rating', 'description',
+                        'clip_type'] %} {% set existing_metadata =
+                        clip.metadata.metadata if clip.metadata and
+                        clip.metadata.metadata else {} %}
 
                         <!-- Always show default fields first -->
                         {% for field in default_fields %}
                         <div class="metadata-field">
-                            <label class="block text-sm font-medium text-gray-700 mb-1 capitalize">
-                                {{ field.replace('_', ' ') }}
-                                {% if field not in ['map', 'rating', 'description', 'clip_type'] %}
-                                <button type="button" onclick="removeField('{{ field }}')" class="ml-2 text-red-500 hover:text-red-700 text-xs">
+                            <label
+                                class="block text-sm font-medium text-gray-700 mb-1 capitalize"
+                            >
+                                {{ field.replace('_', ' ') }} {% if field not in
+                                ['map', 'rating', 'description', 'clip_type'] %}
+                                <button
+                                    type="button"
+                                    onclick="removeField('{{ field }}')"
+                                    class="ml-2 text-red-500 hover:text-red-700 text-xs"
+                                >
                                     ✕
                                 </button>
                                 {% endif %}
@@ -90,7 +113,8 @@
                             {% if field == 'rating' %}
                             <select
                                 name="{{ field }}"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            >
                                 <option value="">Not rated</option>
                                 {% for i in range(1, 6) %}
                                 <option value="{{ i }}" {% if existing_metadata.get(field)|string == i|string %}selected{% endif %}>
@@ -103,11 +127,14 @@
                                 name="{{ field }}"
                                 rows="3"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            >{{ existing_metadata.get(field, '') }}</textarea>
+                            >
+{{ existing_metadata.get(field, '') }}</textarea
+                            >
                             {% elif field == 'clip_type' %}
                             <select
                                 name="{{ field }}"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            >
                                 <option value="">Select type</option>
                                 {% for type in ['Clutch', 'Highlight', 'Funny', 'Fail', 'Tutorial', 'Gameplay', 'Other'] %}
                                 <option value="{{ type }}" {% if existing_metadata.get(field) == type %}selected{% endif %}>{{ type }}</option>
@@ -119,32 +146,36 @@
                                 name="{{ field }}"
                                 value="{{ existing_metadata.get(field, '') }}"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            >
+                            />
                             {% endif %}
                         </div>
                         {% endfor %}
 
                         <!-- Show any additional custom fields -->
-                        {% if existing_metadata %}
-                            {% for key, value in existing_metadata.items() %}
-                                {% if key not in default_fields %}
-                                <div class="metadata-field">
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                                        {{ key }}
-                                        <button type="button" onclick="removeField('{{ key }}')" class="ml-2 text-red-500 hover:text-red-700 text-xs">
-                                            ✕
-                                        </button>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="{{ key }}"
-                                        value="{{ value }}"
-                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    >
-                                </div>
-                                {% endif %}
-                            {% endfor %}
-                        {% endif %}
+                        {% if existing_metadata %} {% for key, value in
+                        existing_metadata.items() %} {% if key not in
+                        default_fields %}
+                        <div class="metadata-field">
+                            <label
+                                class="block text-sm font-medium text-gray-700 mb-1"
+                            >
+                                {{ key }}
+                                <button
+                                    type="button"
+                                    onclick="removeField('{{ key }}')"
+                                    class="ml-2 text-red-500 hover:text-red-700 text-xs"
+                                >
+                                    ✕
+                                </button>
+                            </label>
+                            <input
+                                type="text"
+                                name="{{ key }}"
+                                value="{{ value }}"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                        </div>
+                        {% endif %} {% endfor %} {% endif %}
                     </div>
 
                     <!-- Add new field -->
@@ -155,11 +186,12 @@
                                 id="newFieldKey"
                                 placeholder="Field name"
                                 class="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
-                            >
+                            />
                             <button
                                 type="button"
                                 onclick="addField()"
-                                class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-sm font-medium">
+                                class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-sm font-medium"
+                            >
                                 Add Field
                             </button>
                         </div>
@@ -169,49 +201,57 @@
                     <div class="pt-4 border-t space-y-2">
                         <button
                             type="submit"
-                            class="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium">
+                            class="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium"
+                        >
                             Save Metadata
                         </button>
-                        <div id="saveStatus" class="text-sm text-center hidden"></div>
+                        <div
+                            id="saveStatus"
+                            class="text-sm text-center hidden"
+                        ></div>
                     </div>
                 </form>
 
                 <!-- Metadata timestamps -->
                 {% if clip.metadata %}
                 <div class="mt-6 pt-6 border-t text-xs text-gray-500 space-y-1">
-                    <p>Created: {{ clip.metadata.created_at.strftime('%Y-%m-%d %H:%M') if clip.metadata.created_at else 'N/A' }}</p>
-                    <p>Updated: {{ clip.metadata.updated_at.strftime('%Y-%m-%d %H:%M') if clip.metadata.updated_at else 'N/A' }}</p>
+                    <p>
+                        Created: {{ clip.metadata.created_at.strftime('%Y-%m-%d
+                        %H:%M') if clip.metadata.created_at else 'N/A' }}
+                    </p>
+                    <p>
+                        Updated: {{ clip.metadata.updated_at.strftime('%Y-%m-%d
+                        %H:%M') if clip.metadata.updated_at else 'N/A' }}
+                    </p>
                 </div>
                 {% endif %}
             </div>
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block extra_scripts %}
+{% endblock %} {% block extra_scripts %}
 <script>
-const clipPath = "{{ clip.webdav_path }}";
+    const clipPath = "{{ clip.webdav_path }}";
 
-function addField() {
-    const keyInput = document.getElementById('newFieldKey');
-    const key = keyInput.value.trim();
+    function addField() {
+        const keyInput = document.getElementById("newFieldKey");
+        const key = keyInput.value.trim();
 
-    if (!key) {
-        alert('Please enter a field name');
-        return;
-    }
+        if (!key) {
+            alert("Please enter a field name");
+            return;
+        }
 
-    // Check if field already exists
-    if (document.querySelector(`input[name="${key}"]`)) {
-        alert('Field already exists');
-        return;
-    }
+        // Check if field already exists
+        if (document.querySelector(`input[name="${key}"]`)) {
+            alert("Field already exists");
+            return;
+        }
 
-    const fieldsContainer = document.getElementById('metadataFields');
-    const fieldDiv = document.createElement('div');
-    fieldDiv.className = 'metadata-field';
-    fieldDiv.innerHTML = `
+        const fieldsContainer = document.getElementById("metadataFields");
+        const fieldDiv = document.createElement("div");
+        fieldDiv.className = "metadata-field";
+        fieldDiv.innerHTML = `
         <label class="block text-sm font-medium text-gray-700 mb-1">
             ${key}
             <button type="button" onclick="removeField('${key}')" class="ml-2 text-red-500 hover:text-red-700 text-xs">
@@ -225,65 +265,71 @@ function addField() {
         >
     `;
 
-    fieldsContainer.appendChild(fieldDiv);
-    keyInput.value = '';
-    keyInput.focus();
-}
-
-function removeField(key) {
-    const field = document.querySelector(`input[name="${key}"]`).closest('.metadata-field');
-    if (confirm(`Remove field "${key}"?`)) {
-        field.remove();
+        fieldsContainer.appendChild(fieldDiv);
+        keyInput.value = "";
+        keyInput.focus();
     }
-}
 
-// Handle form submission
-document.getElementById('metadataForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-
-    const formData = new FormData(this);
-    const metadata = {};
-
-    for (const [key, value] of formData.entries()) {
-        if (value.trim()) {
-            metadata[key] = value.trim();
+    function removeField(key) {
+        const field = document
+            .querySelector(`input[name="${key}"]`)
+            .closest(".metadata-field");
+        if (confirm(`Remove field "${key}"?`)) {
+            field.remove();
         }
     }
 
-    const statusDiv = document.getElementById('saveStatus');
-    statusDiv.className = 'text-sm text-center text-blue-600';
-    statusDiv.textContent = 'Saving...';
-    statusDiv.classList.remove('hidden');
+    // Handle form submission
+    document
+        .getElementById("metadataForm")
+        .addEventListener("submit", async function (e) {
+            e.preventDefault();
 
-    try {
-        const response = await fetch(`/clips/${clipPath}/metadata`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(metadata)
+            const formData = new FormData(this);
+            const metadata = {};
+
+            for (const [key, value] of formData.entries()) {
+                if (value.trim()) {
+                    metadata[key] = value.trim();
+                }
+            }
+
+            const statusDiv = document.getElementById("saveStatus");
+            statusDiv.className = "text-sm text-center text-blue-600";
+            statusDiv.textContent = "Saving...";
+            statusDiv.classList.remove("hidden");
+
+            try {
+                const response = await fetch(`/clips/${clipPath}/metadata`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(metadata),
+                });
+
+                if (response.ok) {
+                    statusDiv.className = "text-sm text-center text-green-600";
+                    statusDiv.textContent = "✓ Saved successfully!";
+                    setTimeout(() => statusDiv.classList.add("hidden"), 3000);
+                } else {
+                    throw new Error("Save failed");
+                }
+            } catch (error) {
+                statusDiv.className = "text-sm text-center text-red-600";
+                statusDiv.textContent = "✗ Error saving metadata";
+                setTimeout(() => statusDiv.classList.add("hidden"), 3000);
+            }
         });
 
-        if (response.ok) {
-            statusDiv.className = 'text-sm text-center text-green-600';
-            statusDiv.textContent = '✓ Saved successfully!';
-            setTimeout(() => statusDiv.classList.add('hidden'), 3000);
-        } else {
-            throw new Error('Save failed');
-        }
-    } catch (error) {
-        statusDiv.className = 'text-sm text-center text-red-600';
-        statusDiv.textContent = '✗ Error saving metadata';
-        setTimeout(() => statusDiv.classList.add('hidden'), 3000);
-    }
-});
-
-// Allow adding field with Enter key
-document.getElementById('newFieldKey').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-        e.preventDefault();
-        addField();
-    }
-});
+    // Allow adding field with Enter key
+    document
+        .getElementById("newFieldKey")
+        .addEventListener("keypress", function (e) {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                addField();
+            }
+        });
 </script>
 {% endblock %}

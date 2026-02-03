@@ -6,7 +6,7 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import Optional, List
+from typing import List, Optional
 from urllib.parse import quote
 
 import requests
@@ -45,7 +45,9 @@ class FileClient(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def list_files(self, path: str = "", pattern: str = "*.mp4", exclude_proxy: bool = True) -> List[str]:
+    def list_files(
+        self, path: str = "", pattern: str = "*.mp4", exclude_proxy: bool = True
+    ) -> List[str]:
         """List files matching pattern in a given path."""
         pass
 
@@ -79,6 +81,34 @@ class FileClient(abc.ABC):
         """Ensure a directory exists, creating it if necessary."""
         pass
 
+    def stream_file_range(
+        self, path: str, start: int, end: int, chunk_size: int = 256 * 1024
+    ):
+        """
+        Generator that streams a range of bytes from a file in chunks.
+
+        Default implementation uses read_file_range repeatedly.
+        Subclasses may override for more efficient streaming.
+
+        Args:
+            path: Relative path to file
+            start: Start byte position (inclusive)
+            end: End byte position (inclusive)
+            chunk_size: Size of chunks to yield (default 256KB)
+
+        Yields:
+            Chunks of bytes from the file
+        """
+        bytes_remaining = end - start + 1
+        current_pos = start
+
+        while bytes_remaining > 0:
+            read_size = min(chunk_size, bytes_remaining)
+            chunk = self.read_file_range(path, current_pos, current_pos + read_size)
+            yield chunk
+            current_pos += len(chunk)
+            bytes_remaining -= len(chunk)
+
     # Common helper methods (not abstract)
     def get_metadata_path(self, video_path: str) -> str:
         """
@@ -96,16 +126,16 @@ class FileClient(abc.ABC):
             Path to metadata JSON file
         """
         # Extract components: "2024-11/proxies/clip_proxy.mp4"
-        parts = video_path.split('/')
+        parts = video_path.split("/")
 
-        if len(parts) >= 3 and parts[-2] == 'proxies':
+        if len(parts) >= 3 and parts[-2] == "proxies":
             # Structure: month/proxies/filename
-            month = '/'.join(parts[:-2])  # "2024-11"
+            month = "/".join(parts[:-2])  # "2024-11"
             filename = parts[-1]  # "clip_proxy.mp4"
 
             # Strip _proxy suffix from filename
             if filename.endswith(f"{settings.proxy_suffix}.mp4"):
-                filename = filename[:-len(f"{settings.proxy_suffix}.mp4")] + ".mp4"
+                filename = filename[: -len(f"{settings.proxy_suffix}.mp4")] + ".mp4"
 
             # Build metadata path: month/metadata/filename.metadata.json
             return f"{month}/metadata/{filename}.metadata.json"
@@ -124,7 +154,7 @@ class FileClient(abc.ABC):
             Display name without proxy suffix (e.g., "clip.mp4")
         """
         if filename.endswith(f"{settings.proxy_suffix}.mp4"):
-            return filename[:-len(f"{settings.proxy_suffix}.mp4")] + ".mp4"
+            return filename[: -len(f"{settings.proxy_suffix}.mp4")] + ".mp4"
         return filename
 
     def get_proxy_path(self, video_path: str) -> str:
@@ -138,7 +168,7 @@ class FileClient(abc.ABC):
             Path to proxy video file
         """
         # Replace .mp4 with _proxy.mp4
-        if video_path.endswith('.mp4'):
+        if video_path.endswith(".mp4"):
             return video_path[:-4] + f"{settings.proxy_suffix}.mp4"
         return video_path + settings.proxy_suffix
 
@@ -159,7 +189,7 @@ class FileClient(abc.ABC):
 
         try:
             content = self.read_file(metadata_path)
-            metadata = json.loads(content.decode('utf-8'))
+            metadata = json.loads(content.decode("utf-8"))
             logger.debug(f"Loaded metadata for {video_path}")
             return metadata
         except Exception as e:
@@ -176,7 +206,7 @@ class FileClient(abc.ABC):
         """
         metadata_path = self.get_metadata_path(video_path)
         try:
-            content = json.dumps(metadata, indent=2, default=str).encode('utf-8')
+            content = json.dumps(metadata, indent=2, default=str).encode("utf-8")
             self.write_file(metadata_path, content)
             logger.info(f"Saved metadata for {video_path}")
         except Exception as e:
@@ -189,11 +219,13 @@ class WebDAVFileClient(FileClient):
 
     def __init__(self):
         """Initialize WebDAV client with configured credentials."""
-        self.client = Client({
-            'webdav_hostname': settings.webdav_url,
-            'webdav_login': settings.webdav_username,
-            'webdav_password': settings.webdav_password,
-        })
+        self.client = Client(
+            {
+                "webdav_hostname": settings.webdav_url,
+                "webdav_login": settings.webdav_username,
+                "webdav_password": settings.webdav_password,
+            }
+        )
         self.root_path = settings.webdav_root_path
         logger.info(f"Initialized WebDAV client")
         logger.info(f"  URL: {settings.webdav_url}")
@@ -209,11 +241,13 @@ class WebDAVFileClient(FileClient):
         # Handle empty root_path
         if not self.root_path or self.root_path == "/":
             result = path if path else "/"
-            logger.debug(f"Path conversion: '{original_path}' -> '{result}' (root_path empty or /)")
+            logger.debug(
+                f"Path conversion: '{original_path}' -> '{result}' (root_path empty or /)"
+            )
             return result
 
         # Ensure root_path doesn't end with / unless it's just /
-        root = self.root_path.rstrip('/')
+        root = self.root_path.rstrip("/")
 
         # Combine root and path
         if path:
@@ -221,7 +255,9 @@ class WebDAVFileClient(FileClient):
         else:
             result = root
 
-        logger.debug(f"Path conversion: '{original_path}' + root '{self.root_path}' -> '{result}'")
+        logger.debug(
+            f"Path conversion: '{original_path}' + root '{self.root_path}' -> '{result}'"
+        )
         return result
 
     def list_directories(self, path: str = "") -> List[str]:
@@ -232,7 +268,11 @@ class WebDAVFileClient(FileClient):
             items = self.client.list(full_path)
             logger.debug(f"Raw items from WebDAV: {items}")
             # Filter directories (end with /) and remove current directory
-            dirs = [item.rstrip('/') for item in items if item.endswith('/') and item != './']
+            dirs = [
+                item.rstrip("/")
+                for item in items
+                if item.endswith("/") and item != "./"
+            ]
             logger.info(f"Found {len(dirs)} directories in '{full_path}': {dirs}")
             return dirs
         except Exception as e:
@@ -241,7 +281,9 @@ class WebDAVFileClient(FileClient):
             logger.error(f"  Root path: '{self.root_path}'")
             return []
 
-    def list_files(self, path: str = "", pattern: str = "*.mp4", exclude_proxy: bool = True) -> List[str]:
+    def list_files(
+        self, path: str = "", pattern: str = "*.mp4", exclude_proxy: bool = True
+    ) -> List[str]:
         """List files matching pattern in a given path."""
         full_path = self._full_path(path)
         logger.info(f"Listing files at path='{path}' -> full_path='{full_path}'")
@@ -249,7 +291,7 @@ class WebDAVFileClient(FileClient):
             items = self.client.list(full_path)
             logger.debug(f"Raw items from WebDAV: {items}")
             # Filter files (don't end with /)
-            files = [item for item in items if not item.endswith('/') and item != './']
+            files = [item for item in items if not item.endswith("/") and item != "./"]
 
             # Apply pattern filter
             if pattern:
@@ -262,7 +304,9 @@ class WebDAVFileClient(FileClient):
                 files = [f for f in files if not f.endswith(proxy_suffix)]
                 logger.debug(f"Excluded proxy files with suffix '{proxy_suffix}'")
 
-            logger.info(f"Found {len(files)} files in '{full_path}': {files[:5]}{'...' if len(files) > 5 else ''}")
+            logger.info(
+                f"Found {len(files)} files in '{full_path}': {files[:5]}{'...' if len(files) > 5 else ''}"
+            )
             return files
         except Exception as e:
             logger.error(f"Error listing files in '{full_path}': {e}")
@@ -327,7 +371,7 @@ class WebDAVFileClient(FileClient):
         full_path = self._full_path(path)
         try:
             info = self.client.info(full_path)
-            size = int(info.get('size', 0))
+            size = int(info.get("size", 0))
             logger.debug(f"File {full_path} size: {size} bytes")
             return size
         except Exception as e:
@@ -342,12 +386,14 @@ class WebDAVFileClient(FileClient):
             # Construct URL properly - the webdav_url already includes the base path
             # e.g., https://drive.shkhr.ovh/remote.php/dav/files/replay-hub/
             # So we just need to append the full_path
-            base_url = settings.webdav_url.rstrip('/')
+            base_url = settings.webdav_url.rstrip("/")
             # URL encode the path components but not the slashes
-            encoded_path = '/'.join(quote(part, safe='') for part in full_path.split('/'))
+            encoded_path = "/".join(
+                quote(part, safe="") for part in full_path.split("/")
+            )
             url = f"{base_url}/{encoded_path}"
 
-            headers = {'Range': f'bytes={start}-{end-1}'}  # HTTP range is inclusive
+            headers = {"Range": f"bytes={start}-{end - 1}"}  # HTTP range is inclusive
 
             logger.debug(f"WebDAV Range Request URL: {url}")
 
@@ -355,12 +401,14 @@ class WebDAVFileClient(FileClient):
                 url,
                 headers=headers,
                 auth=(settings.webdav_username, settings.webdav_password),
-                stream=True
+                stream=True,
             )
             response.raise_for_status()
 
             content = response.content
-            logger.debug(f"Read {len(content)} bytes (range {start}-{end}) from {full_path}")
+            logger.debug(
+                f"Read {len(content)} bytes (range {start}-{end}) from {full_path}"
+            )
             return content
         except Exception as e:
             logger.error(f"Error reading range {start}-{end} from {full_path}: {e}")
@@ -377,7 +425,9 @@ class LocalFileClient(FileClient):
         Args:
             root_path: Root directory for file operations (default: settings.local_root_path)
         """
-        self.root_path = Path(root_path or settings.local_root_path).expanduser().resolve()
+        self.root_path = (
+            Path(root_path or settings.local_root_path).expanduser().resolve()
+        )
         logger.info(f"Initialized Local file client")
         logger.info(f"  Root path: '{self.root_path}'")
 
@@ -413,7 +463,9 @@ class LocalFileClient(FileClient):
             logger.error(f"Error listing directories in '{full_path}': {e}")
             return []
 
-    def list_files(self, path: str = "", pattern: str = "*.mp4", exclude_proxy: bool = True) -> List[str]:
+    def list_files(
+        self, path: str = "", pattern: str = "*.mp4", exclude_proxy: bool = True
+    ) -> List[str]:
         """List files matching pattern in a given path."""
         full_path = self._full_path(path)
         logger.info(f"Listing files at path='{path}' -> full_path='{full_path}'")
@@ -436,7 +488,9 @@ class LocalFileClient(FileClient):
                 files = [f for f in files if not f.endswith(proxy_suffix)]
                 logger.debug(f"Excluded proxy files with suffix '{proxy_suffix}'")
 
-            logger.info(f"Found {len(files)} files in '{full_path}': {files[:5]}{'...' if len(files) > 5 else ''}")
+            logger.info(
+                f"Found {len(files)} files in '{full_path}': {files[:5]}{'...' if len(files) > 5 else ''}"
+            )
             return files
         except Exception as e:
             logger.error(f"Error listing files in '{full_path}': {e}")
@@ -498,11 +552,48 @@ class LocalFileClient(FileClient):
         """Read a range of bytes from local file."""
         full_path = self._full_path(path)
         try:
-            with open(full_path, 'rb') as f:
+            with open(full_path, "rb") as f:
                 f.seek(start)
                 content = f.read(end - start)
-            logger.debug(f"Read {len(content)} bytes (range {start}-{end}) from {full_path}")
+            logger.debug(
+                f"Read {len(content)} bytes (range {start}-{end}) from {full_path}"
+            )
             return content
         except Exception as e:
             logger.error(f"Error reading range {start}-{end} from {full_path}: {e}")
+            raise
+
+    def stream_file_range(
+        self, path: str, start: int, end: int, chunk_size: int = 256 * 1024
+    ):
+        """
+        Generator that streams a range of bytes from a local file in chunks.
+
+        This is more efficient than repeated read_file_range calls because it keeps
+        the file handle open for the duration of the streaming operation.
+
+        Args:
+            path: Relative path to file
+            start: Start byte position (inclusive)
+            end: End byte position (inclusive)
+            chunk_size: Size of chunks to yield (default 256KB)
+
+        Yields:
+            Chunks of bytes from the file
+        """
+        full_path = self._full_path(path)
+        try:
+            with open(full_path, "rb") as f:
+                f.seek(start)
+                bytes_remaining = end - start + 1
+
+                while bytes_remaining > 0:
+                    read_size = min(chunk_size, bytes_remaining)
+                    chunk = f.read(read_size)
+                    if not chunk:
+                        break
+                    yield chunk
+                    bytes_remaining -= len(chunk)
+        except Exception as e:
+            logger.error(f"Error streaming range {start}-{end} from {full_path}: {e}")
             raise

@@ -98,9 +98,13 @@ async def index(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# Streaming chunk size for generator-based delivery (256KB chunks for smooth streaming)
+STREAM_CHUNK_SIZE = 256 * 1024
+
+
 @router.get("/clips/{month}/{subpath:path}/stream")
 async def stream_video(request: Request, month: str, subpath: str):
-    """Stream video file with proper range request support."""
+    """Stream video file with proper range request support and optimized delivery."""
     try:
         logger.info(f"Stream - Raw: month='{month}', subpath='{subpath}'")
         month = unquote(month)
@@ -143,36 +147,47 @@ async def stream_video(request: Request, month: str, subpath: str):
             match = re.match(r"bytes=(\d+)-(\d*)", range_header)
             if match:
                 start = int(match.group(1))
-                end = int(match.group(2)) if match.group(2) else file_size - 1
+                # If end is not specified, serve a large chunk (or rest of file)
+                # This reduces round-trips for sequential playback
+                if match.group(2):
+                    end = int(match.group(2))
+                else:
+                    # Serve up to 10MB at a time for open-ended requests
+                    end = min(start + 10 * 1024 * 1024 - 1, file_size - 1)
                 end = min(end, file_size - 1)
             else:
                 # Invalid range format, serve initial chunk
                 start = 0
-                end = min(5 * 1024 * 1024 - 1, file_size - 1)  # 5MB initial chunk
+                end = min(10 * 1024 * 1024 - 1, file_size - 1)  # 10MB initial chunk
         else:
             # No range header - initial request
-            # Return first 5MB to enable quick playback start
+            # Return first 10MB to enable quick playback start with buffer
             # Browser will request more via range requests as needed
             start = 0
-            chunk_size = 5 * 1024 * 1024  # 5MB initial buffer
+            chunk_size = 10 * 1024 * 1024  # 10MB initial buffer
             end = min(chunk_size - 1, file_size - 1)
             logger.info(
                 f"Stream - Initial request, serving first {chunk_size / 1024 / 1024:.1f}MB"
             )
 
-        # Read the requested range
-        chunk = file_client.read_file_range(video_path, start, end + 1)
+        content_length = end - start + 1
+        logger.info(
+            f"Stream - Range: {start}-{end}/{file_size} ({content_length} bytes)"
+        )
 
-        logger.info(f"Stream - Range: {start}-{end}/{file_size} ({len(chunk)} bytes)")
-
+        # Use generator-based streaming for true streaming delivery
+        # stream_file_range keeps file handle open for efficiency (LocalFileClient)
+        # or falls back to chunked read_file_range calls (WebDAVFileClient)
         return StreamingResponse(
-            io.BytesIO(chunk),
+            file_client.stream_file_range(video_path, start, end, STREAM_CHUNK_SIZE),
             status_code=206,  # Partial Content
             media_type="video/mp4",
             headers={
                 "Content-Range": f"bytes {start}-{end}/{file_size}",
                 "Accept-Ranges": "bytes",
-                "Content-Length": str(len(chunk)),
+                "Content-Length": str(content_length),
+                # Cache video chunks for 1 hour - browser can reuse on seek
+                "Cache-Control": "public, max-age=3600",
             },
         )
     except HTTPException:
@@ -300,5 +315,5 @@ async def clip_detail(request: Request, month: str, subpath: str):
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error loading clip detail: {e}")
+        logger.exception(f"Error loading clip detail: {e}")
         raise HTTPException(status_code=500, detail=str(e))
