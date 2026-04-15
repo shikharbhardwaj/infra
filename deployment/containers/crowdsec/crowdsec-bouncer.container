@@ -1,0 +1,27 @@
+[Unit]
+Description=CrowdSec Traefik Bouncer
+Wants=network.target crowdsec.service
+After=network.target crowdsec.service
+
+[Container]
+ContainerName=crowdsec-bouncer
+Image=docker.io/fbonalair/traefik-crowdsec-bouncer:latest
+AutoUpdate=registry
+
+Network=web
+
+# CrowdSec API configuration
+Environment=CROWDSEC_BOUNCER_API_KEY={{ crowdsec_bouncer_api_key }}
+Environment=CROWDSEC_AGENT_HOST=crowdsec:8080
+Environment=GIN_MODE=release
+
+Label=traefik.enable=true
+# The bouncer itself doesn't need external routing, but we define the middleware
+Label=traefik.http.middlewares.crowdsec.forwardAuth.address=http://crowdsec-bouncer:8080/api/v1/forwardAuth
+Label=traefik.http.middlewares.crowdsec.forwardAuth.trustForwardHeader=true
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target

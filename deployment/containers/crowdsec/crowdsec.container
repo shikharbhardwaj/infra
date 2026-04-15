@@ -1,0 +1,30 @@
+[Unit]
+Description=CrowdSec - Security Engine
+Wants=network.target
+After=network.target
+
+[Container]
+ContainerName=crowdsec
+Image=docker.io/crowdsecurity/crowdsec:latest
+AutoUpdate=registry
+
+Network=web
+
+# Data and config persistence
+Volume=%h/containers/crowdsec/data:/var/lib/crowdsec/data:Z
+Volume=%h/containers/crowdsec/config:/etc/crowdsec:Z
+
+# Mount Traefik logs for parsing
+Volume=%h/containers/traefik/logs:/var/log/traefik:ro,z
+
+# Collections to install on first run
+Environment=COLLECTIONS=crowdsecurity/traefik crowdsecurity/http-cve crowdsecurity/whitelist-good-actors
+
+# Enroll with CrowdSec console (optional - get key from app.crowdsec.net)
+# Secret=crowdsec_enroll_key,type=env,target=ENROLL_KEY
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target
