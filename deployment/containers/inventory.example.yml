@@ -11,6 +11,28 @@
 #
 # To install all containers regardless of inventory:
 #   ./install --all
+#
+# ## Base/Overlay Structure (kustomize-style variants)
+#
+# Containers can use a base/overlay structure for host-specific configs:
+#
+#   container-name/
+#   ├── config.yml              # Shared config (podman secrets, etc.)
+#   ├── base/                   # Base configuration files
+#   │   ├── app.container
+#   │   └── config.yml
+#   └── overlays/
+#       └── <hostname>/         # Host-specific overrides (merged with base)
+#           ├── app.container   # Partial - only keys to override
+#           └── config.yml
+#
+# Merge behavior:
+#   - .container files: INI-style merge (overlay keys override base)
+#   - .yml/.yaml files: Deep merge (overlay values override base)
+#   - Other files: Overlay completely replaces base
+#
+# If no base/ directory exists, the container uses flat structure (backward compatible).
+# If no overlay matches the hostname, only base files are used.
 
 # Example configuration:
 gliese:

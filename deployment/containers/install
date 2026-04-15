@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
 
 import argparse
+import configparser
+import copy
 import logging
 import os
 import pathlib
 import re
 import shutil
 import sys
+from io import StringIO
+
 import yaml
 import subprocess
 
@@ -54,6 +58,123 @@ def is_likely_text_file(file_path: pathlib.Path) -> bool:
         # Handle other potential read errors if necessary
         logger.warning(f"Could not read file {file_path} to check if text: {e}")
         return False  # Assume binary if unsure
+
+
+def merge_ini_content(base_content: str, overlay_content: str) -> str:
+    """
+    Merge INI-style files (like .container quadlet files).
+    Overlay values override base values. Keys not in overlay are preserved.
+    Handles duplicate keys (like multiple Label= lines) by accumulating values.
+    """
+    # Parse both files manually to handle duplicate keys
+    def parse_ini_with_duplicates(content: str) -> dict:
+        """Parse INI content, accumulating duplicate keys into lists."""
+        sections = {}
+        current_section = None
+        for line in content.splitlines():
+            line = line.strip()
+            if not line or line.startswith("#") or line.startswith(";"):
+                continue
+            if line.startswith("[") and line.endswith("]"):
+                current_section = line[1:-1]
+                if current_section not in sections:
+                    sections[current_section] = {}
+            elif "=" in line and current_section:
+                key, value = line.split("=", 1)
+                key = key.strip()
+                value = value.strip()
+                if key in sections[current_section]:
+                    # Convert to list if not already
+                    existing = sections[current_section][key]
+                    if isinstance(existing, list):
+                        existing.append(value)
+                    else:
+                        sections[current_section][key] = [existing, value]
+                else:
+                    sections[current_section][key] = value
+        return sections
+
+    def write_ini_with_duplicates(sections: dict) -> str:
+        """Write INI content, expanding lists into duplicate keys."""
+        lines = []
+        for section, keys in sections.items():
+            lines.append(f"[{section}]")
+            for key, value in keys.items():
+                if isinstance(value, list):
+                    for v in value:
+                        lines.append(f"{key}={v}")
+                else:
+                    lines.append(f"{key}={value}")
+            lines.append("")  # Blank line between sections
+        return "\n".join(lines)
+
+    base_sections = parse_ini_with_duplicates(base_content)
+    overlay_sections = parse_ini_with_duplicates(overlay_content)
+
+    # Merge overlay into base
+    for section, keys in overlay_sections.items():
+        if section not in base_sections:
+            base_sections[section] = {}
+        for key, value in keys.items():
+            # For duplicate-key fields, overlay extends (not replaces) base
+            if key in base_sections[section] and isinstance(value, list):
+                existing = base_sections[section][key]
+                if isinstance(existing, list):
+                    existing.extend(value)
+                else:
+                    base_sections[section][key] = [existing] + value
+            else:
+                base_sections[section][key] = value
+
+    return write_ini_with_duplicates(base_sections)
+
+
+def deep_merge_dict(base: dict, overlay: dict) -> dict:
+    """Deep merge two dicts. Overlay values win on conflicts."""
+    result = copy.deepcopy(base)
+    for key, value in overlay.items():
+        if (
+            key in result
+            and isinstance(result[key], dict)
+            and isinstance(value, dict)
+        ):
+            result[key] = deep_merge_dict(result[key], value)
+        else:
+            result[key] = copy.deepcopy(value)
+    return result
+
+
+def merge_yaml_content(base_content: str, overlay_content: str) -> str:
+    """Merge YAML files with deep merge. Overlay values win on conflicts."""
+    base_data = yaml.safe_load(base_content) or {}
+    overlay_data = yaml.safe_load(overlay_content) or {}
+    merged = deep_merge_dict(base_data, overlay_data)
+    return yaml.dump(merged, default_flow_style=False, sort_keys=False)
+
+
+def get_source_dir(container_dir: pathlib.Path) -> pathlib.Path:
+    """Return base/ subdirectory if it exists, otherwise container_dir itself."""
+    base_dir = container_dir / "base"
+    return base_dir if base_dir.is_dir() else container_dir
+
+
+def get_overlay_dir(container_dir: pathlib.Path, hostname: str) -> pathlib.Path | None:
+    """Return overlay directory for hostname if it exists."""
+    overlay_dir = container_dir / "overlays" / hostname
+    return overlay_dir if overlay_dir.is_dir() else None
+
+
+def merge_file_content(
+    base_content: str, overlay_content: str, file_name: str
+) -> str:
+    """Merge file content based on file extension."""
+    if file_name.endswith(".container"):
+        return merge_ini_content(base_content, overlay_content)
+    elif file_name.endswith((".yml", ".yaml")):
+        return merge_yaml_content(base_content, overlay_content)
+    else:
+        # For other files, overlay completely replaces base
+        return overlay_content
 
 
 def load_inventory(inventory_path: pathlib.Path, hostname: str) -> set:
@@ -235,9 +356,8 @@ def main():
     found_containers = False
     containers = []
     for item in script_dir.iterdir():
-        if item.is_dir() and not item.name.startswith(
-            "."
-        ):  # Basic check for container dir
+        if item.is_dir() and not item.name.startswith(".") and item.name != "__pycache__":
+            # Basic check for container dir
             container_name = item.name
 
             # Check if this container should be installed based on inventory
@@ -256,11 +376,31 @@ def main():
             found_containers = True
 
             logger.info(f"Processing container '{container_name}':")
-            logger.debug(f"  Source: {source_dir}")
+
+            # --- Detect base/overlay structure ---
+            base_dir = get_source_dir(source_dir)
+            overlay_dir = get_overlay_dir(source_dir, current_hostname)
+            uses_base_overlay = base_dir != source_dir
+
+            if uses_base_overlay:
+                logger.debug(f"  Using base/overlay structure")
+                logger.debug(f"  Base: {base_dir}")
+                if overlay_dir:
+                    logger.debug(f"  Overlay: {overlay_dir}")
+                else:
+                    logger.debug(f"  No overlay for hostname '{current_hostname}'")
+            else:
+                logger.debug(f"  Using flat structure (no base/ directory)")
+                logger.debug(f"  Source: {source_dir}")
+
             logger.debug(f"  Target: {target_dir}")
 
             # --- Read container's config.yml if it exists ---
+            # Check in root first (shared config), then base
             config_file = source_dir / "config.yml"
+            if not config_file.exists() and uses_base_overlay:
+                config_file = base_dir / "config.yml"
+
             if config_file.exists():
                 try:
                     with open(config_file, "r") as f:
@@ -294,63 +434,95 @@ def main():
 
             target_dir.mkdir(parents=True, exist_ok=True)
 
-            # --- Walk Source Directory and Copy/Substitute ---
-            for root, dirs, files in os.walk(source_dir):
+            # --- Walk Base/Source Directory and Copy/Substitute/Merge ---
+            for root, dirs, files in os.walk(base_dir):
                 source_root = pathlib.Path(root)
-                relative_path = source_root.relative_to(source_dir)
+                relative_path = source_root.relative_to(base_dir)
                 target_root = target_dir / relative_path
+
+                # Skip base/ and overlays/ directories in output
+                dirs[:] = [d for d in dirs if d not in ("base", "overlays")]
 
                 # Create directories
                 for dir_name in dirs:
-                    source_subdir = source_root / dir_name
                     target_subdir = target_root / dir_name
                     if not target_subdir.exists():
                         logger.info(
                             f"    Creating dir:  {target_subdir.relative_to(TARGET_BASE_DIR)}"
                         )
                         target_subdir.mkdir()
-                    # Preserve permissions on directories if needed (more complex)
 
-                # Copy/Substitute files
+                # Process files
                 for file_name in files:
-                    source_file = source_root / file_name
+                    # Skip config.yml (internal use only)
+                    if file_name == "config.yml":
+                        continue
+
+                    base_file = source_root / file_name
                     target_file = target_root / file_name
                     relative_file_path = target_file.relative_to(TARGET_BASE_DIR)
 
-                    if not secrets or not is_likely_text_file(source_file):
-                        # Copy binary files or if no secrets are loaded
-                        logger.info(f"    Copying:     {relative_file_path}")
-                        shutil.copy2(
-                            source_file, target_file
-                        )  # copy2 preserves metadata
-                    else:
-                        # Read, substitute, and write text files
-                        logger.info(f"    Substituting: {relative_file_path}")
-                        try:
-                            with open(source_file, "r", encoding="utf-8") as sf:
-                                content = sf.read()
+                    # Check if overlay file exists
+                    overlay_file = None
+                    if overlay_dir:
+                        overlay_file_path = overlay_dir / relative_path / file_name
+                        if overlay_file_path.exists():
+                            overlay_file = overlay_file_path
 
-                            substituted_content = substitute_secrets(content, secrets)
+                    if not is_likely_text_file(base_file):
+                        # Copy binary files
+                        logger.info(f"    Copying:     {relative_file_path}")
+                        shutil.copy2(base_file, target_file)
+                    elif overlay_file:
+                        # Merge base + overlay, then substitute secrets
+                        logger.info(f"    Merging:     {relative_file_path}")
+                        try:
+                            with open(base_file, "r", encoding="utf-8") as bf:
+                                base_content = bf.read()
+                            with open(overlay_file, "r", encoding="utf-8") as of:
+                                overlay_content = of.read()
+
+                            merged_content = merge_file_content(
+                                base_content, overlay_content, file_name
+                            )
+                            if secrets:
+                                merged_content = substitute_secrets(
+                                    merged_content, secrets
+                                )
 
                             with open(target_file, "w", encoding="utf-8") as tf:
-                                tf.write(substituted_content)
-                            # Preserve permissions after writing
-                            shutil.copymode(source_file, target_file)
+                                tf.write(merged_content)
+                            shutil.copymode(base_file, target_file)
                         except Exception as e:
-                            logger.error(f"Failed processing file {source_file}: {e}")
+                            logger.error(
+                                f"Failed merging file {base_file} with {overlay_file}: {e}"
+                            )
+                            sys.exit(1)
+                    else:
+                        # No overlay - just substitute secrets
+                        logger.info(f"    Substituting: {relative_file_path}")
+                        try:
+                            with open(base_file, "r", encoding="utf-8") as sf:
+                                content = sf.read()
+
+                            if secrets:
+                                content = substitute_secrets(content, secrets)
+
+                            with open(target_file, "w", encoding="utf-8") as tf:
+                                tf.write(content)
+                            shutil.copymode(base_file, target_file)
+                        except Exception as e:
+                            logger.error(f"Failed processing file {base_file}: {e}")
                             sys.exit(1)
 
                     # Create symlinks for container files to systemd directory
                     if file_name.endswith(".container"):
-                        # Ensure systemd directory exists
                         SYSTEMD_CONFIG_DIR.mkdir(parents=True, exist_ok=True)
 
                         systemd_link = SYSTEMD_CONFIG_DIR / file_name
-                        # Remove existing symlink if it exists
                         if systemd_link.exists() or systemd_link.is_symlink():
                             systemd_link.unlink()
 
-                        # Create new symlink
                         logger.info(
                             f"    Creating symlink: {systemd_link} -> {target_file}"
                         )
@@ -361,6 +533,72 @@ def main():
                                 f"Failed to create symlink for {file_name}: {e}"
                             )
                             sys.exit(1)
+
+            # --- Process overlay-only files (files in overlay but not in base) ---
+            if overlay_dir:
+                for root, dirs, files in os.walk(overlay_dir):
+                    overlay_root = pathlib.Path(root)
+                    relative_path = overlay_root.relative_to(overlay_dir)
+                    base_root = base_dir / relative_path
+                    target_root = target_dir / relative_path
+
+                    # Create directories that exist only in overlay
+                    for dir_name in dirs:
+                        target_subdir = target_root / dir_name
+                        if not target_subdir.exists():
+                            logger.info(
+                                f"    Creating dir:  {target_subdir.relative_to(TARGET_BASE_DIR)}"
+                            )
+                            target_subdir.mkdir(parents=True, exist_ok=True)
+
+                    for file_name in files:
+                        if file_name == "config.yml":
+                            continue
+
+                        base_file = base_root / file_name
+                        overlay_file = overlay_root / file_name
+                        target_file = target_root / file_name
+
+                        # Skip if already processed (exists in base)
+                        if base_file.exists():
+                            continue
+
+                        relative_file_path = target_file.relative_to(TARGET_BASE_DIR)
+
+                        if not is_likely_text_file(overlay_file):
+                            logger.info(f"    Copying:     {relative_file_path} (overlay-only)")
+                            shutil.copy2(overlay_file, target_file)
+                        else:
+                            logger.info(f"    Substituting: {relative_file_path} (overlay-only)")
+                            try:
+                                with open(overlay_file, "r", encoding="utf-8") as of:
+                                    content = of.read()
+
+                                if secrets:
+                                    content = substitute_secrets(content, secrets)
+
+                                with open(target_file, "w", encoding="utf-8") as tf:
+                                    tf.write(content)
+                                shutil.copymode(overlay_file, target_file)
+                            except Exception as e:
+                                logger.error(f"Failed processing overlay file {overlay_file}: {e}")
+                                sys.exit(1)
+
+                        if file_name.endswith(".container"):
+                            SYSTEMD_CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+                            systemd_link = SYSTEMD_CONFIG_DIR / file_name
+                            if systemd_link.exists() or systemd_link.is_symlink():
+                                systemd_link.unlink()
+                            logger.info(
+                                f"    Creating symlink: {systemd_link} -> {target_file}"
+                            )
+                            try:
+                                os.symlink(target_file, systemd_link)
+                            except Exception as e:
+                                logger.error(
+                                    f"Failed to create symlink for {file_name}: {e}"
+                                )
+                                sys.exit(1)
 
     if not found_containers:
         logger.info("No container subdirectories found.")
