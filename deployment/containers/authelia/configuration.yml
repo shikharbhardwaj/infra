@@ -1,0 +1,74 @@
+---
+# Authelia Configuration
+# https://www.authelia.com/configuration/
+
+theme: dark
+
+server:
+  address: 'tcp://:9091'
+
+log:
+  level: info
+
+totp:
+  issuer: '{{ oci_parent_host }}'
+  period: 30
+  skew: 1
+
+webauthn:
+  disable: false
+  display_name: '{{ oci_parent_host }}'
+  attestation_conveyance_preference: indirect
+  user_verification: preferred
+  timeout: 60s
+
+authentication_backend:
+  file:
+    path: /config/users_database.yml
+    password:
+      algorithm: argon2id
+      iterations: 3
+      memory: 65536
+      parallelism: 4
+      key_length: 32
+      salt_length: 16
+
+access_control:
+  default_policy: deny
+  rules:
+    # Public access to Authelia itself
+    - domain: 'auth.{{ oci_parent_host }}'
+      policy: bypass
+
+    # Services requiring 2FA
+    - domain: 'clips.{{ oci_parent_host }}'
+      policy: two_factor
+
+    # Add more services that need protection here
+    # - domain: 'budget.{{ oci_host }}'
+    #   policy: two_factor
+
+session:
+  name: authelia_session
+  same_site: lax
+  inactivity: 5m
+  expiration: 1h
+  remember_me: 1M
+  cookies:
+    - domain: '{{ oci_parent_host }}'
+      authelia_url: 'https://auth.{{ oci_parent_host }}'
+      default_redirection_url: 'https://clips.{{ oci_parent_host }}'
+
+regulation:
+  max_retries: 3
+  find_time: 2m
+  ban_time: 5m
+
+storage:
+  local:
+    path: /data/db.sqlite3
+
+notifier:
+  disable_startup_check: true
+  filesystem:
+    filename: /data/notification.txt

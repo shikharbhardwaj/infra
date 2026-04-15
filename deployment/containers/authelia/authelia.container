@@ -1,0 +1,39 @@
+[Unit]
+Description=Authelia - Authentication and 2FA
+Wants=network.target
+After=network.target
+
+[Container]
+ContainerName=authelia
+Image=docker.io/authelia/authelia:latest
+AutoUpdate=registry
+
+Network=web
+
+# Configuration and data directories
+Volume=%h/containers/authelia/configuration.yml:/config/configuration.yml:ro,Z
+Volume=%h/containers/authelia/users_database.yml:/config/users_database.yml:Z
+Volume=%h/containers/authelia/data:/data:Z
+
+# Secrets
+Secret=authelia_jwt_secret,type=env,target=AUTHELIA_JWT_SECRET
+Secret=authelia_session_secret,type=env,target=AUTHELIA_SESSION_SECRET
+Secret=authelia_storage_encryption_key,type=env,target=AUTHELIA_STORAGE_ENCRYPTION_KEY
+
+Label=traefik.enable=true
+Label=traefik.http.routers.authelia.rule=Host(`auth.{{ oci_parent_host }}`)
+Label=traefik.http.routers.authelia.entryPoints=websecure
+Label=traefik.http.routers.authelia.tls=true
+Label=traefik.http.routers.authelia.tls.certresolver=cloudflare
+Label=traefik.http.services.authelia.loadbalancer.server.port=9091
+
+# Middleware for forward auth - used by other services
+Label=traefik.http.middlewares.authelia.forwardAuth.address=http://authelia:9091/api/authz/forward-auth
+Label=traefik.http.middlewares.authelia.forwardAuth.trustForwardHeader=true
+Label=traefik.http.middlewares.authelia.forwardAuth.authResponseHeaders=Remote-User,Remote-Groups,Remote-Email,Remote-Name
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target

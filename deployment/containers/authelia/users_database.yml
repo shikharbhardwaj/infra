@@ -1,0 +1,20 @@
+---
+# Authelia Users Database
+# https://www.authelia.com/reference/guides/passwords/
+#
+# To generate a password hash, run:
+#   podman run --rm authelia/authelia:latest authelia crypto hash generate argon2 --password 'YOUR_PASSWORD'
+#
+# Replace the hash below with your generated hash.
+
+users:
+  admin:
+    disabled: false
+    displayname: "Admin User"
+    # Default password is 'changeme' - CHANGE THIS!
+    # Generate a new hash using the command above
+    password: "$argon2id$v=19$m=65536,t=3,p=4$placeholder_change_this"
+    email: admin@example.com
+    groups:
+      - admins
+      - users
