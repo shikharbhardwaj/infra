@@ -4,7 +4,7 @@ Wants=network.target
 
 [Container]
 ContainerName=traefik
-Image=docker.io/traefik:v3.3
+Image=docker.io/traefik:v3
 AutoUpdate=registry
 
 Network=web
