@@ -5,7 +5,7 @@ After=network.target
 
 [Container]
 ContainerName=uptime-kuma
-Image=docker.io/louislam/uptime-kuma:1-alpine
+Image=docker.io/louislam/uptime-kuma:2-slim
 AutoUpdate=registry
 
 Network=web
