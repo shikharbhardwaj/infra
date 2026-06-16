@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: sabnzbd
+spec:
+  selector:
+    matchLabels:
+      app: sabnzbd
+  serviceName: sabnzbd
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: sabnzbd
+    spec:
+      securityContext:
+        fsGroup: 1000
+        supplementalGroups: [3001]
+      containers:
+      - name: sabnzbd
+        image: lscr.io/linuxserver/sabnzbd:latest
+        env:
+        - name: PUID
+          value: "1000"
+        - name: PGID
+          value: "1000"
+        ports:
+        - containerPort: 8080
+          name: web
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        - name: media
+          mountPath: /data/media
+        - name: incomplete
+          mountPath: /data/incomplete
+        - name: tmp
+          mountPath: /tmp
+        resources:
+          requests:
+            memory: 256Mi
+            cpu: 100m
+      volumes:
+      - name: media
+        persistentVolumeClaim:
+          claimName: deluge-media-pvc
+      - name: tmp
+        emptyDir: {}
+  volumeClaimTemplates:
+  - metadata:
+      name: config
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
+      storageClassName: freenas-iscsi-csi
+  - metadata:
+      name: incomplete
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 100Gi
+      storageClassName: freenas-iscsi-csi
