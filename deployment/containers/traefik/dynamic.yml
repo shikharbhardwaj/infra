@@ -38,8 +38,14 @@ http:
       loadBalancer:
         servers:
           - url: "https://immich.{{ tenzing_host }}"
+        serversTransport: photos-transport
 
 
   serversTransports:
     insecure-transport:
       insecureSkipVerify: true
+    photos-transport:
+      forwardingTimeouts:
+        dialTimeout: 30s
+        responseHeaderTimeout: 0
+        readIdleTimeout: 3600s

@@ -1,0 +1,17 @@
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: traefik
+spec:
+  valuesContent: |-
+    ports:
+      web:
+        transport:
+          respondingTimeouts:
+            readTimeout: "0"
+            writeTimeout: "0"
+      websecure:
+        transport:
+          respondingTimeouts:
+            readTimeout: "0"
+            writeTimeout: "0"

@@ -9,6 +9,11 @@ entryPoints:
     forwardedHeaders:
       trustedIPs:
         - "10.0.0.0/16"
+    transport:
+      respondingTimeouts:
+        readTimeout: 0
+        writeTimeout: 0
+        idleTimeout: 3600s
 
 api:
   dashboard: true
