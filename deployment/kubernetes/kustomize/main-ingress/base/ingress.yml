@@ -88,6 +88,16 @@ spec:
             name: minio
             port: 
               number: 9000
+  - host: "sabnzbd.{{ host }}"
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: sabnzbd
+            port:
+              number: 8080
   - host: "deluge.{{ host }}"
     http:
       paths:
@@ -96,7 +106,7 @@ spec:
         backend:
           service:
             name: deluge
-            port: 
+            port:
               number: 8112
   - host: "radarr.{{ host }}"
     http:
@@ -208,6 +218,16 @@ spec:
             name: crafty
             port: 
               number: 8443
+  - host: "byparr.{{ host }}"
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: byparr
+            port:
+              number: 8191
   - host: "speedtest.{{ host }}"
     http:
       paths:
@@ -216,7 +236,7 @@ spec:
         backend:
           service:
             name: openspeedtest
-            port: 
+            port:
               number: 3000
 ---
 apiVersion: traefik.io/v1alpha1
