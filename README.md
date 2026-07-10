@@ -49,6 +49,16 @@ Download the kubectl config from `/etc/rancher/k3s/k3s.yaml` from one of the
 Kubernetes nodes. Substitute things like cluster name/user name etc and place in
 `~/.kube/config`
 
+### Host inventory
+
+| Host | Type | Role | Services |
+| ---- | ---- | ---- | -------- |
+| `tenzing` | Kubernetes cluster | Hosts most apps (kustomize/helm, see App inventory below) | See App inventory |
+| `tyr` | Oracle Cloud VM | Public-facing utility host | traefik, crafty, uptime-kuma |
+| `gliese` | Windows machine | Home services host | traefik, actual-budget, replay-hub, crowdsec, crowdsec-bouncer, uptime-kuma |
+
+Note: gliese overrides traefik's host-side ports (`traefik_http_port`/`traefik_https_port`/`traefik_dashboard_port` in its local `secrets.yml`) since 80/443 are already used by something else on that host. CrowdSec + the traefik bouncer protect gliese's own routes (actual-budget, replay-hub); `uptime-kuma`'s container template is shared with tyr, which has no bouncer, so it's intentionally left unprotected by the middleware for now.
+
 ### App inventory
 
 TODO: Move all these to ArgoCD.
