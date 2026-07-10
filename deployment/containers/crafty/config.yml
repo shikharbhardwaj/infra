@@ -1,5 +1,4 @@
 # Crafty Controller Configuration
-# This file is used by the installation script to set up the container
-podman_secrets:
-  - crafty_admin_password
-
+# This file is used by the installation script to set up the container.
+# No podman secrets required - the admin account is created via the web UI
+# on first access (see README.md).
