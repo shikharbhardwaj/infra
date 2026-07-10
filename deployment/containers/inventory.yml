@@ -12,23 +12,15 @@
 # To install all containers regardless of inventory:
 #   ./install --all
 
-# Example configuration:
-#gliese:
-    #- traefik
-    #- uptime-kuma
-    #- crafty
 tyr:
   - traefik
   - crafty
   - uptime-kuma
 
-# Additional example hosts:
-# server-1:
-#   - traefik
-#   - uptime-kuma
-#
-# server-2:
-#   - crafty
-#
-# server-3:
-#   - traefik
+gliese:
+  - traefik
+  - actual-budget
+  - replay-hub
+  - crowdsec
+  - crowdsec-bouncer
+  - uptime-kuma
