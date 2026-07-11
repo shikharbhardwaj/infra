@@ -26,7 +26,7 @@ Label=traefik.http.routers.phoenix.tls=true
 Label=traefik.http.routers.phoenix.tls.certresolver=cloudflare
 Label=traefik.http.routers.phoenix.service=phoenix
 Label=traefik.http.services.phoenix.loadbalancer.server.url=https://{{ thor_tailscale_ip }}:8006
-Label=traefik.http.services.phoenix.loadbalancer.serverstransport=insecure-transport@docker
+Label=traefik.http.services.phoenix.loadbalancer.serverstransport=insecure-transport@file
 
 # media -> Jellyfin, via tailscale
 Label=traefik.http.routers.media.rule=Host(`media.{{ oci_parent_host }}`)
@@ -43,7 +43,7 @@ Label=traefik.http.routers.photos.tls=true
 Label=traefik.http.routers.photos.tls.certresolver=cloudflare
 Label=traefik.http.routers.photos.service=photos
 Label=traefik.http.services.photos.loadbalancer.server.url=https://immich.{{ tenzing_host }}
-Label=traefik.http.services.photos.loadbalancer.serverstransport=photos-transport@docker
+Label=traefik.http.services.photos.loadbalancer.serverstransport=photos-transport@file
 
 # speedtest -> tenzing
 Label=traefik.http.routers.speedtest.rule=Host(`speedtest.{{ oci_host }}`)
@@ -60,11 +60,6 @@ Label=traefik.http.routers.drive.tls=true
 Label=traefik.http.routers.drive.tls.certresolver=cloudflare
 Label=traefik.http.routers.drive.service=drive
 Label=traefik.http.services.drive.loadbalancer.server.url=https://drive.{{ tenzing_host }}
-
-Label=traefik.http.serversTransports.insecure-transport.insecureSkipVerify=true
-Label=traefik.http.serversTransports.photos-transport.forwardingTimeouts.dialTimeout=30s
-Label=traefik.http.serversTransports.photos-transport.forwardingTimeouts.responseHeaderTimeout=0
-Label=traefik.http.serversTransports.photos-transport.forwardingTimeouts.readIdleTimeout=3600s
 
 [Service]
 Restart=always

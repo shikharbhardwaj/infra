@@ -24,6 +24,13 @@ providers:
     endpoint: "unix:///var/run/docker.sock"
     exposedByDefault: false
     useBindPortIP: true
+  # serversTransports aren't supported via the docker/podman label provider
+  # (Traefik's rawdata dump has no serversTransports key at all for it), so
+  # this stays file-based. It's purely static/host-agnostic - safe on every
+  # host since transports are inert unless a service actually references one.
+  file:
+    filename: /etc/traefik/transports.yml
+    watch: true
 
 certificatesResolvers:
   cloudflare:

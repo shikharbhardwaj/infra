@@ -1,0 +1,9 @@
+http:
+  serversTransports:
+    insecure-transport:
+      insecureSkipVerify: true
+    photos-transport:
+      forwardingTimeouts:
+        dialTimeout: 30s
+        responseHeaderTimeout: 0
+        readIdleTimeout: 3600s
