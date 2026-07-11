@@ -32,7 +32,6 @@ Label=traefik.http.routers.replay_hub.rule=Host(`clips.{{ oci_parent_host }}`)
 Label=traefik.http.routers.replay_hub.entryPoints=websecure
 Label=traefik.http.routers.replay_hub.tls=true
 Label=traefik.http.routers.replay_hub.tls.certresolver=cloudflare
-Label=traefik.http.routers.replay_hub.middlewares=crowdsec-bouncer@docker
 Label=traefik.http.services.replay_hub.loadbalancer.server.port=8080
 
 [Service]

@@ -22,7 +22,6 @@ PublishPort={{ traefik_dashboard_port }}:8080
 Volume=%h/containers/traefik/traefik.yml:/etc/traefik/traefik.yml:Z
 Volume=%h/containers/traefik/dynamic.yml:/etc/traefik/dynamic.yml:Z
 Volume=%h/containers/traefik/acme.json:/letsencrypt/acme.json:Z
-Volume=%h/containers/traefik/logs:/var/log/traefik:Z
 
 Volume=/run/user/%U/podman/podman.sock:/var/run/docker.sock:z
 

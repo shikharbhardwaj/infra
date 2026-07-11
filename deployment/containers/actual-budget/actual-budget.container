@@ -21,7 +21,6 @@ Label=traefik.http.routers.actual_budget.rule=Host(`budget.{{ oci_host }}`)
 Label=traefik.http.routers.actual_budget.entryPoints=websecure
 Label=traefik.http.routers.actual_budget.tls=true
 Label=traefik.http.routers.actual_budget.tls.certresolver=cloudflare
-Label=traefik.http.routers.actual_budget.middlewares=crowdsec-bouncer@docker
 Label=traefik.http.services.actual_budget.loadbalancer.server.port=5006
 
 [Service]

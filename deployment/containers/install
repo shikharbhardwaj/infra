@@ -96,6 +96,47 @@ def load_inventory(inventory_path: pathlib.Path, hostname: str) -> set:
         sys.exit(1)
 
 
+def find_missing_placeholders(
+    script_dir: pathlib.Path, allowed_containers, secrets: dict
+) -> dict:
+    """Scans container directories for {{ var }} placeholders that have no
+    matching key in the loaded secrets, without modifying anything.
+
+    Returns a dict of container_name -> set of missing variable names.
+    """
+    missing_by_container = {}
+
+    for item in script_dir.iterdir():
+        if not item.is_dir() or item.name.startswith("."):
+            continue
+
+        container_name = item.name
+        if allowed_containers is not None and container_name not in allowed_containers:
+            continue
+
+        for root, _dirs, files in os.walk(item):
+            for file_name in files:
+                file_path = pathlib.Path(root) / file_name
+                if not is_likely_text_file(file_path):
+                    continue
+                try:
+                    content = file_path.read_text(encoding="utf-8")
+                except (UnicodeDecodeError, IOError):
+                    continue
+
+                missing = {
+                    match.group(1)
+                    for match in SECRET_PLACEHOLDER_PATTERN.finditer(content)
+                    if match.group(1) not in secrets
+                }
+                if missing:
+                    missing_by_container.setdefault(container_name, set()).update(
+                        missing
+                    )
+
+    return missing_by_container
+
+
 def create_podman_secrets(container_name: str, podman_secrets: list, secrets: dict):
     """Creates podman secrets for specified secret names."""
     for secret_name in podman_secrets:
@@ -225,6 +266,21 @@ def main():
         logger.info(
             f"Secrets file not found at {secrets_path}. Proceeding without secret substitution."
         )
+
+    # --- Pre-flight: fail loudly on unresolvable {{ var }} placeholders ---
+    # Without this, an unsubstituted placeholder gets silently written into a
+    # live config (e.g. a quadlet file), which only surfaces later as an
+    # unrelated-looking error (e.g. systemd "Unit not found").
+    missing_by_container = find_missing_placeholders(
+        script_dir, allowed_containers, secrets
+    )
+    if missing_by_container:
+        logger.error(
+            f"Missing secrets required to render config files (add these to {secrets_path}):"
+        )
+        for container_name, missing_vars in sorted(missing_by_container.items()):
+            logger.error(f"  {container_name}: {', '.join(sorted(missing_vars))}")
+        sys.exit(1)
 
     # --- Ensure Target Base Directory Exists ---
     logger.info(f"Ensuring target base directory exists: {TARGET_BASE_DIR}")
