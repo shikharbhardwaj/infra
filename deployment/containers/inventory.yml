@@ -21,4 +21,3 @@ gliese:
   - traefik
   - actual-budget
   - replay-hub
-  - uptime-kuma
