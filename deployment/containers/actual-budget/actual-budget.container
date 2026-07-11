@@ -24,7 +24,7 @@ Label=traefik.http.routers.actual_budget.tls=true
 Label=traefik.http.routers.actual_budget.tls.certresolver=cloudflare
 # Only request a cert for the public name - local_host has no public DNS, so
 # an ACME challenge for it would just fail.
-Label=traefik.http.routers.actual_budget.tls.domains[0].main=budget.{{ oci_parent_host }}
+Label=traefik.http.routers.actual_budget.tls.domains[0].main=budget.gliese.{{ oci_parent_host }}
 Label=traefik.http.services.actual_budget.loadbalancer.server.port=5006
 
 [Service]

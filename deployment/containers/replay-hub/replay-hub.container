@@ -35,7 +35,7 @@ Label=traefik.http.routers.replay_hub.tls=true
 Label=traefik.http.routers.replay_hub.tls.certresolver=cloudflare
 # Only request a cert for the public name - local_host has no public DNS, so
 # an ACME challenge for it would just fail.
-Label=traefik.http.routers.replay_hub.tls.domains[0].main=clips.{{ oci_parent_host }}
+Label=traefik.http.routers.replay_hub.tls.domains[0].main=clips.gliese.{{ oci_parent_host }}
 Label=traefik.http.services.replay_hub.loadbalancer.server.port=8080
 
 [Service]
