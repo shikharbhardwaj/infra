@@ -17,11 +17,14 @@ Volume=%h/containers/actual-budget/data:/data
 
 # Traefik labels for reverse proxy
 Label=traefik.enable=true
-Label=traefik.http.routers.actual_budget.rule=Host(`budget.{{ oci_host }}`)
+# Dual-host: reachable via the public domain or the local network directly.
+Label=traefik.http.routers.actual_budget.rule=Host(`budget.{{ oci_parent_host }}`) || Host(`budget.{{ local_host }}`)
 Label=traefik.http.routers.actual_budget.entryPoints=websecure
 Label=traefik.http.routers.actual_budget.tls=true
 Label=traefik.http.routers.actual_budget.tls.certresolver=cloudflare
-Label=traefik.http.routers.actual_budget.middlewares=crowdsec-bouncer@docker
+# Only request a cert for the public name - local_host has no public DNS, so
+# an ACME challenge for it would just fail.
+Label=traefik.http.routers.actual_budget.tls.domains[0].main=budget.{{ oci_parent_host }}
 Label=traefik.http.services.actual_budget.loadbalancer.server.port=5006
 
 [Service]

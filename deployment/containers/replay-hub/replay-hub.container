@@ -28,11 +28,14 @@ Volume=%h/clips:/clips:ro
 # Environment=WEBDAV_ROOT_PATH=replays/
 
 Label=traefik.enable=true
-Label=traefik.http.routers.replay_hub.rule=Host(`clips.{{ oci_parent_host }}`)
+# Dual-host: reachable via the public domain or the local network directly.
+Label=traefik.http.routers.replay_hub.rule=Host(`clips.{{ oci_parent_host }}`) || Host(`clips.{{ local_host }}`)
 Label=traefik.http.routers.replay_hub.entryPoints=websecure
 Label=traefik.http.routers.replay_hub.tls=true
 Label=traefik.http.routers.replay_hub.tls.certresolver=cloudflare
-Label=traefik.http.routers.replay_hub.middlewares=crowdsec-bouncer@docker
+# Only request a cert for the public name - local_host has no public DNS, so
+# an ACME challenge for it would just fail.
+Label=traefik.http.routers.replay_hub.tls.domains[0].main=clips.{{ oci_parent_host }}
 Label=traefik.http.services.replay_hub.loadbalancer.server.port=8080
 
 [Service]
