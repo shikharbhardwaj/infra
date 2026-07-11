@@ -18,7 +18,7 @@ Volume=%h/containers/actual-budget/data:/data
 # Traefik labels for reverse proxy
 Label=traefik.enable=true
 # Dual-host: reachable via the public domain or the local network directly.
-Label=traefik.http.routers.actual_budget.rule=Host(`budget.{{ oci_parent_host }}`) || Host(`budget.{{ local_host }}`)
+Label="traefik.http.routers.actual_budget.rule=Host(`budget.gliese.{{ oci_parent_host }}`) || Host(`budget.{{ local_host }}`)"
 Label=traefik.http.routers.actual_budget.entryPoints=websecure
 Label=traefik.http.routers.actual_budget.tls=true
 Label=traefik.http.routers.actual_budget.tls.certresolver=cloudflare
