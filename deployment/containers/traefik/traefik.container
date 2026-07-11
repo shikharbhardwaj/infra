@@ -18,9 +18,9 @@ PublishPort={{ traefik_http_port }}:80
 PublishPort={{ traefik_https_port }}:443
 PublishPort={{ traefik_dashboard_port }}:8080
 
-# Mount static and dynamic configuration files from host
+# Mount static configuration file from host. Dynamic config comes entirely
+# from container labels now (see external-routes/ for non-podman backends).
 Volume=%h/containers/traefik/traefik.yml:/etc/traefik/traefik.yml:Z
-Volume=%h/containers/traefik/dynamic.yml:/etc/traefik/dynamic.yml:Z
 Volume=%h/containers/traefik/acme.json:/letsencrypt/acme.json:Z
 Volume=%h/containers/traefik/logs:/var/log/traefik:Z
 

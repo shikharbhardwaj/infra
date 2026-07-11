@@ -1,0 +1,73 @@
+[Unit]
+Description=External Service Routes - Traefik labels for non-podman backends
+Wants=network.target
+After=network.target
+
+[Container]
+ContainerName=external-routes
+Image=docker.io/library/alpine:latest
+AutoUpdate=registry
+Exec=sleep infinity
+
+Network=web
+
+# This container runs nothing - it only exists to carry Traefik labels for
+# backends that aren't podman containers on this host (Proxmox on thor,
+# Jellyfin, and apps on the tenzing k8s cluster), so they're discovered the
+# same way as everything else instead of living in a shared, host-agnostic
+# dynamic.yml. Only install this on the host that should actually front
+# these routes (tyr) - see inventory.yml.
+Label=traefik.enable=true
+
+# phoenix -> Proxmox VE web UI on thor, via tailscale
+Label=traefik.http.routers.phoenix.rule=Host(`phoenix.{{ oci_host }}`)
+Label=traefik.http.routers.phoenix.entryPoints=websecure
+Label=traefik.http.routers.phoenix.tls=true
+Label=traefik.http.routers.phoenix.tls.certresolver=cloudflare
+Label=traefik.http.routers.phoenix.service=phoenix
+Label=traefik.http.services.phoenix.loadbalancer.server.url=https://{{ thor_tailscale_ip }}:8006
+Label=traefik.http.services.phoenix.loadbalancer.serverstransport=insecure-transport@docker
+
+# media -> Jellyfin, via tailscale
+Label=traefik.http.routers.media.rule=Host(`media.{{ oci_parent_host }}`)
+Label=traefik.http.routers.media.entryPoints=websecure
+Label=traefik.http.routers.media.tls=true
+Label=traefik.http.routers.media.tls.certresolver=cloudflare
+Label=traefik.http.routers.media.service=media
+Label=traefik.http.services.media.loadbalancer.server.url=http://{{ jellyfin_tailscale_ip }}:8096
+
+# photos -> Immich on tenzing
+Label=traefik.http.routers.photos.rule=Host(`photos.{{ oci_parent_host }}`)
+Label=traefik.http.routers.photos.entryPoints=websecure
+Label=traefik.http.routers.photos.tls=true
+Label=traefik.http.routers.photos.tls.certresolver=cloudflare
+Label=traefik.http.routers.photos.service=photos
+Label=traefik.http.services.photos.loadbalancer.server.url=https://immich.{{ tenzing_host }}
+Label=traefik.http.services.photos.loadbalancer.serverstransport=photos-transport@docker
+
+# speedtest -> tenzing
+Label=traefik.http.routers.speedtest.rule=Host(`speedtest.{{ oci_host }}`)
+Label=traefik.http.routers.speedtest.entryPoints=websecure
+Label=traefik.http.routers.speedtest.tls=true
+Label=traefik.http.routers.speedtest.tls.certresolver=cloudflare
+Label=traefik.http.routers.speedtest.service=speedtest
+Label=traefik.http.services.speedtest.loadbalancer.server.url=https://speedtest.{{ tenzing_host }}
+
+# drive -> tenzing
+Label=traefik.http.routers.drive.rule=Host(`drive.{{ oci_parent_host }}`)
+Label=traefik.http.routers.drive.entryPoints=websecure
+Label=traefik.http.routers.drive.tls=true
+Label=traefik.http.routers.drive.tls.certresolver=cloudflare
+Label=traefik.http.routers.drive.service=drive
+Label=traefik.http.services.drive.loadbalancer.server.url=https://drive.{{ tenzing_host }}
+
+Label=traefik.http.serversTransports.insecure-transport.insecureSkipVerify=true
+Label=traefik.http.serversTransports.photos-transport.forwardingTimeouts.dialTimeout=30s
+Label=traefik.http.serversTransports.photos-transport.forwardingTimeouts.responseHeaderTimeout=0
+Label=traefik.http.serversTransports.photos-transport.forwardingTimeouts.readIdleTimeout=3600s
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target

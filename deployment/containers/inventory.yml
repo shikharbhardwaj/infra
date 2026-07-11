@@ -16,6 +16,7 @@ tyr:
   - traefik
   - crafty
   - uptime-kuma
+  - external-routes
 
 gliese:
   - traefik
