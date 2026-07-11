@@ -1,0 +1,29 @@
+name: CD Containers
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - deployment/containers/**
+  workflow_dispatch: {}
+
+jobs:
+  deploy-containers:
+    runs-on: [self-hosted, linux, x64]
+    steps:
+      # gliese is intentionally excluded: its live container config has
+      # drifted from git (see the commit reverting CrowdSec/authelia there)
+      # and needs reconciling before automated deploys can target it safely.
+      - name: Deploy to tyr
+        run: |
+          set -euo pipefail
+          for target in "ubuntu@tyr"; do
+            echo "Deploying containers to $target"
+            ssh -o StrictHostKeyChecking=accept-new "$target" '
+              set -euo pipefail
+              cd ~/infra
+              git pull --ff-only origin main
+              cd deployment/containers
+              ./install --inventory inventory.yml --restart
+            '
+          done

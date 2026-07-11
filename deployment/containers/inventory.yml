@@ -21,6 +21,4 @@ gliese:
   - traefik
   - actual-budget
   - replay-hub
-  - crowdsec
-  - crowdsec-bouncer
   - uptime-kuma
