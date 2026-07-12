@@ -1,0 +1,41 @@
+[Unit]
+Description=LiteLLM Proxy - unified OpenAI-compatible model routing
+Wants=network.target
+After=network.target
+
+[Container]
+ContainerName=litellm
+Image=ghcr.io/berriai/litellm:main-stable
+AutoUpdate=registry
+
+Network=web
+
+Volume=%h/containers/litellm/litellm-config.yaml:/app/config.yaml:Z
+
+# The image's default command doesn't load a mounted config on its own -
+# has to be told to via --config, per LiteLLM's docker quick start.
+Exec=--config /app/config.yaml
+
+Environment=LITELLM_LOG=INFO
+
+# OpenRouter key referenced from config.yaml via os.environ/OPENROUTER_API_KEY.
+Secret=openrouter_api_key,type=env,target=OPENROUTER_API_KEY
+# Master key clients must present to the proxy (Obsidian Copilot, MCP clients, etc).
+Secret=litellm_master_key,type=env,target=LITELLM_MASTER_KEY
+
+Label=traefik.enable=true
+# Dual-host: reachable via the public domain or the local network directly.
+Label="traefik.http.routers.litellm.rule=Host(`litellm.gliese.{{ oci_parent_host }}`) || Host(`litellm.{{ local_host }}`)"
+Label=traefik.http.routers.litellm.entryPoints=websecure
+Label=traefik.http.routers.litellm.tls=true
+Label=traefik.http.routers.litellm.tls.certresolver=cloudflare
+# Only request a cert for the public name - local_host has no public DNS, so
+# an ACME challenge for it would just fail.
+Label=traefik.http.routers.litellm.tls.domains[0].main=litellm.gliese.{{ oci_parent_host }}
+Label=traefik.http.services.litellm.loadbalancer.server.port=4000
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target

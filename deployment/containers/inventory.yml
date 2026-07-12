@@ -22,3 +22,4 @@ gliese:
   - traefik
   - actual-budget
   - replay-hub
+  - litellm
