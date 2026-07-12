@@ -1,0 +1,36 @@
+# LiteLLM proxy config - the model routing table Obsidian Copilot (and any
+# other OpenAI-compatible client) talks to via litellm.gliese.{{ oci_parent_host }}.
+#
+# Local-first, cloud opt-in: anything touching the vault must stay pinned to
+# a local model at the client (Obsidian Copilot), since retrieved chunks get
+# injected into the prompt - LiteLLM only knows about the final request, not
+# which documents fed it, so it cannot enforce that rule itself. See
+# deployment/mac/obsidian/plugin-settings.md.
+model_list:
+  - model_name: local-mac
+    litellm_params:
+      model: openai/qwen3-32b # placeholder - set to whatever LM Studio has loaded
+      api_base: http://{{ mac_tailscale_ip }}:1234/v1
+      api_key: "not-needed"
+
+  - model_name: openrouter-frontier
+    litellm_params:
+      model: openrouter/anthropic/claude-sonnet-4.5
+      api_key: os.environ/OPENROUTER_API_KEY
+
+  # TODO(luna): add a vLLM entry here once the gaming PC is set up as a
+  # tracked host, then fill out router_settings.fallbacks below:
+  #   - model_name: luna-fast
+  #     litellm_params:
+  #       model: openai/qwen3-14b
+  #       api_base: http://<luna's tailnet ip>:11436/v1
+  #       api_key: "not-needed"
+
+# Deliberately no router_settings.fallbacks from local-mac to
+# openrouter-frontier: vault-grounded chat is pinned to local-mac precisely
+# because it may carry RAG-injected private context, and a silent failover
+# to the cloud on failure would defeat that guarantee. If local-mac is
+# down, the request should fail loudly, not leak.
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
