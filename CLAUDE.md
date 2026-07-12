@@ -1,6 +1,6 @@
 # infra
 
-Homelab IaC. Three hosts, three different deployment mechanisms:
+Homelab IaC. Four hosts, four different deployment mechanisms:
 
 - **tenzing** — Kubernetes cluster (k3s). Hosts most apps via kustomize/Helm
   under `deployment/kubernetes/`. CD via `cd.yml` (self-hosted runner ->
@@ -12,9 +12,12 @@ Homelab IaC. Three hosts, three different deployment mechanisms:
 - **gliese** — Windows machine. Podman actually runs inside **WSL2**, and
   Tailscale is installed *inside that WSL2 distro directly* (not just the
   Windows host) - that's what makes Tailscale SSH land you in the right
-  place. Runs traefik, actual-budget, replay-hub. Non-standard traefik ports
-  (8080/8043/8081 for http/https/dashboard) since 80/443 are already taken
-  by something else on that host.
+  place. Runs traefik, actual-budget, replay-hub, litellm. Non-standard
+  traefik ports (8080/8043/8081 for http/https/dashboard) since 80/443 are
+  already taken by something else on that host.
+- **mac** — MacBook Pro (M4 Max). No CD, no automated install - GUI apps
+  (LM Studio, Obsidian) and launch agents applied by hand via
+  `deployment/mac/install.sh`. See "AI stack" below.
 
 ## Container deployment (tyr/gliese)
 
@@ -102,6 +105,35 @@ podman socket, so gliese's traefik never discovers these routes. This
 replaced a shared `dynamic.yml` (file provider) that used to be mounted on
 every host running traefik, which caused gliese to try (and fail) to issue
 ACME certs for routes it had no business serving.
+
+## AI stack (Obsidian + LiteLLM + MCP)
+
+Personal RAG/assistant stack over an Obsidian vault. Load-bearing pieces:
+
+- **`litellm`** (`deployment/containers/litellm/`) runs on **gliese** as a normal podman
+  quadlet - the single OpenAI-compatible endpoint everything else talks to. Model list lives in
+  `litellm-config.yaml` (mounted into the container as `/app/config.yaml` - not to be confused
+  with the container's own `config.yml` metadata for `podman_secrets`): `local-mac` (LM Studio
+  on the mac, reached over Tailscale) and `openrouter-frontier` (cloud, non-sensitive only).
+- **mac** is a tracked host with no CD (see above). `deployment/mac/` holds a launch agent to
+  keep LM Studio's server up, an MCP client config block for Copilot, and documented (not
+  templated - plugin `data.json` is generated state) Obsidian plugin settings.
+- **No mirrored-networking/portproxy setup was needed.** The original design for this kind of
+  stack assumes Tailscale on the Windows host + WSL2 mirrored networking so the host's LAN can
+  reach a WSL2-bound port. gliese's WSL2 is already a tailnet member (see above), so anything
+  on the tailnet - the mac, and eventually `luna` - reaches services bound there directly via
+  its tailnet IP. Don't reintroduce that plumbing without a reason.
+- **Privacy rule is enforced client-side, not in LiteLLM.** LiteLLM's router only sees the
+  final prompt, not which vault notes were injected into it as RAG context, so it can't route
+  on sensitivity itself. Obsidian Copilot's vault-chat mode is pinned to `local-mac`; only a
+  separate, explicitly-non-vault chat mode may use `openrouter-frontier`. See
+  `deployment/mac/obsidian/plugin-settings.md`.
+- **`luna` (the gaming PC, RTX 5070 Ti) is deferred** - not a tracked host yet. It's the
+  intended home for a real local inference server (vLLM), still undecided whether that runs as
+  a bare WSL2 systemd service or a podman quadlet (GPU passthrough into podman-in-WSL2 is a
+  less-proven path than a native WSL2 CUDA process). When it lands, add a model entry to
+  `litellm`'s `litellm-config.yaml` and complete the fallback chain (`luna` -> mac -> cloud) - the spot
+  is already marked with a `TODO(luna)` comment there.
 
 ## Known outstanding issues
 
