@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.local.lmstudio</string>
+    <key>ProgramArguments</key>
+    <array>
+        <!-- Verify this path with `which lms` after bootstrapping the CLI
+             (Cmd+Shift+P -> "Bootstrap CLI" inside LM Studio). -->
+        <string>/Users/USERNAME/.lmstudio/bin/lms</string>
+        <string>server</string>
+        <string>start</string>
+        <string>--port</string>
+        <string>1234</string>
+        <!-- Defaults to 127.0.0.1-only otherwise, which litellm on gliese
+             (calling over Tailscale) can't reach. Binding 0.0.0.0 also
+             exposes this on the LAN, not just the tailnet - acceptable
+             here since the home LAN is already a trusted boundary, but
+             worth knowing. -->
+        <string>--bind</string>
+        <string>0.0.0.0</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>/tmp/com.local.lmstudio.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/com.local.lmstudio.err.log</string>
+</dict>
+</plist>
