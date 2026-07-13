@@ -115,9 +115,20 @@ Personal RAG/assistant stack over an Obsidian vault. Load-bearing pieces:
   `litellm-config.yaml` (mounted into the container as `/app/config.yaml` - not to be confused
   with the container's own `config.yml` metadata for `podman_secrets`): `local-mac` (LM Studio
   on the mac, reached over Tailscale) and `openrouter-frontier` (cloud, non-sensitive only).
-- **mac** is a tracked host with no CD (see above). `deployment/mac/` holds a launch agent to
-  keep LM Studio's server up, an MCP client config block for Copilot, and documented (not
-  templated - plugin `data.json` is generated state) Obsidian plugin settings.
+- **mac is model-serving only, for now.** `deployment/mac/` holds just a launch agent to keep
+  LM Studio's server up, plus documented (not templated - plugin `data.json` is generated
+  state) Obsidian plugin settings. No MCP servers run there.
+- **`obsidian-sync-mcp`** (`deployment/containers/obsidian-sync-mcp/`) also runs on **gliese**
+  as a podman quadlet - the agent that actually reads/writes the vault. It talks to
+  `obsidian-couchdb` (the existing LiveSync backend on **tenzing**, see
+  `deployment/kubernetes/kustomize/obsidian-couchdb`) over HTTPS via `{{ tenzing_host }}`,
+  *not* the vault filesystem. The vault syncs across multiple devices via Self-hosted
+  LiveSync, so a raw filesystem MCP on any one device would race LiveSync's own change
+  tracking and only see that device's copy; going through CouchDB directly is the only way
+  that's both device-independent and LiveSync-safe. Obsidian Copilot (wherever it's running)
+  points at its `/mcp` endpoint as a remote HTTP MCP server, not a local `npx` spawn - see
+  `deployment/mac/obsidian/plugin-settings.md`. Apple Reminders/Calendar MCP is deferred
+  alongside this (EventKit-based, can only run on the mac, and mac is model-only for now).
 - **No mirrored-networking/portproxy setup was needed.** The original design for this kind of
   stack assumes Tailscale on the Windows host + WSL2 mirrored networking so the host's LAN can
   reach a WSL2-bound port. gliese's WSL2 is already a tailnet member (see above), so anything

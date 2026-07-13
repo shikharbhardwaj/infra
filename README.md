@@ -55,8 +55,8 @@ Kubernetes nodes. Substitute things like cluster name/user name etc and place in
 | ---- | ---- | ---- | -------- |
 | `tenzing` | Kubernetes cluster | Hosts most apps (kustomize/helm, see App inventory below) | See App inventory |
 | `tyr` | Oracle Cloud VM | Public-facing utility host | traefik, crafty, uptime-kuma |
-| `gliese` | Windows machine | Home services host | traefik, actual-budget, replay-hub, uptime-kuma, litellm |
-| `mac` | MacBook Pro (M4 Max) | AI workspace / local model node | LM Studio, Obsidian (Copilot + Smart Connections), MCP servers |
+| `gliese` | Windows machine | Home services host | traefik, actual-budget, replay-hub, uptime-kuma, litellm, obsidian-sync-mcp |
+| `mac` | MacBook Pro (M4 Max) | Local model node | LM Studio |
 
 Note: gliese overrides traefik's host-side ports (`traefik_http_port`/`traefik_https_port`/`traefik_dashboard_port` in its local `secrets.yml`) since 80/443 are already used by something else on that host.
 
