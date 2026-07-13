@@ -1,0 +1,50 @@
+[Unit]
+Description=Obsidian Sync MCP - CouchDB LiveSync-aware vault access for AI agents
+Wants=network.target
+After=network.target
+
+[Container]
+ContainerName=obsidian-sync-mcp
+Image=ghcr.io/es617/obsidian-sync-mcp:latest
+AutoUpdate=registry
+
+Network=web
+
+# obsidian-couchdb is the existing LiveSync backend on tenzing (see
+# deployment/kubernetes/kustomize/obsidian-couchdb) - talking to it here
+# instead of the vault filesystem means this works no matter which device
+# is awake, and can't desync LiveSync's own change tracking the way a raw
+# file write from an unrelated process would.
+Environment=COUCHDB_URL=https://obsidian-couchdb.{{ tenzing_host }}
+Environment=COUCHDB_DATABASE={{ obsidian_couchdb_database }}
+Environment=VAULT_NAME="{{ obsidian_vault_name }}"
+Environment=PORT=8787
+
+Secret=obsidian_couchdb_user,type=env,target=COUCHDB_USER
+Secret=obsidian_couchdb_pass,type=env,target=COUCHDB_PASSWORD
+# Protects the /mcp HTTP endpoint below - Copilot (wherever it runs) sends
+# this back as `Authorization: Bearer <token>`.
+Secret=mcp_auth_token,type=env,target=MCP_AUTH_TOKEN
+
+# LiveSync's E2E encryption is on (Obsidian -> Self-hosted LiveSync settings)
+# - this passphrase must match what's configured there or the server can't
+# decrypt chunks. Path obfuscation is off, so COUCHDB_OBFUSCATE_PROPERTIES
+# stays unset.
+Secret=obsidian_couchdb_passphrase,type=env,target=COUCHDB_PASSPHRASE
+
+Label=traefik.enable=true
+# Dual-host: reachable via the public domain or the local network directly.
+Label="traefik.http.routers.obsidian_sync_mcp.rule=Host(`obsidian-sync-mcp.gliese.{{ oci_parent_host }}`) || Host(`obsidian-sync-mcp.{{ local_host }}`)"
+Label=traefik.http.routers.obsidian_sync_mcp.entryPoints=websecure
+Label=traefik.http.routers.obsidian_sync_mcp.tls=true
+Label=traefik.http.routers.obsidian_sync_mcp.tls.certresolver=cloudflare
+# Only request a cert for the public name - local_host has no public DNS, so
+# an ACME challenge for it would just fail.
+Label=traefik.http.routers.obsidian_sync_mcp.tls.domains[0].main=obsidian-sync-mcp.gliese.{{ oci_parent_host }}
+Label=traefik.http.services.obsidian_sync_mcp.loadbalancer.server.port=8787
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target
