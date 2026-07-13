@@ -1,0 +1,5 @@
+podman_secrets:
+- obsidian_couchdb_user
+- obsidian_couchdb_pass
+- obsidian_couchdb_passphrase
+- mcp_auth_token

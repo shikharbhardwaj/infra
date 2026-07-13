@@ -18,8 +18,14 @@ Settings → Copilot:
 - **Embedding model**: leave on Copilot's local/built-in embedding option — do not point this
   at LiteLLM or any remote endpoint. Embedding the vault via a remote API leaks its contents
   even if the chat model itself is local.
-- **MCP servers**: Settings → Copilot → MCP Servers → paste the contents of
-  `deployment/mac/mcp/client-config.json` (with the vault path filled in).
+- **MCP servers**: Settings → Copilot → MCP Servers → add gliese's `obsidian-sync-mcp` as a
+  remote HTTP server (not a local `npx` spawn — nothing MCP-related runs on the mac itself, see
+  `deployment/mac/README.md`):
+  - URL: `https://obsidian-sync-mcp.gliese.{{ oci_parent_host }}/mcp`
+  - Auth header: `Authorization: Bearer <mcp_auth_token>` (from gliese's `secrets.yml`)
+  This talks to the vault through its CouchDB LiveSync backend rather than the filesystem, so
+  it works identically from any synced device, not just whichever machine has the vault folder
+  open, and can't step on LiveSync's own change tracking the way a raw filesystem write would.
 
 ## Smart Connections
 
