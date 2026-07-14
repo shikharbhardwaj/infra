@@ -9,7 +9,7 @@
 model_list:
   - model_name: local-mac
     litellm_params:
-      model: qwen/qwen3.6-27b
+      model: openai/qwen/qwen3.6-27b
       api_base: http://{{ mac_tailscale_ip }}:1234/v1
       api_key: "not-needed"
 
