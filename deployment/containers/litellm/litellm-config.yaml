@@ -9,13 +9,13 @@
 model_list:
   - model_name: local-mac
     litellm_params:
-      model: openai/qwen3-32b # placeholder - set to whatever LM Studio has loaded
+      model: qwen/qwen3.6-27b
       api_base: http://{{ mac_tailscale_ip }}:1234/v1
       api_key: "not-needed"
 
   - model_name: openrouter-frontier
     litellm_params:
-      model: openrouter/anthropic/claude-sonnet-4.5
+      model: openrouter/anthropic/claude-sonnet-5
       api_key: os.environ/OPENROUTER_API_KEY
 
   # TODO(luna): add a vLLM entry here once the gaming PC is set up as a
