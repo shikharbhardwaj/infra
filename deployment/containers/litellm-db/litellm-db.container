@@ -1,0 +1,23 @@
+[Unit]
+Description=Postgres - backing store for litellm's admin UI (virtual keys, teams, spend tracking)
+Wants=network.target
+After=network.target
+
+[Container]
+ContainerName=litellm-db
+Image=docker.io/library/postgres:18-alpine
+AutoUpdate=registry
+
+Network=web
+
+Volume=%h/containers/litellm-db/data:/var/lib/postgresql/data:Z
+
+Environment=POSTGRES_USER=litellm
+Environment=POSTGRES_DB=litellm
+Secret=litellm_db_password,type=env,target=POSTGRES_PASSWORD
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target

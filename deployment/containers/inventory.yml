@@ -22,5 +22,6 @@ gliese:
   - traefik
   - actual-budget
   - replay-hub
+  - litellm-db
   - litellm
   # - obsidian-sync-mcp # TODO: audit the mcp server before hosting it.

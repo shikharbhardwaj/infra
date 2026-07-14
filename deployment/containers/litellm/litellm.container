@@ -2,6 +2,10 @@
 Description=LiteLLM Proxy - unified OpenAI-compatible model routing
 Wants=network.target
 After=network.target
+# The admin UI (/ui) needs Postgres to log in at all - without DATABASE_URL
+# it fails with "Not connected to DB!" even though the proxy itself works.
+Requires=litellm-db.service
+After=litellm-db.service
 
 [Container]
 ContainerName=litellm
@@ -22,6 +26,10 @@ Environment=LITELLM_LOG=INFO
 Secret=openrouter_api_key,type=env,target=OPENROUTER_API_KEY
 # Master key clients must present to the proxy (Obsidian Copilot, MCP clients, etc).
 Secret=litellm_master_key,type=env,target=LITELLM_MASTER_KEY
+# Full postgres connection string for the litellm-db container - runs
+# LiteLLM's prisma migrations automatically on startup. Must point at the
+# same user/password/db as litellm-db's own secrets (litellm_db_password).
+Secret=litellm_db_url,type=env,target=DATABASE_URL
 
 Label=traefik.enable=true
 # Dual-host: reachable via the public domain or the local network directly.
