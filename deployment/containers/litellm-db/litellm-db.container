@@ -10,7 +10,7 @@ AutoUpdate=registry
 
 Network=web
 
-Volume=%h/containers/litellm-db/data:/var/lib/postgresql/data:Z
+Volume=%h/containers/litellm-db/data:/var/lib/postgresql:Z
 
 Environment=POSTGRES_USER=litellm
 Environment=POSTGRES_DB=litellm
