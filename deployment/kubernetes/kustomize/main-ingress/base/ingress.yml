@@ -238,6 +238,16 @@ spec:
             name: openspeedtest
             port:
               number: 3000
+  - host: "office.{{ host }}"
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: onlyoffice-documentserver
+            port:
+              number: 80
 ---
 apiVersion: traefik.io/v1alpha1
 kind: Middleware

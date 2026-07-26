@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: onlyoffice-documentserver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: onlyoffice-documentserver
+  template:
+    metadata:
+      labels:
+        app: onlyoffice-documentserver
+    spec:
+      containers:
+      - name: onlyoffice-documentserver
+        image: onlyoffice/documentserver:latest
+        ports:
+        - containerPort: 80
+          name: http
+        env:
+        - name: JWT_ENABLED
+          value: "true"
+        envFrom:
+        - secretRef:
+            name: onlyoffice-documentserver-env
+        resources:
+          limits:
+            memory: "2Gi"
+            cpu: "2"
