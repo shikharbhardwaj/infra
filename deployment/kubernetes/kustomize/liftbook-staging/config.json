@@ -1,0 +1,10 @@
+{
+    "name": "liftbook-staging",
+    "type": "k8s-kustomize",
+    "environments": [
+        {
+            "name": "staging",
+            "status": "live"
+        }
+    ]
+}
