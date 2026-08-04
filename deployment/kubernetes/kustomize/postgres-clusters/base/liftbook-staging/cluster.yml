@@ -1,0 +1,20 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: liftbook-staging
+  namespace: cloudnative-pg
+spec:
+  instances: 1
+  primaryUpdateStrategy: unsupervised
+
+  # Require 1Gi of space
+  storage:
+    size: 1Gi
+    storageClass: freenas-iscsi-csi
+
+  bootstrap:
+    initdb:
+      database: liftbook_staging
+      owner: liftbook-staging
+      secret:
+        name: liftbook-staging-db-url
