@@ -7,6 +7,8 @@ spec:
   instances: 1
   primaryUpdateStrategy: unsupervised
 
+  imageName: ghcr.io/cloudnative-pg/postgresql:18-minimal-trixie
+
   # Require 1Gi of space
   storage:
     size: 1Gi
