@@ -5,7 +5,7 @@ After=network.target
 
 [Container]
 ContainerName=crafty
-Image=docker.io/arcadiatechnology/crafty-4:4.4.9
+Image=docker.io/arcadiatechnology/crafty-4:4.10.8
 AutoUpdate=registry
 
 Network=web
