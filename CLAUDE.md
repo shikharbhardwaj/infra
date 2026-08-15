@@ -1,6 +1,11 @@
 # infra
 
-Homelab IaC. Four hosts, four different deployment mechanisms:
+Homelab IaC. Four app-hosting hosts, four different deployment mechanisms
+(plus arete/thor - the Proxmox hypervisors underneath tenzing's k3s nodes
+and a few other VMs - and saras, a separate standalone Proxmox host not
+part of that cluster; all three ansible-managed for OS updates only, no app
+deployment mechanism of their own; see `deployment/hosts.yml` for the full
+physical/VM host inventory):
 
 - **tenzing** — Kubernetes cluster (k3s). Hosts most apps via kustomize/Helm
   under `deployment/kubernetes/`. CD via `cd.yml` (self-hosted runner ->
