@@ -51,12 +51,18 @@ Kubernetes nodes. Substitute things like cluster name/user name etc and place in
 
 ### Host inventory
 
+Canonical list: [deployment/hosts.yml](/deployment/hosts.yml) - update it
+first when adding/removing a host, then bring this table in line with it.
+
 | Host | Type | Role | Services |
 | ---- | ---- | ---- | -------- |
 | `tenzing` | Kubernetes cluster | Hosts most apps (kustomize/helm, see App inventory below) | See App inventory |
-| `tyr` | Oracle Cloud VM | Public-facing utility host | traefik, crafty, uptime-kuma |
+| `tyr` | Oracle Cloud VM | Public-facing utility host | traefik, crafty, uptime-kuma, netdata parent |
 | `gliese` | Windows machine | Home services host | traefik, actual-budget, replay-hub, uptime-kuma, litellm, obsidian-sync-mcp |
 | `mac` | MacBook Pro (M4 Max) | Local model node | LM Studio |
+| `arete` | Proxmox VE host | Hypervisor | - |
+| `thor` | Proxmox VE host | Hypervisor | - |
+| `saras` | Proxmox VE host | Hypervisor | - |
 
 Note: gliese overrides traefik's host-side ports (`traefik_http_port`/`traefik_https_port`/`traefik_dashboard_port` in its local `secrets.yml`) since 80/443 are already used by something else on that host.
 
