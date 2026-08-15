@@ -131,9 +131,9 @@ data:
               url: https://status.{{ parent_host }}
               slug: overall
         - Netdata:
-            href: https://app.netdata.cloud/spaces/shikharbhardwa-space/rooms/all-nodes/home
+            href: http://tyr:19999
             icon: netdata.png
-            description: Hardware monitoring
+            description: Hardware monitoring (tailnet-only - tyr is the streaming parent)
         - Grafana:
             href: https://arete.grafana.net
             icon: grafana.png
