@@ -2,10 +2,21 @@
 !/files/docker_persistent_data/.gitkeep
 /hosts
 .DS_Store
-/group_vars/
 /host_vars/
 !/host_vars/.gitkeep
+
+# Ignore group_vars/ by default, but individual files/dirs below can be
+# un-ignored - note the un-ignore only takes effect if every intermediate
+# directory is also explicitly un-ignored (`/group_vars/` alone as a
+# directory-only pattern blocks git from ever looking inside, no matter what
+# negation patterns follow).
+/group_vars/*
+!/group_vars/all/
+/group_vars/all/*
 !/group_vars/all/vars.yml
+!/group_vars/netdata_hosts/
+/group_vars/netdata_hosts/*
+!/group_vars/netdata_hosts/vars.example.yml
 mountsraspi
 
 backups/inflight
