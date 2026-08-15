@@ -13,7 +13,9 @@ physical/VM host inventory):
   push to `main`. TODO in README: migrate to ArgoCD.
 - **tyr** — Oracle Cloud VM (Linux). Runs traefik, crafty, uptime-kuma, and
   `external-routes` (see below) via podman quadlets + `systemd --user`.
-  Standard traefik ports (80/443/8080).
+  Standard traefik ports (80/443/8080). Also the netdata streaming parent
+  for the whole fleet - see "Netdata monitoring" below - which is
+  ansible-managed, not part of the podman quadlet setup.
 - **gliese** — Windows machine. Podman actually runs inside **WSL2**, and
   Tailscale is installed *inside that WSL2 distro directly* (not just the
   Windows host) - that's what makes Tailscale SSH land you in the right
@@ -110,6 +112,52 @@ podman socket, so gliese's traefik never discovers these routes. This
 replaced a shared `dynamic.yml` (file provider) that used to be mounted on
 every host running traefik, which caused gliese to try (and fail) to issue
 ACME certs for routes it had no business serving.
+
+## Netdata monitoring
+
+Every host runs netdata; **tyr is the central streaming parent**, replacing
+what used to be Netdata Cloud (dropped entirely - no cloud claiming, no
+`app.netdata.cloud` link anywhere). Children push their metrics to tyr for
+longer local retention and a single-pane dashboard, instead of each host
+only holding its own short local history.
+
+- **arete, thor, saras** (ansible-managed) and **tyr** itself are configured
+  by `playbooks/configure-netdata-streaming.yml`, templating
+  `/etc/netdata/stream.conf` from `playbooks/templates/stream.conf.j2`
+  based on each host's `netdata_role` (set in `hosts.example`'s
+  `netdata_hosts` group). Run via `make configure-netdata-streaming`. This
+  is also the first playbook to target tyr - it was previously only
+  ansible-invisible, reachable exclusively via the container-CD SSH path.
+- **gliese** is not ansible-managed (Windows/WSL2) and is configured by
+  hand instead: edit gliese's own `/etc/netdata/stream.conf` to add the
+  same `[stream]` block the template renders for other children
+  (`destination = tyr:19999`, `api key = <the shared netdata_stream_api_key
+  from group_vars/netdata_hosts/vars.yml>`), then restart the service.
+- The shared `netdata_stream_api_key` lives in
+  `group_vars/netdata_hosts/vars.yml` (gitignored - copy
+  `vars.example.yml` and fill in a real UUID, e.g. via `uuidgen`), following
+  the same pattern as `deployment/containers/secrets.yml`.
+- Streaming destinations use plain **Tailscale MagicDNS hostnames**
+  (`tyr:19999`), the same pattern the CD workflow already relies on
+  (`ssh ubuntu@tyr`, `ssh gliese@gliese`) - not raw tailscale IPs. This
+  assumes every streaming host is a tailnet member; arete in particular has
+  no existing tailscale reference anywhere in this repo (unlike thor, via
+  `thor_tailscale_ip`), so confirm it's actually joined before relying on
+  this.
+- **The parent's dashboard is tailnet-only** - `http://tyr:19999`, reached
+  directly over Tailscale, no traefik route. netdata has no built-in login,
+  so deliberately not exposing it publicly until an OIDC/auth layer is
+  added in front of it (deferred, no mechanism for that in this repo yet).
+- Actual retention length is controlled by tyr's `netdata.conf` `[db]`
+  section (`dbengine multihost disk space MB`), not `stream.conf` - size it
+  to tyr's actual free disk (it's a small Oracle Cloud free-tier VM) rather
+  than assuming headroom; this isn't ansible-managed yet, set by hand.
+- **Watch for OCI's default-deny firewall** if children fail to connect:
+  Oracle Cloud VM images commonly layer host-level iptables rules on top of
+  the cloud security list, blocking inbound ports that were never
+  explicitly opened - tyr's 80/443/8080 already work because they were
+  opened for traefik, but that says nothing about 19999. Check
+  `sudo iptables -L` on tyr before assuming the child's config is wrong.
 
 ## AI stack (Obsidian + LiteLLM + MCP)
 
