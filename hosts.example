@@ -1,6 +1,7 @@
 [proxmox_hosts]
 arete
 perseus
+saras
 thor
 
 [proxmox_hosts:vars]
@@ -12,3 +13,14 @@ tenzing-02
 tenzing-03
 omada-controller
 jellyfin ansible_user=root
+
+# Hosts running netdata, streaming to tyr as the central parent - see
+# playbooks/configure-netdata-streaming.yml and CLAUDE.md's "Netdata
+# monitoring" section. netdata_role selects which half of stream.conf.j2
+# gets rendered. gliese is also a streaming child but isn't ansible-managed
+# (Windows/WSL2) - its stream.conf is set up by hand instead.
+[netdata_hosts]
+arete netdata_role=child
+thor netdata_role=child
+saras netdata_role=child
+tyr netdata_role=parent ansible_user=ubuntu
