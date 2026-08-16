@@ -1,7 +1,0 @@
-# Copy this file to vars.yml (gitignored) in this same directory and fill
-# in a real value. Used by playbooks/configure-netdata-streaming.yml via
-# templates/stream.conf.j2 - shared by tyr (the streaming parent, which
-# accepts it) and arete/thor/saras (children, which present it).
-#
-# Generate with: uuidgen
-netdata_stream_api_key: ""

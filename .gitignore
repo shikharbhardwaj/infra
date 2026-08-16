@@ -14,9 +14,6 @@
 !/group_vars/all/
 /group_vars/all/*
 !/group_vars/all/vars.yml
-!/group_vars/netdata_hosts/
-/group_vars/netdata_hosts/*
-!/group_vars/netdata_hosts/vars.example.yml
 mountsraspi
 
 backups/inflight
