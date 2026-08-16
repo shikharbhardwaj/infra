@@ -11,7 +11,7 @@
   "editable": true,
   "graphTooltip": 1,
   "time": {
-    "from": "now-6h",
+    "from": "now-3h",
     "to": "now"
   },
   "refresh": "30s",
@@ -26,8 +26,8 @@
           "type": "prometheus",
           "uid": "victoriametrics"
         },
-        "query": "label_values(up, host)",
-        "definition": "label_values(up, host)",
+        "query": "label_values(node:cpu_utilization:ratio{host!=\"\"}, host)",
+        "definition": "label_values(node:cpu_utilization:ratio{host!=\"\"}, host)",
         "refresh": 2,
         "sort": 1,
         "includeAll": false,
@@ -75,7 +75,8 @@
           "expr": "node:cpu_utilization:ratio{host=\"$node\"}",
           "legendFormat": "cpu",
           "refId": "A",
-          "range": true
+          "range": false,
+          "instant": true
         }
       ],
       "fieldConfig": {
@@ -83,6 +84,7 @@
           "unit": "percentunit",
           "min": 0,
           "max": 1,
+          "decimals": 1,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -140,7 +142,8 @@
           "expr": "node:memory_utilization:ratio{host=\"$node\"}",
           "legendFormat": "mem",
           "refId": "A",
-          "range": true
+          "range": false,
+          "instant": true
         }
       ],
       "fieldConfig": {
@@ -148,6 +151,7 @@
           "unit": "percentunit",
           "min": 0,
           "max": 1,
+          "decimals": 1,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -205,7 +209,8 @@
           "expr": "node:fs_utilization:ratio{host=\"$node\"}",
           "legendFormat": "fs",
           "refId": "A",
-          "range": true
+          "range": false,
+          "instant": true
         }
       ],
       "fieldConfig": {
@@ -213,6 +218,7 @@
           "unit": "percentunit",
           "min": 0,
           "max": 1,
+          "decimals": 1,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -270,12 +276,14 @@
           "expr": "node:cpu_count:cores{host=\"$node\"}",
           "legendFormat": "cores",
           "refId": "A",
-          "range": true
+          "range": false,
+          "instant": true
         }
       ],
       "fieldConfig": {
         "defaults": {
           "unit": "short",
+          "decimals": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -327,12 +335,14 @@
           "expr": "node:temperature_max:celsius{host=\"$node\"}",
           "legendFormat": "temp",
           "refId": "A",
-          "range": true
+          "range": false,
+          "instant": true
         }
       ],
       "fieldConfig": {
         "defaults": {
           "unit": "celsius",
+          "decimals": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -404,7 +414,8 @@
           "expr": "node:cpu_utilization:ratio{host=\"$node\"}",
           "legendFormat": "utilization",
           "refId": "A",
-          "range": true
+          "range": true,
+          "instant": false
         },
         {
           "datasource": {
@@ -414,12 +425,14 @@
           "expr": "node:cpu_saturation:ratio{host=\"$node\"}",
           "legendFormat": "saturation",
           "refId": "B",
-          "range": true
+          "range": true,
+          "instant": false
         }
       ],
       "fieldConfig": {
         "defaults": {
           "unit": "percentunit",
+          "decimals": 1,
           "custom": {
             "drawStyle": "line",
             "lineInterpolation": "smooth",
@@ -472,12 +485,14 @@
           "expr": "node:memory_utilization:ratio{host=\"$node\"}",
           "legendFormat": "utilization",
           "refId": "A",
-          "range": true
+          "range": true,
+          "instant": false
         }
       ],
       "fieldConfig": {
         "defaults": {
           "unit": "percentunit",
+          "decimals": 1,
           "custom": {
             "drawStyle": "line",
             "lineInterpolation": "smooth",
@@ -551,12 +566,14 @@
           "expr": "node:disk_saturation:ratio{host=\"$node\"}",
           "legendFormat": "saturation",
           "refId": "A",
-          "range": true
+          "range": true,
+          "instant": false
         }
       ],
       "fieldConfig": {
         "defaults": {
           "unit": "percentunit",
+          "decimals": 1,
           "custom": {
             "drawStyle": "line",
             "lineInterpolation": "smooth",
@@ -610,12 +627,14 @@
           "expr": "node:network_errors:rate{host=\"$node\"}",
           "legendFormat": "errors",
           "refId": "A",
-          "range": true
+          "range": true,
+          "instant": false
         }
       ],
       "fieldConfig": {
         "defaults": {
           "unit": "pps",
+          "decimals": 1,
           "custom": {
             "drawStyle": "line",
             "lineInterpolation": "smooth",
@@ -679,7 +698,8 @@
           "expr": "node_hwmon_temp_celsius{host=\"$node\"}",
           "legendFormat": "{{chip}} {{sensor}}",
           "refId": "A",
-          "range": true
+          "range": true,
+          "instant": false
         },
         {
           "datasource": {
@@ -689,12 +709,14 @@
           "expr": "{__name__=~\"lhm_.+_temperature_celsius\", host=\"$node\"}",
           "legendFormat": "{{__name__}}",
           "refId": "B",
-          "range": true
+          "range": true,
+          "instant": false
         }
       ],
       "fieldConfig": {
         "defaults": {
           "unit": "celsius",
+          "decimals": 1,
           "custom": {
             "drawStyle": "line",
             "lineInterpolation": "smooth",

@@ -11,7 +11,7 @@
   "editable": true,
   "graphTooltip": 1,
   "time": {
-    "from": "now-6h",
+    "from": "now-3h",
     "to": "now"
   },
   "refresh": "30s",
@@ -54,10 +54,11 @@
             "type": "prometheus",
             "uid": "victoriametrics"
           },
-          "expr": "node:cpu_utilization:ratio",
+          "expr": "node:cpu_utilization:ratio{host!=\"\"}",
           "legendFormat": "{{host}}",
           "refId": "A",
-          "range": true
+          "range": false,
+          "instant": true
         }
       ],
       "fieldConfig": {
@@ -65,6 +66,7 @@
           "unit": "percentunit",
           "min": 0,
           "max": 1,
+          "decimals": 1,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -120,10 +122,11 @@
             "type": "prometheus",
             "uid": "victoriametrics"
           },
-          "expr": "node:memory_utilization:ratio",
+          "expr": "node:memory_utilization:ratio{host!=\"\"}",
           "legendFormat": "{{host}}",
           "refId": "A",
-          "range": true
+          "range": false,
+          "instant": true
         }
       ],
       "fieldConfig": {
@@ -131,6 +134,7 @@
           "unit": "percentunit",
           "min": 0,
           "max": 1,
+          "decimals": 1,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -186,10 +190,11 @@
             "type": "prometheus",
             "uid": "victoriametrics"
           },
-          "expr": "node:fs_utilization:ratio",
+          "expr": "node:fs_utilization:ratio{host!=\"\"}",
           "legendFormat": "{{host}}",
           "refId": "A",
-          "range": true
+          "range": false,
+          "instant": true
         }
       ],
       "fieldConfig": {
@@ -197,6 +202,7 @@
           "unit": "percentunit",
           "min": 0,
           "max": 1,
+          "decimals": 1,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -264,15 +270,17 @@
             "type": "prometheus",
             "uid": "victoriametrics"
           },
-          "expr": "node:cpu_utilization:ratio",
+          "expr": "node:cpu_utilization:ratio{host!=\"\"}",
           "legendFormat": "{{host}}",
           "refId": "A",
-          "range": true
+          "range": true,
+          "instant": false
         }
       ],
       "fieldConfig": {
         "defaults": {
           "unit": "percentunit",
+          "decimals": 1,
           "custom": {
             "drawStyle": "line",
             "lineInterpolation": "smooth",
@@ -343,15 +351,17 @@
             "type": "prometheus",
             "uid": "victoriametrics"
           },
-          "expr": "node:memory_utilization:ratio",
+          "expr": "node:memory_utilization:ratio{host!=\"\"}",
           "legendFormat": "{{host}}",
           "refId": "A",
-          "range": true
+          "range": true,
+          "instant": false
         }
       ],
       "fieldConfig": {
         "defaults": {
           "unit": "percentunit",
+          "decimals": 1,
           "custom": {
             "drawStyle": "line",
             "lineInterpolation": "smooth",
@@ -434,15 +444,17 @@
             "type": "prometheus",
             "uid": "victoriametrics"
           },
-          "expr": "node:cpu_saturation:ratio",
+          "expr": "node:cpu_saturation:ratio{host!=\"\"}",
           "legendFormat": "{{host}}",
           "refId": "A",
-          "range": true
+          "range": true,
+          "instant": false
         }
       ],
       "fieldConfig": {
         "defaults": {
           "unit": "percentunit",
+          "decimals": 1,
           "custom": {
             "drawStyle": "line",
             "lineInterpolation": "smooth",
@@ -492,15 +504,17 @@
             "type": "prometheus",
             "uid": "victoriametrics"
           },
-          "expr": "node:disk_saturation:ratio",
+          "expr": "node:disk_saturation:ratio{host!=\"\"}",
           "legendFormat": "{{host}}",
           "refId": "A",
-          "range": true
+          "range": true,
+          "instant": false
         }
       ],
       "fieldConfig": {
         "defaults": {
           "unit": "percentunit",
+          "decimals": 1,
           "custom": {
             "drawStyle": "line",
             "lineInterpolation": "smooth",
@@ -563,15 +577,17 @@
             "type": "prometheus",
             "uid": "victoriametrics"
           },
-          "expr": "node:network_errors:rate",
+          "expr": "node:network_errors:rate{host!=\"\"}",
           "legendFormat": "{{host}}",
           "refId": "A",
-          "range": true
+          "range": true,
+          "instant": false
         }
       ],
       "fieldConfig": {
         "defaults": {
           "unit": "pps",
+          "decimals": 1,
           "custom": {
             "drawStyle": "line",
             "lineInterpolation": "smooth",
@@ -620,15 +636,17 @@
             "type": "prometheus",
             "uid": "victoriametrics"
           },
-          "expr": "node:temperature_max:celsius",
+          "expr": "node:temperature_max:celsius{host!=\"\"}",
           "legendFormat": "{{host}}",
           "refId": "A",
-          "range": true
+          "range": true,
+          "instant": false
         }
       ],
       "fieldConfig": {
         "defaults": {
           "unit": "celsius",
+          "decimals": 1,
           "custom": {
             "drawStyle": "line",
             "lineInterpolation": "smooth",
