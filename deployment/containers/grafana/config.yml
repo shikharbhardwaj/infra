@@ -1,0 +1,2 @@
+podman_secrets:
+- grafana_admin_password

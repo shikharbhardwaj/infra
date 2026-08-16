@@ -1,0 +1,30 @@
+[Unit]
+Description=Grafana - dashboards for fleet hardware metrics
+Wants=network.target
+Requires=victoria-metrics.service
+After=victoria-metrics.service
+
+[Container]
+ContainerName=grafana
+Image=docker.io/grafana/grafana:latest
+AutoUpdate=registry
+
+Network=web
+
+Volume=%h/containers/grafana/data:/var/lib/grafana:Z
+Volume=%h/containers/grafana/provisioning:/etc/grafana/provisioning:Z
+
+Secret=grafana_admin_password,type=env,target=GF_SECURITY_ADMIN_PASSWORD
+
+Label=traefik.enable=true
+Label=traefik.http.routers.grafana.rule=Host(`grafana.{{ oci_parent_host }}`)
+Label=traefik.http.routers.grafana.entryPoints=websecure
+Label=traefik.http.routers.grafana.tls=true
+Label=traefik.http.routers.grafana.tls.certresolver=cloudflare
+Label=traefik.http.services.grafana.loadbalancer.server.port=3000
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target
