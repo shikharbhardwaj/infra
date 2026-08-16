@@ -130,10 +130,10 @@ data:
               type: uptimekuma
               url: https://status.{{ parent_host }}
               slug: overall
-        - Netdata:
-            href: http://tyr:19999
-            icon: netdata.png
-            description: Hardware monitoring (tailnet-only - tyr is the streaming parent)
+        - Fleet Metrics:
+            href: https://grafana.{{ parent_host }}
+            icon: grafana.png
+            description: Hardware/sensor monitoring (VictoriaMetrics + vmagent + Grafana on tyr)
         - Grafana:
             href: https://arete.grafana.net
             icon: grafana.png
