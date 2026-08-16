@@ -19,6 +19,7 @@ tyr:
   - external-routes
   - victoria-metrics
   - vmagent
+  - vmalert
   - grafana
 
 gliese:

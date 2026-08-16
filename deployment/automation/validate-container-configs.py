@@ -10,6 +10,7 @@ Checks:
   - Every container listed for a host in inventory.yml/inventory.example.yml
     has a matching directory under deployment/containers/.
 """
+import fnmatch
 import os
 import re
 import sys
@@ -92,6 +93,18 @@ def check_config_yml(container_dir, secret_refs, known_secrets):
         )
 
 
+def load_render_exclude(container_dir):
+    """config.yml `render_exclude` globs - files copied verbatim by install,
+    so their {{ }} is not secret syntax (e.g. Grafana dashboard legends)."""
+    config_path = os.path.join(container_dir, "config.yml")
+    if not os.path.exists(config_path):
+        return []
+    with open(config_path) as f:
+        data = yaml.safe_load(f) or {}
+    patterns = data.get("render_exclude", []) if isinstance(data, dict) else []
+    return [str(p) for p in patterns] if isinstance(patterns, list) else []
+
+
 def check_inventory_references(known_containers):
     for name in ("inventory.yml", "inventory.example.yml"):
         path = os.path.join(CONTAINERS_DIR, name)
@@ -129,12 +142,18 @@ def main():
             check_config_yml(container_dir, secret_refs, known_secrets)
 
         # Check placeholders in any other text files in the directory (e.g.
-        # traefik.yml, dynamic.yml, acquis.yaml).
+        # traefik.yml, dynamic.yml, acquis.yaml). Files matched by the
+        # container's render_exclude are copied verbatim by install, so their
+        # {{ }} is foreign templating (e.g. Grafana legends), not our secrets.
+        render_exclude = load_render_exclude(container_dir)
         for root, _, files in os.walk(container_dir):
             for fname in files:
                 if fname.endswith(".container") or fname == "config.yml":
                     continue
                 fpath = os.path.join(root, fname)
+                rel = os.path.relpath(fpath, container_dir)
+                if any(fnmatch.fnmatch(rel, pat) for pat in render_exclude):
+                    continue
                 try:
                     with open(fpath, "r", encoding="utf-8") as f:
                         text = f.read()

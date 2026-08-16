@@ -1,0 +1,27 @@
+[Unit]
+Description=vmalert - evaluates recording rules that normalize node_exporter/windows_exporter/LHM into a single metric namespace
+Wants=network.target
+Requires=victoria-metrics.service
+After=victoria-metrics.service
+
+[Container]
+ContainerName=vmalert
+Image=docker.io/victoriametrics/vmalert:latest
+AutoUpdate=registry
+
+Network=web
+
+Volume=%h/containers/vmalert/rules.yml:/etc/vmalert/rules.yml:Z
+Volume=%h/containers/vmalert/data:/vmalertdata:Z
+
+# Reads raw exporter metrics from victoria-metrics, writes the normalized
+# recording-rule results (node:*) back into it. Same container reached by
+# name over the shared `web` network, like vmagent/grafana. tmpDataPath
+# buffers remote-write on a VM restart so no rule samples are dropped.
+Exec=--rule=/etc/vmalert/rules.yml --datasource.url=http://victoria-metrics:8428 --remoteWrite.url=http://victoria-metrics:8428 --remoteWrite.tmpDataPath=/vmalertdata --evaluationInterval=30s
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target

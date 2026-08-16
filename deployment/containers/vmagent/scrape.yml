@@ -5,6 +5,12 @@
 # everyone else's, rather than via "localhost" - a container can't reach
 # the host that way.
 #
+# Every target carries an explicit `host` label (the machine's short name).
+# This is the join key vmalert's recording rules and the Grafana dashboards
+# filter on - it collapses gliese's two exporters (windows_exporter + LHM)
+# onto a single host and hides the raw `instance` (tailscale-ip:port), which
+# is useless as a picker value. Add it to any new job below.
+#
 # Plain Tailscale MagicDNS hostnames (e.g. "arete:9100") were tried first
 # and don't work from inside this container: podman's netavark backend
 # overrides --dns with the "web" network's own built-in DNS (aardvark-dns)
@@ -17,27 +23,40 @@ scrape_configs:
   - job_name: tyr
     static_configs:
       - targets: ["{{ tyr_tailscale_ip }}:9100"]
+        labels:
+          host: tyr
 
   - job_name: arete
     static_configs:
       - targets: ["{{ arete_tailscale_ip }}:9100"]
+        labels:
+          host: arete
 
   - job_name: thor
     static_configs:
       - targets: ["{{ thor_tailscale_ip }}:9100"]
+        labels:
+          host: thor
 
   - job_name: saras
     static_configs:
       - targets: ["{{ saras_tailscale_ip }}:9100"]
+        labels:
+          host: saras
 
   # windows_exporter: OS-level metrics (CPU/disk/network).
   - job_name: gliese
     static_configs:
       - targets: ["{{ gliese_tailscale_ip }}:9182"]
+        labels:
+          host: gliese
 
   # LibreHardwareMonitor's own built-in web server - native Prometheus
   # /metrics support (merged upstream Oct 2025), no bridge tool needed.
-  # Enabled via LHM's Options -> Remote Web Server.
+  # Enabled via LHM's Options -> Remote Web Server. Same `host` as the
+  # windows_exporter job above so both collapse onto one node in the views.
   - job_name: gliese-lhm
     static_configs:
       - targets: ["{{ gliese_tailscale_ip }}:8085"]
+        labels:
+          host: gliese

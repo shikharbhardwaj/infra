@@ -29,3 +29,6 @@ node_modules/
 **/secrets.yml
 
 var/
+# Python bytecode cache
+__pycache__/
+*.pyc

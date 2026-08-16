@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import fnmatch
 import logging
 import os
 import pathlib
@@ -62,6 +63,39 @@ def is_likely_text_file(file_path: pathlib.Path) -> bool:
         return False  # Assume binary if unsure
 
 
+def load_render_exclude(container_dir: pathlib.Path) -> list:
+    """Reads a container's config.yml `render_exclude` list, if any.
+
+    These are glob patterns (relative to the container dir) for files that
+    must be copied verbatim, WITHOUT {{ }} secret substitution - e.g. Grafana
+    dashboard JSON, whose {{label}} legend syntax collides with our
+    {{ secret }} placeholder syntax. Such files contain no secrets.
+    """
+    config_file = container_dir / "config.yml"
+    if not config_file.exists():
+        return []
+    try:
+        with open(config_file, "r") as f:
+            config = yaml.safe_load(f)
+    except (yaml.YAMLError, IOError):
+        return []
+    if isinstance(config, dict):
+        patterns = config.get("render_exclude", [])
+        if isinstance(patterns, list):
+            return [str(p) for p in patterns]
+    return []
+
+
+def is_render_excluded(
+    file_path: pathlib.Path, container_dir: pathlib.Path, patterns: list
+) -> bool:
+    """True if file_path matches any render_exclude glob for its container."""
+    if not patterns:
+        return False
+    rel = file_path.relative_to(container_dir).as_posix()
+    return any(fnmatch.fnmatch(rel, pat) for pat in patterns)
+
+
 def load_inventory(inventory_path: pathlib.Path, hostname: str) -> set:
     """Loads inventory file and returns set of containers for the given hostname."""
     if not inventory_path.exists():
@@ -120,9 +154,12 @@ def find_missing_placeholders(
         if allowed_containers is not None and container_name not in allowed_containers:
             continue
 
+        render_exclude = load_render_exclude(item)
         for root, _dirs, files in os.walk(item):
             for file_name in files:
                 file_path = pathlib.Path(root) / file_name
+                if is_render_excluded(file_path, item, render_exclude):
+                    continue
                 if not is_likely_text_file(file_path):
                     continue
                 try:
@@ -354,6 +391,8 @@ def main():
                     logger.error(f"Could not read config file {config_file}: {e}")
                     sys.exit(1)
 
+            render_exclude = load_render_exclude(source_dir)
+
             target_dir.mkdir(parents=True, exist_ok=True)
 
             # --- Walk Source Directory and Copy/Substitute ---
@@ -385,8 +424,13 @@ def main():
                     target_file = target_root / file_name
                     relative_file_path = target_file.relative_to(TARGET_BASE_DIR)
 
-                    if not secrets or not is_likely_text_file(source_file):
-                        # Copy binary files or if no secrets are loaded
+                    verbatim = is_render_excluded(
+                        source_file, source_dir, render_exclude
+                    )
+                    if not secrets or verbatim or not is_likely_text_file(source_file):
+                        # Copy binary files, render-excluded files (e.g. Grafana
+                        # dashboards whose {{label}} syntax is not ours), or when
+                        # no secrets are loaded.
                         logger.info(f"    Copying:     {relative_file_path}")
                         shutil.copy2(
                             source_file, target_file

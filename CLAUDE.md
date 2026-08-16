@@ -151,7 +151,10 @@ observability with the workloads it's watching.
   same pattern `external-routes` already uses for `thor_tailscale_ip`.
   tyr's own node_exporter is scraped over its tailscale IP too, same as
   everyone else - a container can't reach the host it runs on via
-  `localhost`. **Plain Tailscale MagicDNS hostnames were tried first and
+  `localhost` (its `tyr_tailscale_ip` secret must be the real tailnet IP,
+  **not** `127.0.0.1` - that resolves to the vmagent container itself and
+  the scrape silently fails). Every job also sets a static `host` label -
+  see the normalization notes below. **Plain Tailscale MagicDNS hostnames were tried first and
   don't work here** - confirmed by direct testing on tyr: podman's
   netavark backend overrides any `DNS=`/`--dns` setting with the `web`
   network's own built-in DNS (aardvark-dns) regardless, and even bypassing
@@ -169,12 +172,54 @@ observability with the workloads it's watching.
 - **Grafana is exposed publicly** through tyr's traefik
   (`grafana.{{ oci_parent_host }}`), unlike netdata's dashboard - Grafana
   has its own login, so there's no bare/unauthenticated surface and no new
-  auth mechanism needed. The VictoriaMetrics datasource is pre-provisioned
-  (`grafana/provisioning/datasources/`); import the stock community "Node
-  Exporter Full" dashboard (ID 1860) rather than building custom panels -
-  it already covers `node_hwmon_*` sensor metrics.
-- Watch tyr's memory headroom once these three containers join
-  traefik/crafty/uptime-kuma on that small OCI instance.
+  auth mechanism needed. Both the datasource and the dashboards are
+  provisioned as code (see below).
+- **Dashboards are provisioned from git**, not clicked together in the UI.
+  `grafana/provisioning/dashboards/` has a file provider + two dashboards
+  (`json/fleet-overview.json`, `json/node-overview.json`). The committed
+  artifacts are the JSON themselves (initially machine-generated for
+  consistency, but hand-editable). Iterate in the UI, then export
+  (`Share -> Export -> Save to file`) back into `json/` -
+  `allowUiUpdates:false` keeps the UI read-only so git stays the source of
+  truth. The datasource is referenced by a stable
+  `uid: victoriametrics` (set in the datasource YAML) so the JSON isn't tied
+  to a random per-instance uid.
+- **Grafana legend syntax `{{label}}` collides with `install`'s
+  `{{ secret }}` templating.** A provisioned dashboard's `legendFormat:
+  "{{host}}"` would otherwise trip the missing-secret pre-flight (or get
+  blanked). Fix: `grafana/config.yml` has a `render_exclude:` glob
+  (`provisioning/dashboards/json/*.json`) that tells `install` to copy those
+  files verbatim - no substitution. `install` and
+  `validate-container-configs.py` both honor it. Any future config carrying
+  foreign `{{ }}` templating (Alertmanager/Prometheus templates) should use
+  the same escape hatch.
+- **vmalert** (`deployment/containers/vmalert/`) is the normalization layer.
+  node_exporter, windows_exporter and LHM expose completely different metric
+  names; vmalert's recording rules (`rules.yml`) collapse them into ONE
+  `node:*` namespace keyed by a `host` label (e.g.
+  `node:cpu_utilization:ratio`, `node:fs_utilization:ratio`,
+  `node:temperature_max:celsius`) - two rules per metric writing the same
+  `record:` name, one from each exporter family, never colliding because
+  they emit different `host` values. The dashboards query only these
+  normalized metrics, so a single panel plots the whole mixed-OS fleet.
+  vmalert reads raw metrics from victoria-metrics and remote-writes the
+  results back into it (internal, over the `web` network, no traefik route).
+  Saturation is best-effort cross-platform (Linux PSI vs Windows
+  processor-queue-length); utilization/errors are cleanly normalized.
+- **The `host` label is load-bearing** and is set in
+  `vmagent/scrape.yml` as a static per-target label (not via relabeling), so
+  gliese's two jobs (`gliese` windows_exporter + `gliese-lhm`) both collapse
+  to `host=gliese`. `honor_labels` is false, so this static label wins over
+  any `host` an exporter sets itself (LHM reports `host=GLIESE` - our label
+  normalizes the casing; theirs survives as `exported_host`). The `$node`
+  picker on the node dashboard is `label_values(up, host)`.
+- **MetricsQL `{__name__=~"..."}` regexes work fine** (used for LHM temps,
+  `lhm_.+_temperature_celsius`) - if one ever appears to return nothing when
+  the exact name has data, suspect your test transport, not VM: form-encoded
+  POST (`wget --post-data`) mangles `+` to a space. URL-encode GET queries.
+- Watch tyr's memory headroom now that four monitoring containers
+  (victoria-metrics, vmagent, vmalert, grafana) join traefik/crafty/
+  uptime-kuma on that small OCI instance.
 
 ## AI stack (Obsidian + LiteLLM + MCP)
 

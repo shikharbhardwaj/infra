@@ -1,0 +1,72 @@
+# Recording rules that normalize three different exporters into ONE metric
+# namespace so a single Grafana panel can plot the whole fleet regardless of
+# OS. Each normalized `node:*` series carries only a `host` label (every rule
+# aggregates `by (host)`), which is the join key the dashboards filter on.
+#
+# The pattern throughout: for each normalized metric, TWO rules write the
+# SAME `record:` name - one from the Linux exporter (node_exporter), one from
+# the Windows side (windows_exporter, or LHM for sensor data). They never
+# collide because they emit different `host` values.
+#
+# Metric names were verified against live data on tyr (2026-08) - notably
+# LHM's series are `lhm_*`, not `librehardwaremonitor_*`. tyr is an OCI VM
+# with no hwmon, so it legitimately has no temperature series.
+#
+# USE method (Utilization / Saturation / Errors), all ratios are 0..1.
+groups:
+  - name: fleet-use-normalized
+    interval: 30s
+    rules:
+      # ---- CPU utilization: 1 - idle fraction, averaged across cores ----
+      - record: node:cpu_utilization:ratio
+        expr: 1 - avg by (host) (rate(node_cpu_seconds_total{mode="idle"}[5m]))
+      - record: node:cpu_utilization:ratio
+        expr: 1 - avg by (host) (rate(windows_cpu_time_total{mode="idle"}[5m]))
+
+      # ---- Memory utilization: 1 - available/total ----
+      - record: node:memory_utilization:ratio
+        expr: 1 - avg by (host) (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)
+      - record: node:memory_utilization:ratio
+        expr: 1 - avg by (host) (windows_memory_available_bytes / windows_memory_physical_total_bytes)
+
+      # ---- Filesystem utilization: fullest real mount on the host ----
+      - record: node:fs_utilization:ratio
+        expr: max by (host) (1 - node_filesystem_avail_bytes{fstype!~"tmpfs|fuse.*|overlay|squashfs|ramfs|nsfs"} / node_filesystem_size_bytes)
+      - record: node:fs_utilization:ratio
+        expr: max by (host) (1 - windows_logical_disk_free_bytes / windows_logical_disk_size_bytes)
+
+      # ---- CPU saturation ----
+      # Linux: PSI - fraction of time runnable tasks were stalled on CPU (0..1).
+      # Windows: no PSI, so processor-queue-length per logical core as a
+      # comparable "how backed up is the CPU" proxy (documented caveat: not the
+      # same unit as PSI, but the same intent - >1 means threads are waiting).
+      - record: node:cpu_saturation:ratio
+        expr: avg by (host) (rate(node_pressure_cpu_waiting_seconds_total[5m]))
+      - record: node:cpu_saturation:ratio
+        expr: windows_system_processor_queue_length / count by (host) (windows_cpu_time_total{mode="idle"})
+
+      # ---- Disk saturation: fraction of time the busiest device was busy ----
+      - record: node:disk_saturation:ratio
+        expr: max by (host) (rate(node_disk_io_time_seconds_total[5m]))
+      - record: node:disk_saturation:ratio
+        expr: max by (host) (1 - rate(windows_logical_disk_idle_seconds_total[5m]))
+
+      # ---- Network errors: errors + drops/discards per second, both dirs ----
+      - record: node:network_errors:rate
+        expr: sum by (host) (rate(node_network_receive_errs_total[5m]) + rate(node_network_transmit_errs_total[5m]) + rate(node_network_receive_drop_total[5m]) + rate(node_network_transmit_drop_total[5m]))
+      - record: node:network_errors:rate
+        expr: sum by (host) (rate(windows_net_packets_received_errors_total[5m]) + rate(windows_net_packets_outbound_errors_total[5m]) + rate(windows_net_packets_received_discarded_total[5m]) + rate(windows_net_packets_outbound_discarded_total[5m]))
+
+      # ---- Peak temperature: hottest sensor on the host ----
+      # Linux: lm-sensors via node_hwmon (absent on tyr - OCI VM, no hwmon).
+      # gliese: LHM's cpu/gpu/storage temps (matched by name).
+      - record: node:temperature_max:celsius
+        expr: max by (host) (node_hwmon_temp_celsius)
+      - record: node:temperature_max:celsius
+        expr: max by (host) ({__name__=~"lhm_.+_temperature_celsius"})
+
+      # ---- CPU core count (context for saturation panels) ----
+      - record: node:cpu_count:cores
+        expr: count by (host) (node_cpu_seconds_total{mode="idle"})
+      - record: node:cpu_count:cores
+        expr: count by (host) (windows_cpu_time_total{mode="idle"})

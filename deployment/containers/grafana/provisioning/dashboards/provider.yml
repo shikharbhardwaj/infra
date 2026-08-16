@@ -1,0 +1,18 @@
+apiVersion: 1
+
+# File-based dashboard provisioning. Grafana loads every *.json under the
+# path below on startup and re-reads it every updateIntervalSeconds, so the
+# JSON in git is the source of truth. allowUiUpdates:false makes the UI
+# read-only for these - edit in the UI to iterate, then export the JSON back
+# into the repo (Share -> Export -> Save to file) and let install ship it.
+providers:
+  - name: fleet
+    orgId: 1
+    folder: Fleet
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: false
+    options:
+      path: /etc/grafana/provisioning/dashboards/json
+      foldersFromFilesStructure: false
