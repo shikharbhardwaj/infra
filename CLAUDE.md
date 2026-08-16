@@ -146,16 +146,20 @@ observability with the workloads it's watching.
     check Windows Security -> Core Isolation -> Memory Integrity, which is
     known to block the sensor driver LHM depends on.
 - **vmagent** (`deployment/containers/vmagent/scrape.yml`) scrapes all
-  hosts by plain **Tailscale MagicDNS name** (`arete:9100`, `tyr:9100`,
-  `gliese:9182`, `gliese:8085`, ...) rather than raw LAN IPs or per-host
-  `_tailscale_ip` secrets - not every host is confirmed to share a LAN
-  with tyr, and MagicDNS is simpler than maintaining an IP per host. This
-  needs `DNS=100.100.100.100` (Tailscale's "quad 100" resolver) explicitly
-  set on the container in `vmagent.container` - a container doesn't
-  inherit tyr's own MagicDNS resolution automatically just because the
-  host has it. tyr's own node_exporter is scraped by name too, same as
+  hosts over **Tailscale IPs** (`{{ arete_tailscale_ip }}`, etc.) - not raw
+  LAN IPs, since not every host is confirmed to share a LAN with tyr - the
+  same pattern `external-routes` already uses for `thor_tailscale_ip`.
+  tyr's own node_exporter is scraped over its tailscale IP too, same as
   everyone else - a container can't reach the host it runs on via
-  `localhost`.
+  `localhost`. **Plain Tailscale MagicDNS hostnames were tried first and
+  don't work here** - confirmed by direct testing on tyr: podman's
+  netavark backend overrides any `DNS=`/`--dns` setting with the `web`
+  network's own built-in DNS (aardvark-dns) regardless, and even bypassing
+  that, Tailscale's quad-100 resolver (`100.100.100.100`) returns SERVFAIL
+  from inside a container's network namespace - it's designed for
+  same-netns access on the host, not routed/NAT'd container traffic.
+  Don't reintroduce that path without a genuinely different mechanism
+  (e.g. `Network=host`) backing it.
 - **victoria-metrics** has no traefik route - internal only, reached by
   vmagent/Grafana via the container name over the shared podman network
   (same as litellm/litellm-db). Retention (`-retentionPeriod`) is set

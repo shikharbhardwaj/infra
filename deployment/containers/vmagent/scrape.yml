@@ -1,35 +1,43 @@
-# vmagent scrape config - one job per fleet host, all reached by plain
-# Tailscale MagicDNS node name (see the DNS=100.100.100.100 directive in
-# vmagent.container) rather than raw LAN IPs or per-host tailscale-ip
-# secrets - not every host is confirmed to share a LAN with tyr, and tyr
-# already has proven tailnet reachability to everything. tyr's own
-# node_exporter is scraped the same way as everyone else's, rather than via
-# "localhost" - a container can't reach the host that way.
+# vmagent scrape config - one job per fleet host, reached over Tailscale
+# IPs (not raw LAN IPs - not every host is confirmed to share a LAN with
+# tyr), the same pattern external-routes already uses for
+# thor_tailscale_ip. tyr's own node_exporter is scraped the same way as
+# everyone else's, rather than via "localhost" - a container can't reach
+# the host that way.
+#
+# Plain Tailscale MagicDNS hostnames (e.g. "arete:9100") were tried first
+# and don't work from inside this container: podman's netavark backend
+# overrides --dns with the "web" network's own built-in DNS (aardvark-dns)
+# regardless, and even bypassing that, a direct query against Tailscale's
+# quad-100 resolver (100.100.100.100) returns SERVFAIL from inside the
+# container's network namespace - it's designed for same-netns access on
+# the host, not routed/NAT'd container traffic. Don't retry that path
+# without a different mechanism (e.g. --network=host) backing it.
 scrape_configs:
   - job_name: tyr
     static_configs:
-      - targets: ["tyr:9100"]
+      - targets: ["{{ tyr_tailscale_ip }}:9100"]
 
   - job_name: arete
     static_configs:
-      - targets: ["arete:9100"]
+      - targets: ["{{ arete_tailscale_ip }}:9100"]
 
   - job_name: thor
     static_configs:
-      - targets: ["thor:9100"]
+      - targets: ["{{ thor_tailscale_ip }}:9100"]
 
   - job_name: saras
     static_configs:
-      - targets: ["saras:9100"]
+      - targets: ["{{ saras_tailscale_ip }}:9100"]
 
   # windows_exporter: OS-level metrics (CPU/disk/network).
   - job_name: gliese
     static_configs:
-      - targets: ["gliese:9182"]
+      - targets: ["{{ gliese_tailscale_ip }}:9182"]
 
   # LibreHardwareMonitor's own built-in web server - native Prometheus
   # /metrics support (merged upstream Oct 2025), no bridge tool needed.
   # Enabled via LHM's Options -> Remote Web Server.
   - job_name: gliese-lhm
     static_configs:
-      - targets: ["gliese:8085"]
+      - targets: ["{{ gliese_tailscale_ip }}:8085"]
