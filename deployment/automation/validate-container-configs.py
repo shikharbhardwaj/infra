@@ -146,9 +146,13 @@ def main():
         # container's render_exclude are copied verbatim by install, so their
         # {{ }} is foreign templating (e.g. Grafana legends), not our secrets.
         render_exclude = load_render_exclude(container_dir)
+        # config.yml IS scanned here (only .container files are handled
+        # separately above): install's pre-flight scans every text file for
+        # {{ placeholders }}, so a stray double-brace in a config.yml comment
+        # must fail CI here too, not only at deploy time.
         for root, _, files in os.walk(container_dir):
             for fname in files:
-                if fname.endswith(".container") or fname == "config.yml":
+                if fname.endswith(".container"):
                     continue
                 fpath = os.path.join(root, fname)
                 rel = os.path.relpath(fpath, container_dir)
