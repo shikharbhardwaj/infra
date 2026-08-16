@@ -1,0 +1,30 @@
+# vmagent scrape config - one job per fleet host, all reached over
+# Tailscale (not raw LAN IPs - not every host is confirmed to share a LAN
+# with tyr, and tyr already has proven tailnet reachability to everything,
+# same as external-routes' use of thor_tailscale_ip). tyr's own
+# node_exporter is scraped the same way as everyone else's, rather than via
+# "localhost" - a container can't reach the host that way.
+scrape_configs:
+  - job_name: tyr
+    static_configs:
+      - targets: ["{{ tyr_tailscale_ip }}:9100"]
+
+  - job_name: arete
+    static_configs:
+      - targets: ["{{ arete_tailscale_ip }}:9100"]
+
+  - job_name: thor
+    static_configs:
+      - targets: ["{{ thor_tailscale_ip }}:9100"]
+
+  - job_name: saras
+    static_configs:
+      - targets: ["{{ saras_tailscale_ip }}:9100"]
+
+  # windows_exporter's textfile collector merges in lhm_exporter's sensor
+  # data (LibreHardwareMonitor), so this is one job/port, not two - see
+  # CLAUDE.md's "Hardware/sensor monitoring" section for how that's wired
+  # up on gliese.
+  - job_name: gliese
+    static_configs:
+      - targets: ["{{ gliese_tailscale_ip }}:9182"]
