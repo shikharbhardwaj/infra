@@ -11,6 +11,12 @@ AutoUpdate=registry
 
 Network=web
 
+# Point the container's resolver at Tailscale's MagicDNS ("quad 100")
+# service so scrape.yml can use plain node names (arete, thor, ...) instead
+# of per-host tailscale IPs - the container doesn't inherit tyr's own
+# MagicDNS resolution automatically just because the host has it.
+DNS=100.100.100.100
+
 Volume=%h/containers/vmagent/scrape.yml:/etc/vmagent/scrape.yml:Z
 Volume=%h/containers/vmagent/data:/vmagentdata:Z
 
