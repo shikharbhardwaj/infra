@@ -13,3 +13,13 @@ tenzing-02
 tenzing-03
 omada-controller
 jellyfin ansible_user=root
+
+# Hosts running node_exporter, scraped by vmagent on tyr - see
+# playbooks/configure-node-exporter.yml and CLAUDE.md's "Hardware/sensor
+# monitoring" section. gliese also gets scraped but isn't ansible-managed
+# (Windows/WSL2) - windows_exporter/lhm_exporter are set up by hand there.
+[node_exporter_hosts]
+arete
+thor
+saras
+tyr ansible_user=ubuntu
