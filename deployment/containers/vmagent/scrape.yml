@@ -22,10 +22,14 @@ scrape_configs:
     static_configs:
       - targets: ["saras:9100"]
 
-  # windows_exporter's textfile collector merges in lhm_exporter's sensor
-  # data (LibreHardwareMonitor), so this is one job/port, not two - see
-  # CLAUDE.md's "Hardware/sensor monitoring" section for how that's wired
-  # up on gliese.
+  # windows_exporter: OS-level metrics (CPU/disk/network).
   - job_name: gliese
     static_configs:
       - targets: ["gliese:9182"]
+
+  # LibreHardwareMonitor's own built-in web server - native Prometheus
+  # /metrics support (merged upstream Oct 2025), no bridge tool needed.
+  # Enabled via LHM's Options -> Remote Web Server.
+  - job_name: gliese-lhm
+    static_configs:
+      - targets: ["gliese:8085"]

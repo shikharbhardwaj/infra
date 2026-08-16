@@ -130,23 +130,32 @@ observability with the workloads it's watching.
   per host by hand first - interactive/hardware-specific, not something to
   blindly automate.
 - **gliese** isn't ansible-managed (Windows/WSL2, and WSL2 has no hardware
-  access anyway) - set up by hand instead: `windows_exporter` (port 9182,
-  started with the `textfile` collector enabled) plus
-  [`lhm_exporter`](https://github.com/Ormiach/lhm_exporter) (reads real
-  sensor data via LibreHardwareMonitor, writes into windows_exporter's
-  textfile collector directory rather than serving its own HTTP endpoint -
-  so this is one scrape target/port, not two). Both run as native Windows
-  services.
-- **vmagent** (`deployment/containers/vmagent/scrape.yml`) scrapes all five
+  access anyway) - set up by hand instead, two independent sources, two
+  scrape jobs:
+  - `windows_exporter` (port 9182) for OS-level metrics.
+  - **LibreHardwareMonitor's own built-in web server** (port 8085 by
+    default, enabled via Options -> Remote Web Server) for real sensor
+    data - it has a native Prometheus `/metrics` endpoint (merged upstream
+    Oct 2025), so no bridge/exporter tool is needed at all. (An earlier
+    attempt used a community tool, `lhm_exporter`, that bridged LHM's WMI
+    namespace into windows_exporter's textfile collector - unnecessary
+    complexity once LHM's native endpoint was found; don't reintroduce it.)
+  - Either way, LHM must be **running elevated (Administrator)** for
+    temperature/voltage sensors specifically to read at all - load/clock
+    work unelevated, temps don't. If temps are still blank while elevated,
+    check Windows Security -> Core Isolation -> Memory Integrity, which is
+    known to block the sensor driver LHM depends on.
+- **vmagent** (`deployment/containers/vmagent/scrape.yml`) scrapes all
   hosts by plain **Tailscale MagicDNS name** (`arete:9100`, `tyr:9100`,
-  ...) rather than raw LAN IPs or per-host `_tailscale_ip` secrets - not
-  every host is confirmed to share a LAN with tyr, and MagicDNS is simpler
-  than maintaining an IP per host. This needs
-  `DNS=100.100.100.100` (Tailscale's "quad 100" resolver) explicitly set on
-  the container in `vmagent.container` - a container doesn't inherit tyr's
-  own MagicDNS resolution automatically just because the host has it.
-  tyr's own node_exporter is scraped by name too, same as everyone else -
-  a container can't reach the host it runs on via `localhost`.
+  `gliese:9182`, `gliese:8085`, ...) rather than raw LAN IPs or per-host
+  `_tailscale_ip` secrets - not every host is confirmed to share a LAN
+  with tyr, and MagicDNS is simpler than maintaining an IP per host. This
+  needs `DNS=100.100.100.100` (Tailscale's "quad 100" resolver) explicitly
+  set on the container in `vmagent.container` - a container doesn't
+  inherit tyr's own MagicDNS resolution automatically just because the
+  host has it. tyr's own node_exporter is scraped by name too, same as
+  everyone else - a container can't reach the host it runs on via
+  `localhost`.
 - **victoria-metrics** has no traefik route - internal only, reached by
   vmagent/Grafana via the container name over the shared podman network
   (same as litellm/litellm-db). Retention (`-retentionPeriod`) is set
