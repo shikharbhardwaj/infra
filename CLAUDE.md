@@ -138,11 +138,15 @@ observability with the workloads it's watching.
   so this is one scrape target/port, not two). Both run as native Windows
   services.
 - **vmagent** (`deployment/containers/vmagent/scrape.yml`) scrapes all five
-  hosts over **Tailscale IPs** - not raw LAN IPs, since not every host is
-  confirmed to share a LAN with tyr - the same pattern `external-routes`
-  already uses for `thor_tailscale_ip`. tyr's own node_exporter is scraped
-  over its tailscale IP too, same as everyone else - a container can't
-  reach the host it runs on via `localhost`.
+  hosts by plain **Tailscale MagicDNS name** (`arete:9100`, `tyr:9100`,
+  ...) rather than raw LAN IPs or per-host `_tailscale_ip` secrets - not
+  every host is confirmed to share a LAN with tyr, and MagicDNS is simpler
+  than maintaining an IP per host. This needs
+  `DNS=100.100.100.100` (Tailscale's "quad 100" resolver) explicitly set on
+  the container in `vmagent.container` - a container doesn't inherit tyr's
+  own MagicDNS resolution automatically just because the host has it.
+  tyr's own node_exporter is scraped by name too, same as everyone else -
+  a container can't reach the host it runs on via `localhost`.
 - **victoria-metrics** has no traefik route - internal only, reached by
   vmagent/Grafana via the container name over the shared podman network
   (same as litellm/litellm-db). Retention (`-retentionPeriod`) is set
