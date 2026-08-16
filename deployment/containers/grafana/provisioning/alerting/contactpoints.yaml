@@ -1,0 +1,15 @@
+apiVersion: 1
+
+# Discord contact point for fleet alerts. The webhook is a secret (install
+# substitutes it); reuse the channel uptime-kuma already posts to or a
+# dedicated #monitoring one. No Go templating here, so this file is rendered
+# normally - the templated rule messages live in rules.yaml (render-excluded).
+contactPoints:
+  - orgId: 1
+    name: Discord
+    receivers:
+      - uid: discord_fleet
+        type: discord
+        settings:
+          url: {{ alert_discord_webhook_url }}
+        disableResolveMessage: false
