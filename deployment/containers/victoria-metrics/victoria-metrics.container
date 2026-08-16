@@ -1,0 +1,24 @@
+[Unit]
+Description=VictoriaMetrics - time series database for fleet hardware metrics
+Wants=network.target
+After=network.target
+
+[Container]
+ContainerName=victoria-metrics
+Image=docker.io/victoriametrics/victoria-metrics:stable
+AutoUpdate=registry
+
+Network=web
+
+Volume=%h/containers/victoria-metrics/data:/victoria-metrics-data:Z
+
+# Internal only - no traefik labels. vmagent/Grafana reach it by container
+# name over the shared network. Retention is small in practice (5 hosts of
+# node_exporter-scale metrics), but sized conservatively for tyr's disk.
+Exec=--storageDataPath=/victoria-metrics-data --retentionPeriod=3
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target
