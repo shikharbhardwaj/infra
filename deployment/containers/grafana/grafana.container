@@ -11,7 +11,7 @@ AutoUpdate=registry
 
 Network=web
 
-Volume=%h/containers/grafana/data:/var/lib/grafana:Z
+Volume=%h/containers/grafana/data:/var/lib/grafana:Z,U
 Volume=%h/containers/grafana/provisioning:/etc/grafana/provisioning:Z
 
 Secret=grafana_admin_password,type=env,target=GF_SECURITY_ADMIN_PASSWORD
