@@ -12,13 +12,12 @@ AutoUpdate=registry
 Network=web
 
 Volume=%h/containers/vmalert/rules.yml:/etc/vmalert/rules.yml:Z
-Volume=%h/containers/vmalert/data:/vmalertdata:Z
 
 # Reads raw exporter metrics from victoria-metrics, writes the normalized
 # recording-rule results (node:*) back into it. Same container reached by
-# name over the shared `web` network, like vmagent/grafana. tmpDataPath
-# buffers remote-write on a VM restart so no rule samples are dropped.
-Exec=--rule=/etc/vmalert/rules.yml --datasource.url=http://victoria-metrics:8428 --remoteWrite.url=http://victoria-metrics:8428 --remoteWrite.tmpDataPath=/vmalertdata --evaluationInterval=30s
+# name over the shared `web` network, like vmagent/grafana. Stateless for
+# recording rules (in-memory remote-write queue) - no data volume needed.
+Exec=--rule=/etc/vmalert/rules.yml --datasource.url=http://victoria-metrics:8428 --remoteWrite.url=http://victoria-metrics:8428 --evaluationInterval=30s
 
 [Service]
 Restart=always
