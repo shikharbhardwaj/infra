@@ -14,6 +14,19 @@ Repo containing IaC for my homelab machines.
 
 ### Dependencies
 
+#### Python tooling
+
+The `deployment/containers/install` script (and other tooling in this repo)
+needs the packages in `requirements.txt`:
+
+```
+pip install -r requirements.txt
+```
+
+If this hits an "externally-managed-environment" error (PEP 668, common on
+newer Debian/Ubuntu-based distros), either add `--break-system-packages` or
+use a venv first (`python3 -m venv .venv && source .venv/bin/activate`).
+
 #### bitwarden CLI with local vault
 
 1. Download bitwarden CLI and place it in `PATH`
