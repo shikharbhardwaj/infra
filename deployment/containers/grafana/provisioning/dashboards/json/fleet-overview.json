@@ -221,7 +221,7 @@
     },
     {
       "type": "stat",
-      "title": "Fullest filesystem",
+      "title": "Root filesystem (fullest)",
       "datasource": {
         "type": "prometheus",
         "uid": "victoriametrics"
@@ -238,7 +238,7 @@
             "type": "prometheus",
             "uid": "victoriametrics"
           },
-          "expr": "max(node:fs_mount_utilization:ratio{host!=\"\"})",
+          "expr": "max(node:fs_mount_utilization:ratio{host!=\"\", mount=~\"/|C:\"})",
           "legendFormat": "",
           "refId": "A",
           "range": true,
@@ -573,7 +573,7 @@
     },
     {
       "type": "bargauge",
-      "title": "Filesystem (fullest mount)",
+      "title": "Root filesystem",
       "datasource": {
         "type": "prometheus",
         "uid": "victoriametrics"
@@ -590,7 +590,7 @@
             "type": "prometheus",
             "uid": "victoriametrics"
           },
-          "expr": "node:fs_utilization:ratio{host!=\"\"}",
+          "expr": "node:fs_mount_utilization:ratio{host!=\"\", mount=~\"/|C:\"}",
           "legendFormat": "{{host}}",
           "refId": "A",
           "range": false,
@@ -674,7 +674,7 @@
           "instant": true,
           "range": false,
           "format": "table",
-          "expr": "node:fs_mount_utilization:ratio{host!=\"\"}"
+          "expr": "node:fs_mount_utilization:ratio{host!=\"\", mount!~\"HarddiskVolume.*\"}"
         }
       ],
       "transformations": [

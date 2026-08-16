@@ -10,15 +10,15 @@ groups:
   interval: 1m
   rules:
   - uid: fleet-fs-full-warn
-    title: Filesystem nearly full
+    title: Root filesystem nearly full
     condition: C
     for: 15m
     labels:
       severity: warning
     annotations:
-      summary: '{{ $labels.host }}:{{ $labels.mount }} is {{ printf "%.0f" (mul $values.A.Value 100) }}%
-        full'
-      description: Filesystem above 90% for 15m (mounts >1GB only, so tiny reserved volumes don't false-alarm).
+      summary: '{{ $labels.host }} root disk ({{ $labels.mount }}) is {{ printf "%.0f" (mul $values.A.Value
+        100) }}% full'
+      description: Root filesystem above 90% for 15m.
     noDataState: OK
     execErrState: Error
     data:
@@ -33,8 +33,7 @@ groups:
           type: prometheus
           uid: victoriametrics
         editorMode: code
-        expr: node:fs_mount_utilization:ratio{host!=""} and on(host,mount) (node:fs_mount_size:bytes{host!=""}
-          > 1e9)
+        expr: node:fs_mount_utilization:ratio{host!="", mount=~"/|C:"}
         instant: true
         range: false
         intervalMs: 1000
@@ -66,15 +65,15 @@ groups:
             params: []
           type: query
   - uid: fleet-fs-full-crit
-    title: Filesystem critically full
+    title: Root filesystem critically full
     condition: C
     for: 5m
     labels:
       severity: critical
     annotations:
-      summary: '{{ $labels.host }}:{{ $labels.mount }} is {{ printf "%.0f" (mul $values.A.Value 100) }}%
-        full'
-      description: Filesystem above 95% - act now.
+      summary: '{{ $labels.host }} root disk ({{ $labels.mount }}) is {{ printf "%.0f" (mul $values.A.Value
+        100) }}% full'
+      description: Root filesystem above 95% - act now.
     noDataState: OK
     execErrState: Error
     data:
@@ -89,8 +88,7 @@ groups:
           type: prometheus
           uid: victoriametrics
         editorMode: code
-        expr: node:fs_mount_utilization:ratio{host!=""} and on(host,mount) (node:fs_mount_size:bytes{host!=""}
-          > 1e9)
+        expr: node:fs_mount_utilization:ratio{host!="", mount=~"/|C:"}
         instant: true
         range: false
         intervalMs: 1000
@@ -122,14 +120,14 @@ groups:
             params: []
           type: query
   - uid: fleet-fs-predict-24h
-    title: Filesystem will fill within 24h
+    title: Root filesystem will fill within 24h
     condition: C
     for: 30m
     labels:
       severity: warning
     annotations:
-      summary: '{{ $labels.host }}:{{ $labels.mountpoint }} is on track to fill within 24h'
-      description: Linear projection of free space over the last 6h crosses zero within a day - catch
+      summary: '{{ $labels.host }} root disk is on track to fill within 24h'
+      description: Linear projection of root free space over the last 6h crosses zero within a day - catch
         runaway logs before 100%.
     noDataState: OK
     execErrState: Error
@@ -145,8 +143,8 @@ groups:
           type: prometheus
           uid: victoriametrics
         editorMode: code
-        expr: predict_linear(node_filesystem_avail_bytes{fstype!~"tmpfs|fuse.*|overlay|squashfs|ramfs|nsfs"}[6h],
-          86400)
+        expr: predict_linear(node_filesystem_avail_bytes{fstype!~"tmpfs|fuse.*|overlay|squashfs|ramfs|nsfs",
+          mountpoint="/", host!=""}[6h], 86400)
         instant: true
         range: false
         intervalMs: 1000
