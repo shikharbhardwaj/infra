@@ -5,7 +5,7 @@ After=network.target
 
 [Container]
 ContainerName=victoria-metrics
-Image=docker.io/victoriametrics/victoria-metrics:stable
+Image=docker.io/victoriametrics/victoria-metrics:latest
 AutoUpdate=registry
 
 Network=web
