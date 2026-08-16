@@ -17,6 +17,9 @@ tyr:
   - crafty
   - uptime-kuma
   - external-routes
+  - victoria-metrics
+  - vmagent
+  - grafana
 
 gliese:
   - traefik
