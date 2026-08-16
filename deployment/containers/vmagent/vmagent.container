@@ -1,0 +1,23 @@
+[Unit]
+Description=vmagent - scrapes fleet hosts' metrics over Tailscale, forwards to victoria-metrics
+Wants=network.target
+Requires=victoria-metrics.service
+After=victoria-metrics.service
+
+[Container]
+ContainerName=vmagent
+Image=docker.io/victoriametrics/vmagent:stable
+AutoUpdate=registry
+
+Network=web
+
+Volume=%h/containers/vmagent/scrape.yml:/etc/vmagent/scrape.yml:Z
+Volume=%h/containers/vmagent/data:/vmagentdata:Z
+
+Exec=--promscrape.config=/etc/vmagent/scrape.yml --remoteWrite.url=http://victoria-metrics:8428/api/v1/write
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target
