@@ -1,5 +1,16 @@
 apiVersion: 1
 
+# deleteDatasources runs before datasources on every startup. It's required
+# here because Grafana's datasource provisioner fails FATALLY ("data source
+# not found") if asked to set a uid on a datasource it already stored under a
+# different (auto-generated) uid from an earlier, uid-less provisioning - which
+# crash-loops the whole container. Deleting first turns the apply into a clean
+# insert. Idempotent: a no-op on a fresh install, and the uid stays stable
+# across restarts so provisioned dashboards keep resolving it.
+deleteDatasources:
+  - name: VictoriaMetrics
+    orgId: 1
+
 datasources:
   - name: VictoriaMetrics
     uid: victoriametrics
