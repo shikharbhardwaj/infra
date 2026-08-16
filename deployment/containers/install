@@ -14,6 +14,12 @@ import subprocess
 TARGET_BASE_DIR = pathlib.Path.home() / "containers"
 SYSTEMD_CONFIG_DIR = pathlib.Path.home() / ".config" / "containers" / "systemd"
 SECRET_PLACEHOLDER_PATTERN = re.compile(r"\{\{\s*(\w+)\s*\}\}")
+# Placeholder committed into otherwise-empty bind-mount dirs so git tracks
+# them in the source tree (git ignores empty dirs). It has no purpose in the
+# rendered target - the dir itself is what install must create - and copying
+# it into a data dir owned by the container's mapped UID (rootless :U mounts)
+# fails with EACCES, so it is skipped during rendering.
+GIT_DIR_PLACEHOLDER = "empty-file-so-git-tracks-this-dir.txt"
 DEFAULT_SECRETS_FILE = "secrets.yml"
 DEFAULT_INVENTORY_FILE = None  # No default - must be explicitly specified or use --all
 
@@ -369,6 +375,12 @@ def main():
 
                 # Copy/Substitute files
                 for file_name in files:
+                    # Git-tracking placeholders exist only in the source tree;
+                    # the dir they mark is already created above. Skip them -
+                    # copying into a container-owned data dir fails with EACCES.
+                    if file_name == GIT_DIR_PLACEHOLDER:
+                        continue
+
                     source_file = source_root / file_name
                     target_file = target_root / file_name
                     relative_file_path = target_file.relative_to(TARGET_BASE_DIR)
