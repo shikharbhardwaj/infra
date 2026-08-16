@@ -113,6 +113,52 @@ replaced a shared `dynamic.yml` (file provider) that used to be mounted on
 every host running traefik, which caused gliese to try (and fail) to issue
 ACME certs for routes it had no business serving.
 
+## Hardware/sensor monitoring
+
+Replaces an earlier netdata-based attempt (its Windows agent turned out to
+be paid-only, and the cloud-upsell posture was unwelcome). **VictoriaMetrics
++ vmagent + Grafana run on tyr** (`deployment/containers/victoria-metrics`,
+`vmagent`, `grafana`), deliberately outside every system being monitored -
+not on the k8s cluster, so it survives tenzing being down and doesn't mix
+observability with the workloads it's watching.
+
+- **Sources**: `node_exporter` (free, unrestricted) on arete/thor/saras/tyr,
+  installed via `playbooks/configure-node-exporter.yml` /
+  `make configure-node-exporter` (ansible, `node_exporter_hosts` group in
+  `hosts.example`). For full sensor coverage beyond node_exporter's
+  defaults, run `apt install lm-sensors` and `sensors-detect --auto` once
+  per host by hand first - interactive/hardware-specific, not something to
+  blindly automate.
+- **gliese** isn't ansible-managed (Windows/WSL2, and WSL2 has no hardware
+  access anyway) - set up by hand instead: `windows_exporter` (port 9182,
+  started with the `textfile` collector enabled) plus
+  [`lhm_exporter`](https://github.com/Ormiach/lhm_exporter) (reads real
+  sensor data via LibreHardwareMonitor, writes into windows_exporter's
+  textfile collector directory rather than serving its own HTTP endpoint -
+  so this is one scrape target/port, not two). Both run as native Windows
+  services.
+- **vmagent** (`deployment/containers/vmagent/scrape.yml`) scrapes all five
+  hosts over **Tailscale IPs** - not raw LAN IPs, since not every host is
+  confirmed to share a LAN with tyr - the same pattern `external-routes`
+  already uses for `thor_tailscale_ip`. tyr's own node_exporter is scraped
+  over its tailscale IP too, same as everyone else - a container can't
+  reach the host it runs on via `localhost`.
+- **victoria-metrics** has no traefik route - internal only, reached by
+  vmagent/Grafana via the container name over the shared podman network
+  (same as litellm/litellm-db). Retention (`-retentionPeriod`) is set
+  conservatively for tyr's disk; VictoriaMetrics is far more
+  storage-efficient than netdata's dbengine was, so this should be a small
+  fraction of what netdata needed for the same fleet.
+- **Grafana is exposed publicly** through tyr's traefik
+  (`grafana.{{ oci_parent_host }}`), unlike netdata's dashboard - Grafana
+  has its own login, so there's no bare/unauthenticated surface and no new
+  auth mechanism needed. The VictoriaMetrics datasource is pre-provisioned
+  (`grafana/provisioning/datasources/`); import the stock community "Node
+  Exporter Full" dashboard (ID 1860) rather than building custom panels -
+  it already covers `node_hwmon_*` sensor metrics.
+- Watch tyr's memory headroom once these three containers join
+  traefik/crafty/uptime-kuma on that small OCI instance.
+
 ## AI stack (Obsidian + LiteLLM + MCP)
 
 Personal RAG/assistant stack over an Obsidian vault. Load-bearing pieces:
