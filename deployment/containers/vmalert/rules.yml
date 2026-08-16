@@ -35,6 +35,23 @@ groups:
       - record: node:fs_utilization:ratio
         expr: max by (host) (1 - windows_logical_disk_free_bytes / windows_logical_disk_size_bytes)
 
+      # ---- Per-mount filesystem utilization (host + mount), for the fleet
+      # filesystems table and the root-filesystem-full alert. label_replace
+      # unifies node_exporter's `mountpoint` and windows_exporter's `volume`
+      # into one `mount` label so both OSes share the metric.
+      - record: node:fs_mount_utilization:ratio
+        expr: label_replace(1 - node_filesystem_avail_bytes{fstype!~"tmpfs|fuse.*|overlay|squashfs|ramfs|nsfs"} / node_filesystem_size_bytes, "mount", "$1", "mountpoint", "(.+)")
+      - record: node:fs_mount_utilization:ratio
+        expr: label_replace(1 - windows_logical_disk_free_bytes / windows_logical_disk_size_bytes, "mount", "$1", "volume", "(.+)")
+
+      # ---- Per-mount filesystem size (bytes), same `mount` label - lets the
+      # table show capacity alongside %full, and lets alerts ignore tiny
+      # reserved partitions (e.g. Windows recovery volumes) by size.
+      - record: node:fs_mount_size:bytes
+        expr: label_replace(node_filesystem_size_bytes{fstype!~"tmpfs|fuse.*|overlay|squashfs|ramfs|nsfs"}, "mount", "$1", "mountpoint", "(.+)")
+      - record: node:fs_mount_size:bytes
+        expr: label_replace(windows_logical_disk_size_bytes, "mount", "$1", "volume", "(.+)")
+
       # ---- CPU saturation ----
       # Linux: PSI - fraction of time runnable tasks were stalled on CPU (0..1).
       # Windows: no PSI, so processor-queue-length per logical core as a
