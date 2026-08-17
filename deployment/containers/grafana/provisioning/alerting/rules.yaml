@@ -230,15 +230,18 @@ groups:
             type: last
             params: []
           type: query
-  - uid: fleet-mem-high
-    title: High memory utilization
+  - uid: fleet-mem-pressure
+    title: Memory pressure (PSI stalls)
     condition: C
-    for: 15m
+    for: 10m
     labels:
       severity: warning
     annotations:
-      summary: '{{ $labels.host }} memory is {{ printf "%.0f" (mul $values.A.Value 100) }}%'
-      description: Memory above 90% for 15m.
+      summary: '{{ $labels.host }} tasks stalled on memory {{ printf "%.1f" (mul $values.A.Value
+        100) }}% of the time'
+      description: Memory PSI waiting fraction above 5% for 10m - real memory contention,
+        not just high utilization (expected on Proxmox hosts that statically
+        allocate RAM to VMs). Windows has no PSI and is not covered.
     noDataState: OK
     execErrState: Error
     data:
@@ -253,7 +256,7 @@ groups:
           type: prometheus
           uid: victoriametrics
         editorMode: code
-        expr: node:memory_utilization:ratio{host!=""}
+        expr: node:memory_saturation:ratio{host!=""}
         instant: true
         range: false
         intervalMs: 1000
@@ -274,7 +277,7 @@ groups:
         - evaluator:
             type: gt
             params:
-            - 0.9
+            - 0.05
           operator:
             type: and
           query:

@@ -62,6 +62,14 @@ groups:
       - record: node:cpu_saturation:ratio
         expr: windows_system_processor_queue_length / count by (host) (windows_cpu_time_total{mode="idle"})
 
+      # ---- Memory saturation: fraction of time runnable tasks were stalled on
+      # memory (Linux PSI). Unlike utilization, this is meaningful on Proxmox
+      # hosts that statically allocate RAM to VMs (no ballooning) - high mem
+      # utilization is expected there, but stalls only happen under real
+      # contention. Windows has no PSI equivalent.
+      - record: node:memory_saturation:ratio
+        expr: avg by (host) (rate(node_pressure_memory_waiting_seconds_total[5m]))
+
       # ---- Disk saturation: fraction of time the busiest device was busy ----
       - record: node:disk_saturation:ratio
         expr: max by (host) (rate(node_disk_io_time_seconds_total[5m]))
