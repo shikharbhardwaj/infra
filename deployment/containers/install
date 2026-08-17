@@ -2,6 +2,8 @@
 
 import argparse
 import fnmatch
+import hashlib
+import json
 import logging
 import os
 import pathlib
@@ -21,6 +23,11 @@ SECRET_PLACEHOLDER_PATTERN = re.compile(r"\{\{\s*(\w+)\s*\}\}")
 # it into a data dir owned by the container's mapped UID (rootless :U mounts)
 # fails with EACCES, so it is skipped during rendering.
 GIT_DIR_PLACEHOLDER = "empty-file-so-git-tracks-this-dir.txt"
+# Sidecar digests let install decide whether a podman secret's value actually
+# changed (podman deliberately never exposes a secret's value for comparison).
+# Keyed by secret name -> sha256 of the value last written. Used only to avoid
+# needless secret recreation + container restarts on unchanged pushes.
+SECRET_DIGEST_DIR = SYSTEMD_CONFIG_DIR / ".secret-digests"
 DEFAULT_SECRETS_FILE = "secrets.yml"
 DEFAULT_INVENTORY_FILE = None  # No default - must be explicitly specified or use --all
 
@@ -180,8 +187,39 @@ def find_missing_placeholders(
     return missing_by_container
 
 
-def create_podman_secrets(container_name: str, podman_secrets: list, secrets: dict):
-    """Creates podman secrets for specified secret names."""
+def write_if_changed(target_file: pathlib.Path, new_bytes: bytes) -> bool:
+    """Writes new_bytes to target_file only if the content differs from what is
+    already there. Returns True if the file was created or its content changed.
+
+    This is what makes deploys idempotent: an unchanged rendered file leaves the
+    on-disk copy (and its mtime) untouched, so install can tell which containers
+    actually need a restart and which can be left running.
+    """
+    if target_file.exists():
+        try:
+            if target_file.read_bytes() == new_bytes:
+                return False
+        except OSError:
+            pass  # unreadable - fall through and rewrite
+    target_file.parent.mkdir(parents=True, exist_ok=True)
+    target_file.write_bytes(new_bytes)
+    return True
+
+
+def ensure_podman_secrets(
+    container_name: str, podman_secrets: list, secrets: dict
+) -> bool:
+    """Ensures each podman secret exists with the current value. Returns True if
+    any secret was created or its value changed (meaning the container must be
+    restarted to pick it up).
+
+    podman never exposes a secret's value, so to avoid recreating (and thus
+    forcing a restart of) unchanged secrets on every push, we compare against a
+    sidecar sha256 digest written the last time we set it. A secret is
+    (re)created only when it is missing from podman or its value's digest
+    differs.
+    """
+    changed = False
     for secret_name in podman_secrets:
         if secret_name not in secrets:
             logger.error(
@@ -189,37 +227,61 @@ def create_podman_secrets(container_name: str, podman_secrets: list, secrets: di
             )
             sys.exit(1)
 
-        # Check if secret already exists in podman
-        check_cmd = ["podman", "secret", "inspect", secret_name]
+        value = str(secrets[secret_name])
+        digest = hashlib.sha256(value.encode("utf-8")).hexdigest()
+        digest_file = SECRET_DIGEST_DIR / secret_name
+
+        # Does podman already hold this secret?
         try:
-            process = subprocess.run(check_cmd, capture_output=True, text=True)
-            secret_exists = process.returncode == 0
+            secret_exists = (
+                subprocess.run(
+                    ["podman", "secret", "inspect", secret_name],
+                    capture_output=True,
+                    text=True,
+                ).returncode
+                == 0
+            )
         except Exception as e:
             logger.error(f"Failed to check if secret '{secret_name}' exists: {e}")
             sys.exit(1)
 
-        # If secret exists, remove it first (to update)
+        prev_digest = None
+        if digest_file.exists():
+            try:
+                prev_digest = digest_file.read_text(encoding="utf-8").strip()
+            except OSError:
+                prev_digest = None
+
+        if secret_exists and prev_digest == digest:
+            logger.debug(f"Secret '{secret_name}' unchanged, leaving as-is.")
+            continue
+
+        # (Re)create: value changed, secret missing, or digest unknown.
         if secret_exists:
-            logger.debug(f"Removing existing secret '{secret_name}'")
+            logger.debug(f"Removing existing secret '{secret_name}' to update it")
             try:
                 subprocess.run(["podman", "secret", "rm", secret_name], check=True)
             except subprocess.CalledProcessError as e:
                 logger.error(f"Failed to remove existing secret '{secret_name}': {e}")
                 sys.exit(1)
 
-        # Create the secret
         logger.info(f"Creating podman secret: {secret_name}")
         try:
-            # Use echo to pass the secret value to podman
             create_cmd = ["podman", "secret", "create", secret_name, "-"]
             process = subprocess.Popen(create_cmd, stdin=subprocess.PIPE, text=True)
-            process.communicate(input=str(secrets[secret_name]))
+            process.communicate(input=value)
             if process.returncode != 0:
                 logger.error(f"Failed to create secret '{secret_name}'")
                 sys.exit(1)
         except Exception as e:
             logger.error(f"Error creating secret '{secret_name}': {e}")
             sys.exit(1)
+
+        SECRET_DIGEST_DIR.mkdir(parents=True, exist_ok=True)
+        digest_file.write_text(digest, encoding="utf-8")
+        changed = True
+
+    return changed
 
 
 # --- Main Logic ---
@@ -248,7 +310,16 @@ def main():
         help="Install all containers, ignoring inventory file.",
     )
     parser.add_argument(
-        "--restart", "-r", action="store_true", help="Restart containers"
+        "--restart",
+        "-r",
+        action="store_true",
+        help="Restart only containers whose rendered config or secrets changed.",
+    )
+    parser.add_argument(
+        "--restart-all",
+        action="store_true",
+        help="Force-restart every installed container regardless of changes "
+        "(implies --restart). Use for recovery or to pick up image updates.",
     )
     parser.add_argument(
         "--verbose", "-v", action="store_true", help="Enable verbose (debug) logging"
@@ -333,6 +404,7 @@ def main():
     logger.info(f"Searching for container directories in: {script_dir}")
     found_containers = False
     containers = []
+    changed_containers = set()  # names whose rendered config or secrets changed
     for item in script_dir.iterdir():
         if item.is_dir() and not item.name.startswith(
             "."
@@ -376,9 +448,10 @@ def main():
                             podman_secrets_list, list
                         ):
                             if secrets:
-                                create_podman_secrets(
+                                if ensure_podman_secrets(
                                     container_name, podman_secrets_list, secrets
-                                )
+                                ):
+                                    changed_containers.add(container_name)
                             else:
                                 logger.error(
                                     f"Container '{container_name}' requires secrets but no secrets file was loaded."
@@ -431,23 +504,33 @@ def main():
                         # Copy binary files, render-excluded files (e.g. Grafana
                         # dashboards whose {{label}} syntax is not ours), or when
                         # no secrets are loaded.
-                        logger.info(f"    Copying:     {relative_file_path}")
-                        shutil.copy2(
-                            source_file, target_file
-                        )  # copy2 preserves metadata
+                        try:
+                            new_bytes = source_file.read_bytes()
+                        except OSError as e:
+                            logger.error(f"Failed reading {source_file}: {e}")
+                            sys.exit(1)
+                        if write_if_changed(target_file, new_bytes):
+                            logger.info(f"    Copying:     {relative_file_path}")
+                            shutil.copymode(source_file, target_file)
+                            changed_containers.add(container_name)
+                        else:
+                            logger.debug(f"    Unchanged:   {relative_file_path}")
                     else:
                         # Read, substitute, and write text files
-                        logger.info(f"    Substituting: {relative_file_path}")
                         try:
                             with open(source_file, "r", encoding="utf-8") as sf:
                                 content = sf.read()
 
                             substituted_content = substitute_secrets(content, secrets)
 
-                            with open(target_file, "w", encoding="utf-8") as tf:
-                                tf.write(substituted_content)
-                            # Preserve permissions after writing
-                            shutil.copymode(source_file, target_file)
+                            if write_if_changed(
+                                target_file, substituted_content.encode("utf-8")
+                            ):
+                                logger.info(f"    Substituting: {relative_file_path}")
+                                shutil.copymode(source_file, target_file)
+                                changed_containers.add(container_name)
+                            else:
+                                logger.debug(f"    Unchanged:   {relative_file_path}")
                         except Exception as e:
                             logger.error(f"Failed processing file {source_file}: {e}")
                             sys.exit(1)
@@ -458,21 +541,27 @@ def main():
                         SYSTEMD_CONFIG_DIR.mkdir(parents=True, exist_ok=True)
 
                         systemd_link = SYSTEMD_CONFIG_DIR / file_name
-                        # Remove existing symlink if it exists
-                        if systemd_link.exists() or systemd_link.is_symlink():
-                            systemd_link.unlink()
-
-                        # Create new symlink
-                        logger.info(
-                            f"    Creating symlink: {systemd_link} -> {target_file}"
+                        # Only (re)create the symlink when it is missing or
+                        # points elsewhere. A newly-linked unit is a brand-new
+                        # service, so treat that as a change that needs a start.
+                        already_linked = (
+                            systemd_link.is_symlink()
+                            and os.readlink(systemd_link) == str(target_file)
                         )
-                        try:
-                            os.symlink(target_file, systemd_link)
-                        except Exception as e:
-                            logger.error(
-                                f"Failed to create symlink for {file_name}: {e}"
+                        if not already_linked:
+                            if systemd_link.exists() or systemd_link.is_symlink():
+                                systemd_link.unlink()
+                            logger.info(
+                                f"    Creating symlink: {systemd_link} -> {target_file}"
                             )
-                            sys.exit(1)
+                            try:
+                                os.symlink(target_file, systemd_link)
+                            except Exception as e:
+                                logger.error(
+                                    f"Failed to create symlink for {file_name}: {e}"
+                                )
+                                sys.exit(1)
+                            changed_containers.add(container_name)
 
     if not found_containers:
         logger.info("No container subdirectories found.")
@@ -486,8 +575,21 @@ def main():
             logger.error(f"Failed to reload systemd: {e}")
             sys.exit(1)
 
-        if args.restart:
-            for container in containers:
+        if args.restart or args.restart_all:
+            if args.restart_all:
+                to_restart = list(containers)
+                logger.info("Force-restarting all installed containers (--restart-all).")
+            else:
+                # Only recycle containers whose rendered config or secrets
+                # actually changed - restarting unchanged ones (especially
+                # traefik) is what caused an uptime dip on every push.
+                to_restart = [c for c in containers if c in changed_containers]
+                if not to_restart:
+                    logger.info(
+                        "No container config changed; nothing to restart."
+                    )
+
+            for container in to_restart:
                 logger.info(f"Restart container: {container}")
                 try:
                     subprocess.run(

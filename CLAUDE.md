@@ -47,7 +47,15 @@ files into `~/.config/containers/systemd/`, and reloads systemd.
   references a container directory that doesn't exist.
 - CD is `.github/workflows/cd-containers.yml`: a self-hosted runner (on the
   Tailscale tailnet) SSHes into each host, `git pull --ff-only`, runs
-  `./install --inventory inventory.yml --restart`. Auth is via **Tailscale
+  `./install --inventory inventory.yml --restart`. `--restart` is
+  **change-scoped**: `install` renders every file but only `systemctl restart`s
+  a container whose rendered output (or one of its podman secrets) actually
+  changed vs what's already on disk - so a push that only touches, say, a
+  Grafana dashboard no longer recycles traefik and every other container, which
+  used to cause a fleet-wide uptime dip on *every* push. Secret changes are
+  detected via a sidecar sha256 in `~/.config/containers/systemd/.secret-digests/`
+  (podman never exposes a secret's value to diff against). Use `--restart-all`
+  to force-recycle everything (recovery, or to pick up an image update). Auth is via **Tailscale
   SSH** (tailnet ACLs, not a keypair) - the ACL's `ssh` rule for the runner
   must use `"action": "accept"`, not the default `"check"`, or CI hangs
   waiting for an interactive browser re-auth that can never happen
