@@ -1698,6 +1698,62 @@
           "sort": "desc"
         }
       }
+    },
+    {
+      "type": "row",
+      "title": "Alerts",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 51
+      },
+      "panels": []
+    },
+    {
+      "type": "alertlist",
+      "title": "Firing & pending alerts",
+      "datasource": {
+        "type": "grafana",
+        "uid": "-- Grafana --"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 52,
+        "w": 24,
+        "h": 8
+      },
+      "targets": [],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "useAs": "panel",
+        "show": "current",
+        "onlyAlertsOnDashboard": false,
+        "dashboardAlerts": false,
+        "stateFilter": [
+          "alerting",
+          "pending"
+        ],
+        "sortOrder": 1,
+        "maxItems": 100,
+        "alertListOptions": {
+          "viewMode": "list",
+          "groupBy": [],
+          "sortOrder": 1,
+          "maxItems": 100,
+          "stateFilter": {
+            "alerting": true,
+            "pending": true,
+            "no_data": false,
+            "ok": false,
+            "error": false
+          }
+        }
+      }
     }
   ]
 }
