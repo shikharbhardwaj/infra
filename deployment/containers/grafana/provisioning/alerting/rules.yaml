@@ -3,6 +3,9 @@
 # which must reach Grafana verbatim, not be eaten by install's secret
 # substitution). Each rule: instant PromQL query A -> threshold C.
 apiVersion: 1
+deleteRules:
+- orgId: 1
+  uid: fleet-mem-high
 groups:
 - orgId: 1
   name: fleet
@@ -237,11 +240,10 @@ groups:
     labels:
       severity: warning
     annotations:
-      summary: '{{ $labels.host }} tasks stalled on memory {{ printf "%.1f" (mul $values.A.Value
-        100) }}% of the time'
-      description: Memory PSI waiting fraction above 5% for 10m - real memory contention,
-        not just high utilization (expected on Proxmox hosts that statically
-        allocate RAM to VMs). Windows has no PSI and is not covered.
+      summary: '{{ $labels.host }} tasks stalled on memory {{ printf "%.1f" (mul $values.A.Value 100)
+        }}% of the time'
+      description: Memory PSI waiting fraction above 5% for 10m - real memory contention, not just high
+        utilization.
     noDataState: OK
     execErrState: Error
     data:
