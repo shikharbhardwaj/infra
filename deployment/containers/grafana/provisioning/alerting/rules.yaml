@@ -21,7 +21,7 @@ groups:
     annotations:
       summary: '{{ $labels.host }} root disk ({{ $labels.mount }}) is {{ printf "%.0f" (mul $values.A.Value
         100) }}% full'
-      description: Root filesystem above 90% for 15m.
+      description: Root filesystem between 90% and 95% for 15m.
     noDataState: OK
     execErrState: Error
     data:
@@ -55,9 +55,10 @@ groups:
           uid: __expr__
         conditions:
         - evaluator:
-            type: gt
+            type: within_range
             params:
             - 0.9
+            - 0.95
           operator:
             type: and
           query:

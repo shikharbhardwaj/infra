@@ -1,0 +1,21 @@
+apiVersion: 1
+
+# Concise Discord message/title, replacing Grafana's verbose default (which
+# dumps every annotation + label + a Silence/View URL per alert). Here the body
+# is just one line per alert - its `summary` annotation - prefixed by state.
+#
+# Render-EXCLUDED (see grafana/config.yml): the Go `{{ range }}`/`{{ end }}`
+# templating must reach Grafana verbatim. contactpoints.yaml stays render-normal
+# so its `{{ alert_discord_webhook_url }}` secret still substitutes - it only
+# references these templates via `{{ template "..." . }}`, which install's
+# `{{ \w+ }}` secret regex does not match (the quoted arg + dot break it), so
+# no bare `{{ end }}` ever lands in a render-normal file.
+templates:
+  - orgId: 1
+    name: discord.fleet
+    template: |
+      {{ define "discord.fleet.title" }}{{ if eq .Status "firing" }}🔴 {{ .Alerts.Firing | len }} firing{{ else }}✅ resolved{{ end }} · {{ .CommonLabels.alertname }}{{ end }}
+
+      {{ define "discord.fleet.message" }}{{ range .Alerts.Firing }}🔴 {{ .Annotations.summary }}
+      {{ end }}{{ range .Alerts.Resolved }}✅ {{ .Annotations.summary }}
+      {{ end }}{{ end }}

@@ -2,8 +2,11 @@ apiVersion: 1
 
 # Discord contact point for fleet alerts. The webhook is a secret (install
 # substitutes it); reuse the channel uptime-kuma already posts to or a
-# dedicated #monitoring one. No Go templating here, so this file is rendered
-# normally - the templated rule messages live in rules.yaml (render-excluded).
+# dedicated #monitoring one. This file is rendered normally so the webhook
+# secret substitutes - the only braces here are `{{ template "..." . }}`
+# references, which install's `{{ \w+ }}` secret regex deliberately does not
+# match. The templates themselves (the range-over-alerts loops) live in
+# templates.yaml, which IS render-excluded.
 contactPoints:
   - orgId: 1
     name: Discord
@@ -12,4 +15,6 @@ contactPoints:
         type: discord
         settings:
           url: {{ alert_discord_webhook_url }}
+          title: '{{ template "discord.fleet.title" . }}'
+          message: '{{ template "discord.fleet.message" . }}'
         disableResolveMessage: false

@@ -11,6 +11,11 @@ AutoUpdate=registry
 
 Network=web
 
+# Public URL Grafana embeds in alert notifications (and uses for redirects).
+# Without this it defaults to http://localhost:3000, so Discord alert links
+# point at localhost. Must match the traefik route below.
+Environment=GF_SERVER_ROOT_URL=https://grafana.{{ oci_parent_host }}
+
 Volume=%h/containers/grafana/data:/var/lib/grafana:Z,U
 Volume=%h/containers/grafana/provisioning:/etc/grafana/provisioning:Z
 

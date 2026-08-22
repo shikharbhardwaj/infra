@@ -7,7 +7,10 @@ podman_secrets:
 # hold no secrets - the datasource is referenced by uid, not credentials.
 render_exclude:
 - provisioning/dashboards/json/*.json
-# Alert rule summaries use Go {{ }} templating ({{ $labels.host }} etc.) that
-# must reach Grafana verbatim. contactpoints.yaml is NOT excluded - it needs
-# its {{ alert_discord_webhook_url }} secret substituted.
+# Alert rule summaries and the Discord message/title templates use Go double-
+# brace templating (labels, range-over-alerts loops) that must reach Grafana
+# verbatim. contactpoints.yaml is NOT excluded - it needs its
+# {{ alert_discord_webhook_url }} secret substituted, and only references the
+# templates via {{ template "..." . }} (not matched by the secret regex).
 - provisioning/alerting/rules.yaml
+- provisioning/alerting/templates.yaml
