@@ -95,3 +95,17 @@ groups:
         expr: count by (host) (node_cpu_seconds_total{mode="idle"})
       - record: node:cpu_count:cores
         expr: count by (host) (windows_cpu_time_total{mode="idle"})
+
+      # ---- Storage temperatures (TrueNAS) ----
+      # Deliberately SEPARATE from node:temperature_max:celsius: a drive/HBA is
+      # not a CPU, so the 85C peak-temp threshold is wrong for it, and folding
+      # them in would write node:temperature_max:celsius{host=truenas-*} from
+      # several rules for one host (same labels = a collision). These come from
+      # node_exporter's textfile collector inside the TrueNAS VM (see
+      # deployment/truenas/); only that host emits them, so no cross-exporter
+      # twin rule is needed. Per-disk temp keeps its `disk` label; HBA is one
+      # sensor per host.
+      - record: node:disk_temperature:celsius
+        expr: max by (host, disk) (disk_temperature_celsius)
+      - record: node:hba_temperature:celsius
+        expr: max by (host) (hba_temperature_celsius)

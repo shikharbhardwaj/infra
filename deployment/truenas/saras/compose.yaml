@@ -1,0 +1,65 @@
+# TrueNAS monitoring Custom App for the saras TrueNAS VM.
+#
+# Installed by hand via the TrueNAS UI (Apps -> Discover -> Custom App -> install
+# from YAML), NOT via this repo's tyr/gliese `install` mechanism. It is
+# documented-but-not-automated, like deployment/mac/. See README.md.
+#
+# Two services, one scrape target (:9100, labelled host=truenas-saras):
+#   node-exporter     - host networking, so it's reachable at the VM's own
+#                       tailnet IP (Tailscale runs with host networking on this
+#                       VM). Reads host CPU/mem/fs/zfs from the bind-mounted
+#                       /proc,/sys,/ via --path.*; serves the collector's
+#                       textfile output on :9100.
+#   metrics-collector - privileged sidecar; runs the HBA tool + smartctl and
+#                       writes drive/HBA temps into the shared textfile volume.
+#
+# No Tailscale sidecar / auth key: this VM's Tailscale already puts the tailnet
+# interface in the host netns, so host networking is enough. Put the VM's
+# existing tailnet IP into tyr's secrets.yml as truenas_saras_tailscale_ip.
+#
+# Host paths below assume the pool `main` (same place the HBA tool already lives,
+# /mnt/main/apps/hba-temp). Adjust the /mnt/main/... prefixes if your pool
+# differs, and copy collector-loop.sh to the path referenced below.
+
+services:
+  node-exporter:
+    image: quay.io/prometheus/node-exporter:latest
+    # Host networking -> binds :9100 on the host's interfaces, including the
+    # tailnet one. Host CPU/mem/fs still come from the bind mounts + --path.*.
+    network_mode: host
+    pid: host
+    command:
+      - --path.rootfs=/host
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+      - --collector.textfile.directory=/textfile
+      - --collector.zfs
+      - --no-collector.wifi
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/host:ro,rslave
+      - textfile:/textfile:ro
+    restart: unless-stopped
+
+  metrics-collector:
+    image: debian:stable-slim
+    # Needs raw access to /dev/mpt2ctl (HBA control) and the drives. privileged
+    # is the pragmatic choice on a NAS where the disk set is dynamic; it also
+    # exposes host /dev inside the container. Trades breadth for simplicity.
+    privileged: true
+    pid: host
+    volumes:
+      - /mnt/main/apps/hba-temp:/opt/hba-temp:ro
+      - /mnt/main/apps/truenas-monitoring/collector-loop.sh:/collector-loop.sh:ro
+      - textfile:/textfile
+    # smartmontools isn't in the base image; install once on start, then loop.
+    # (Baking a small image is the later optimization if start latency matters.)
+    command:
+      - bash
+      - -c
+      - "apt-get update && apt-get install -y --no-install-recommends smartmontools && exec bash /collector-loop.sh"
+    restart: unless-stopped
+
+volumes:
+  textfile:
