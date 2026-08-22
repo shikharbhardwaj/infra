@@ -1734,25 +1734,15 @@
         "show": "current",
         "onlyAlertsOnDashboard": false,
         "dashboardAlerts": false,
-        "stateFilter": [
-          "alerting",
-          "pending"
-        ],
+        "stateFilter": {
+          "alerting": true,
+          "pending": true,
+          "no_data": false,
+          "normal": false,
+          "error": false
+        },
         "sortOrder": 1,
-        "maxItems": 100,
-        "alertListOptions": {
-          "viewMode": "list",
-          "groupBy": [],
-          "sortOrder": 1,
-          "maxItems": 100,
-          "stateFilter": {
-            "alerting": true,
-            "pending": true,
-            "no_data": false,
-            "ok": false,
-            "error": false
-          }
-        }
+        "maxItems": 100
       }
     }
   ]
