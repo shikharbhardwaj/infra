@@ -1,0 +1,2 @@
+podman_secrets:
+- shelly_plug_device_config

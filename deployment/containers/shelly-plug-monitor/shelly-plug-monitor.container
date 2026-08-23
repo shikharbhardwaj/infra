@@ -1,0 +1,34 @@
+[Unit]
+Description=shelly-plug-monitor - polls Shelly smart plugs' RPC and exports smartplug_* Prometheus metrics
+Wants=network.target
+After=network.target
+
+[Container]
+ContainerName=shelly-plug-monitor
+Image=ghcr.io/shikharbhardwaj/shelly-plug-monitor:latest
+AutoUpdate=registry
+
+Network=web
+
+# Exposed on the WSL2 host network so vmagent (on tyr) can scrape it over
+# gliese's WSL2 tailnet IP. NOTE: that is NOT gliese_tailscale_ip - that
+# secret is the *Windows* host IP (windows_exporter/LHM live there); podman
+# containers run in the WSL2 distro, which is a separate tailnet node. See
+# vmagent/scrape.yml's shelly-plug-monitor job.
+PublishPort=9080:9080
+
+# Device list (plug ip / id / friendly_name / digest-auth key) is sensitive,
+# so it rides as a podman secret rather than a rendered file in the checkout.
+# Same secret the k8s deployment uses (kustomize/shelly-plug-monitor). The
+# app reads it from DEVICE_CONFIG_PATH.
+Secret=shelly_plug_device_config,type=mount,target=device-config.json
+Environment=DEVICE_CONFIG_PATH=/run/secrets/device-config.json
+
+# No traefik route: internal scrape target only, reached by vmagent over the
+# tailnet, same posture as victoria-metrics.
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target
