@@ -5,4 +5,3 @@ resources:
   - graphite_exporter.yml
   - custom-stats-exporter.yml
   - openwrt.yml
-  - shelly-plug-monitor.yml
