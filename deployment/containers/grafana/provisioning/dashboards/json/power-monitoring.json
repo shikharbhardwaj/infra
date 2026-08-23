@@ -53,7 +53,7 @@
               }
             ]
           },
-          "unit": "currency${currency:text}"
+          "unit": "none"
         },
         "overrides": []
       },
@@ -110,7 +110,7 @@
           "refId": "B"
         }
       ],
-      "title": "Estimated monthly cost",
+      "title": "Estimated monthly cost (${currency:text})",
       "type": "stat"
     },
     {
