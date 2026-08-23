@@ -48,31 +48,48 @@ power = prometheus_client.Gauge('smartplug_power_watts', 'Smartplug power readin
 temp = prometheus_client.Gauge('smartplug_temperature_celcius', 'Smartplug temperature (celcius)', ['device_id', 'device_name'])
 energy = prometheus_client.Counter('smartplug_energy_watthour', 'Total energy consumption in Watthours', ['device_id', 'device_name'])
 
-last_energy_captured = 0
+# Last observed cumulative energy (aenergy.total, Wh) per device id. The Shelly
+# keeps its own monotonic total; we mirror positive deltas into the Prometheus
+# counter so `increase(smartplug_energy_watthour_total[...])` stays correct even
+# with several plugs. Keyed by device - a single shared global previously made
+# multiple plugs clobber each other's accounting.
+last_energy_total: Dict[str, float] = {}
 
 def observe_data(data: Dict, device_cfg: Device):
   required_keys = { 'apower', 'voltage', 'temperature', 'aenergy' }
   missing_keys = required_keys - data.keys()
 
   if missing_keys:
-    log.warning('Did not find power data in response.')
+    log.warning('Did not find power data in response (missing: %s).', missing_keys)
     return
+
+  labels = (device_cfg.id, device_cfg.friendly_name)
 
   power_watts = float(data.get('apower', 0))
   voltage_volts = float(data.get('voltage', 0))
-  current_amps = 0 if voltage_volts == 0 else power_watts / voltage_volts
+  # Prefer the plug's own current reading; fall back to P/V only if the field
+  # is absent (deriving it double-counts the power factor error).
+  if data.get('current') is not None:
+    current_amps = float(data['current'])
+  else:
+    current_amps = 0 if voltage_volts == 0 else power_watts / voltage_volts
   temp_celcius = data.get('temperature', {}).get('tC', 0)
-  energy_by_minute_watt_hour = data.get('aenergy', {}).get('by_minute')[1] / 1000
 
-  power.labels(device_cfg.id, device_cfg.friendly_name).set(power_watts)
-  voltage.labels(device_cfg.id, device_cfg.friendly_name).set(voltage_volts)
-  current.labels(device_cfg.id, device_cfg.friendly_name).set(current_amps)
-  temp.labels(device_cfg.id, device_cfg.friendly_name).set(temp_celcius)
+  power.labels(*labels).set(power_watts)
+  voltage.labels(*labels).set(voltage_volts)
+  current.labels(*labels).set(current_amps)
+  temp.labels(*labels).set(temp_celcius)
+  switch_enabled.labels(*labels).set(1 if data.get('output') else 0)
 
-  global last_energy_captured
-  if energy_by_minute_watt_hour != last_energy_captured:
-    last_energy_captured = energy_by_minute_watt_hour
-    energy.labels(device_cfg.id, device_cfg.friendly_name).inc(energy_by_minute_watt_hour)
+  # Mirror the device's cumulative energy counter via per-device deltas.
+  total_wh = float(data.get('aenergy', {}).get('total', 0))
+  previous = last_energy_total.get(device_cfg.id)
+  last_energy_total[device_cfg.id] = total_wh
+  if previous is not None:
+    # A drop means the device's counter reset (reboot) - count up from zero.
+    delta = total_wh - previous if total_wh >= previous else total_wh
+    if delta > 0:
+      energy.labels(*labels).inc(delta)
 
 
 async def observe_devices(device_configs: DeviceConfigs):
@@ -81,18 +98,20 @@ async def observe_devices(device_configs: DeviceConfigs):
 
 
   while True:
-    log.info('Observations, observations')
-
     for cfg in device_configs.devices:
-      resp = requests.get(f'http://{cfg.ip}/rpc/Switch.GetStatus?id={cfg.id}', auth=HTTPDigestAuth('admin', cfg.key))
+      try:
+        resp = requests.get(f'http://{cfg.ip}/rpc/Switch.GetStatus?id={cfg.id}', auth=HTTPDigestAuth('admin', cfg.key), timeout=5)
+      except requests.RequestException as e:
+        log.warning('Request to %s (%s) failed: %s', cfg.friendly_name, cfg.ip, e)
+        continue
+
       if not resp.ok:
-        log.warning('Response not okay: %d', resp.status_code)
+        log.warning('Response not okay for %s: %d', cfg.friendly_name, resp.status_code)
         continue
 
       data = resp.json()
+      log.debug('Received data from %s: %s', cfg.friendly_name, data)
 
-      log.info('Received data: %s', data)
-      
       observe_data(data, cfg)
 
     await asyncio.sleep(5)
