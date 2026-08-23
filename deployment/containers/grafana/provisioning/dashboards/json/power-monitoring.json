@@ -90,7 +90,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "$currency * (sum(sum_over_time(smartplug_power_watts{device_id=\"$device_id\"}[7d]) / on (device_id) (count_over_time(smartplug_power_watts{device_id=\"$device_id\"}[1m]) * 60) / 1000) by (device_id, device_name))",
+          "expr": "$currency * 4 * (sum(sum_over_time(smartplug_power_watts{device_id=\"$device_id\"}[7d]) / on (device_id) (count_over_time(smartplug_power_watts{device_id=\"$device_id\"}[1m]) * 60) / 1000) by (device_id, device_name))",
           "hide": true,
           "instant": false,
           "legendFormat": "__auto",
@@ -103,7 +103,7 @@
             "uid": "victoriametrics"
           },
           "editorMode": "code",
-          "expr": "$currency * (increase(smartplug_energy_watthour_total{device_id=\"$device_id\"}[7d]) / 1000)",
+          "expr": "$currency * 4 * (increase(smartplug_energy_watthour_total{device_id=\"$device_id\"}[7d]) / 1000)",
           "hide": false,
           "instant": false,
           "range": true,
@@ -1054,9 +1054,9 @@
       {
         "name": "currency",
         "label": "Currency",
-        "description": "Energy price currency. Value is the tariff per kWh (EUR: 0.30, INR: 32).",
+        "description": "Energy tariff per kWh in the selected currency (EUR: 0.30, INR: 8). The monthly-cost panel scales the weekly energy by 4.",
         "type": "custom",
-        "query": "EUR : 0.3, INR : 32",
+        "query": "EUR : 0.3, INR : 8",
         "options": [
           {
             "text": "EUR",
@@ -1065,7 +1065,7 @@
           },
           {
             "text": "INR",
-            "value": "32",
+            "value": "8",
             "selected": false
           }
         ],
