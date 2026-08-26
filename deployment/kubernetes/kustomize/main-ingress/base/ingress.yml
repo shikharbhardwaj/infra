@@ -12,11 +12,6 @@ spec:
     - "{{ host }}"
     - "*.{{ host }}"
     secretName: tenzing-dev-cert-tls
-  defaultBackend:
-    service:
-      name: heimdall
-      port:
-        number: 80
   rules:
   - host: "{{ host }}"
     http:
