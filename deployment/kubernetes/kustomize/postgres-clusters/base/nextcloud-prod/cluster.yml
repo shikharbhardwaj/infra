@@ -8,7 +8,9 @@ spec:
   instances: 1
   primaryUpdateStrategy: unsupervised
 
-  imageName: ghcr.io/cloudnative-pg/postgresql:17-minimal-trixie
+  # NOTE: must be a "standard" (not "minimal") image — minimal images omit the
+  # barman-cloud-* CLI that in-tree barmanObjectStore archiving/backup needs.
+  imageName: ghcr.io/cloudnative-pg/postgresql:17-standard-trixie
 
   backup:
     barmanObjectStore:

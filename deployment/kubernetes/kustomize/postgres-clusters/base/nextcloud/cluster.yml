@@ -10,22 +10,10 @@ spec:
 
   imageName: ghcr.io/cloudnative-pg/postgresql:14
 
-  backup:
-    barmanObjectStore:
-      destinationPath: "s3://{{ cnpg_backup_bucket }}/nextcloud"
-      s3Credentials:
-        accessKeyId:
-          name: aws-creds
-          key: ACCESS_KEY_ID
-        secretAccessKey:
-          name: aws-creds
-          key: ACCESS_SECRET_KEY
-      endpointURL: "https://{{ cnpg_backup_s3_endpoint }}"
-      wal:
-        compression: gzip
-        encryption: AES256
-    retentionPolicy: "7d"
-    target: primary
+  # Legacy cluster, superseded by nextcloud-prod. Backup/WAL archiving removed:
+  # it was failing continuously (barman-cloud-wal-archive exit 1), which piled up
+  # thousands of stuck Backup CRs and risked unbounded pg_wal growth. Not backed
+  # up by design — slated for decommission.
 
   storage:
     size: 10Gi

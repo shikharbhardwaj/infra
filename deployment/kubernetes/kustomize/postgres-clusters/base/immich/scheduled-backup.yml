@@ -5,7 +5,8 @@ metadata:
   name: immich-daily-backup
   namespace: cloudnative-pg
 spec:
-  schedule: "0 2 * * *"
+  # CNPG cron is 6-field (seconds first); this is daily at 02:00:00.
+  schedule: "0 0 2 * * *"
   backupOwnerReference: self
   cluster:
     name: immich
