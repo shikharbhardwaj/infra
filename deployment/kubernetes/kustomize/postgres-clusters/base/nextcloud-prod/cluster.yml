@@ -8,9 +8,11 @@ spec:
   instances: 1
   primaryUpdateStrategy: unsupervised
 
-  # NOTE: must be a "standard" (not "minimal") image — minimal images omit the
-  # barman-cloud-* CLI that in-tree barmanObjectStore archiving/backup needs.
-  imageName: ghcr.io/cloudnative-pg/postgresql:17-standard-trixie
+  # NOTE: in-tree barmanObjectStore needs the barman-cloud-* CLI, which ONLY the
+  # "system" image flavor bundles (minimal/standard omit it). "system" is
+  # deprecated and goes away when in-tree Barman support does (~CNPG 1.31) — the
+  # migration target is a minimal/standard image + the Barman Cloud Plugin.
+  imageName: ghcr.io/cloudnative-pg/postgresql:17-system-trixie
 
   backup:
     barmanObjectStore:
