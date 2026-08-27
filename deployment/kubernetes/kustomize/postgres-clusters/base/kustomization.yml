@@ -6,7 +6,6 @@ resources:
 - ./linkwarden
 - ./langfuse
 - ./immich
-- ./nextcloud
 - ./nextcloud-prod
 - ./liftbook-staging
 - ./secret.yml

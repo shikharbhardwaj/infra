@@ -52,8 +52,8 @@ data:
 
     - Services:
         - Nextcloud:
-            href: https://nextcloud.{{ host }}
-            ping: https://nextcloud.{{ host }}/status.php
+            href: https://drive.{{ parent_host }}
+            ping: https://drive.{{ parent_host }}/status.php
             description: File sharing
             icon: nextcloud.png
         - Bitwarden:
@@ -181,7 +181,7 @@ data:
             icon: netdata.png
             description: Hardware monitoring
         - Grafana:
-            href: https://arete.grafana.net
+            href: https://grafana.{{ parent_host }}
             icon: grafana.png
             description: Application stats and logs
       
