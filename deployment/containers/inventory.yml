@@ -26,6 +26,7 @@ gliese:
   - traefik
   - actual-budget
   - replay-hub
+  - ah-invoices
   - litellm-db
   - litellm
   - shelly-plug-monitor

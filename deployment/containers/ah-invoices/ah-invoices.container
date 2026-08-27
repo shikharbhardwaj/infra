@@ -1,0 +1,37 @@
+[Unit]
+Description=AH Invoices - Albert Heijn receipt sync, analytics and monthly shopping list
+Wants=network.target
+After=network.target
+
+[Container]
+ContainerName=ah-invoices
+# Hardened fork (token file 0600, no CORS wildcard, vendored chart.js):
+# https://github.com/shikharbhardwaj/ah-api
+# Pinned to a build SHA on purpose - bump deliberately after reviewing changes.
+Image=ghcr.io/shikharbhardwaj/ah-api:sha-e76419f
+
+Network=web
+
+# Mount volume for SQLite receipts DB and the OAuth token file (.tokens.json,
+# written 0600 by the app). Volume access == AH account access.
+Volume=%h/containers/ah-invoices/data:/data
+
+# No PublishPort on purpose: this app has no authentication of its own and
+# exposes the full purchase history. Reach it only through Traefik.
+Label=traefik.enable=true
+# Dual-host: reachable via the public domain or the local network directly.
+# Hostname is deliberately not "receipts"/"budget"-adjacent public naming.
+Label="traefik.http.routers.ah_invoices.rule=Host(`invoices.gliese.{{ oci_parent_host }}`) || Host(`invoices.{{ local_host }}`)"
+Label=traefik.http.routers.ah_invoices.entryPoints=websecure
+Label=traefik.http.routers.ah_invoices.tls=true
+Label=traefik.http.routers.ah_invoices.tls.certresolver=cloudflare
+# Only request a cert for the public name - local_host has no public DNS, so
+# an ACME challenge for it would just fail.
+Label=traefik.http.routers.ah_invoices.tls.domains[0].main=invoices.gliese.{{ oci_parent_host }}
+Label=traefik.http.services.ah_invoices.loadbalancer.server.port=8000
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target
