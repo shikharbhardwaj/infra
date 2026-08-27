@@ -4,6 +4,10 @@ metadata:
   name: onlyoffice-documentserver
 spec:
   replicas: 1
+  # RWO volumes + replicas:1: Recreate tears down the old pod before starting
+  # the new one, avoiding a multi-attach deadlock on rollout.
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: onlyoffice-documentserver
@@ -14,7 +18,8 @@ spec:
     spec:
       containers:
       - name: onlyoffice-documentserver
-        image: onlyoffice/documentserver:latest
+        # Pinned (was :latest) to the version running in prod at time of writing.
+        image: onlyoffice/documentserver:9.4.0
         ports:
         - containerPort: 80
           name: http
@@ -25,6 +30,56 @@ spec:
         - secretRef:
             name: onlyoffice-documentserver-env
         resources:
+          requests:
+            # Account for whatever still lands on ephemeral storage so the
+            # scheduler reserves it and this pod is no longer the automatic
+            # eviction victim under node disk pressure.
+            ephemeral-storage: "512Mi"
           limits:
             memory: "2Gi"
             cpu: "2"
+            ephemeral-storage: "2Gi"
+        # OnlyOffice serves 200 on /healthcheck once all bundled services are up.
+        # startupProbe gives the bundled Postgres/RabbitMQ migrations time before
+        # liveness starts killing; readiness gates traffic until ready.
+        startupProbe:
+          httpGet:
+            path: /healthcheck
+            port: http
+          periodSeconds: 10
+          failureThreshold: 30
+        readinessProbe:
+          httpGet:
+            path: /healthcheck
+            port: http
+          periodSeconds: 10
+          timeoutSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /healthcheck
+            port: http
+          periodSeconds: 20
+          timeoutSeconds: 5
+          failureThreshold: 3
+        volumeMounts:
+        - name: lib
+          mountPath: /var/lib/onlyoffice
+        - name: db
+          mountPath: /var/lib/postgresql
+        - name: logs
+          mountPath: /var/log/onlyoffice
+        - name: data
+          mountPath: /var/www/onlyoffice/Data
+      volumes:
+      - name: lib
+        persistentVolumeClaim:
+          claimName: onlyoffice-lib
+      - name: db
+        persistentVolumeClaim:
+          claimName: onlyoffice-db
+      - name: logs
+        persistentVolumeClaim:
+          claimName: onlyoffice-logs
+      - name: data
+        persistentVolumeClaim:
+          claimName: onlyoffice-data

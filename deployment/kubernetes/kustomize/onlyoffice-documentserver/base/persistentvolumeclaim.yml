@@ -1,0 +1,49 @@
+# Dedicated volumes for OnlyOffice's writable paths. Without these, the
+# bundled PostgreSQL/RabbitMQ/Redis, converter cache and logs all land on the
+# container's writable layer (node ephemeral storage), grow unbounded, and the
+# kubelet evicts the pod under node disk pressure. Paths match OnlyOffice's
+# documented docker volumes (logs / Data / lib / db). RWO is fine at replicas:1;
+# the Deployment uses strategy Recreate to avoid a multi-attach deadlock on roll.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: onlyoffice-lib
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: freenas-nfs-csi
+  resources:
+    requests:
+      storage: 8Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: onlyoffice-db
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: freenas-nfs-csi
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: onlyoffice-logs
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: freenas-nfs-csi
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: onlyoffice-data
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: freenas-nfs-csi
+  resources:
+    requests:
+      storage: 1Gi
