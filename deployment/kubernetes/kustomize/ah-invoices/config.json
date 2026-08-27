@@ -1,0 +1,10 @@
+{
+    "name": "ah-invoices",
+    "type": "k8s-kustomize",
+    "environments": [
+        {
+            "name": "dev",
+            "status": "live"
+        }
+    ]
+}
