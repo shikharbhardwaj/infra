@@ -1,0 +1,49 @@
+{
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  extends: ["config:recommended", ":dependencyDashboard"],
+  timezone: "Asia/Kolkata",
+  // Batch the noise into one weekly window; the dependency dashboard issue
+  // always shows the current backlog regardless.
+  schedule: ["before 6am on monday"],
+  labels: ["dependencies"],
+
+  // --- What Renovate is allowed to look at ------------------------------------
+  // Argo CD Application manifests that pin an upstream chart via targetRevision.
+  argocd: {
+    managerFilePatterns: ["deployment/kubernetes/argocd/**/*.yml", "deployment/kubernetes/argocd/**/*.yaml"],
+  },
+  // Vendored wrapper charts (e.g. tailscale-operator) that pin an upstream
+  // dependency version in Chart.yaml.
+  helmv3: {
+    managerFilePatterns: ["deployment/kubernetes/helm-values/**/Chart.yaml"],
+  },
+
+  // Stale: the 'nextcloud-prod' Application in here is not deployed (only the
+  // 'nextcloud' app in argocd/ is live). Don't raise PRs against dead config.
+  ignorePaths: ["deployment/kubernetes/helm-values/argo-cd/applications/**"],
+
+  packageRules: [
+    {
+      description: "Immich's chart is published as git tags shaped 'immich-<semver>'; strip the prefix so Renovate compares versions correctly.",
+      matchManagers: ["argocd"],
+      matchFileNames: ["deployment/kubernetes/argocd/immich.yml"],
+      extractVersion: "^immich-(?<version>.*)$",
+    },
+    {
+      description: "A Helm chart's version is NOT its application's version, so no chart bump is auto-merged — every one gets a human who checks the appVersion delta and upstream notes.",
+      matchManagers: ["argocd", "helmv3"],
+      automerge: false,
+    },
+    {
+      description: "Make major chart bumps impossible to miss.",
+      matchManagers: ["argocd", "helmv3"],
+      matchUpdateTypes: ["major"],
+      addLabels: ["chart-major-review"],
+    },
+  ],
+
+  prBodyNotes: [
+    "⚠️ A chart's own version is not the application's version. A chart *patch* can carry an application *major*: immich chart 0.12.0→0.12.1 shipped Immich v2→v3. Before merging, check the chart `appVersion` delta and read the upstream release / migration notes.",
+    "After merge, the Argo CD Application still has to be applied and synced — see docs/chart-upgrades.md for whether that is automatic or manual for this target.",
+  ],
+}

@@ -1,0 +1,47 @@
+name: renovate
+
+# Self-hosted Renovate: scans the repo's pinned Helm charts (Argo CD
+# Application manifests under deployment/kubernetes/argocd/ and vendored
+# Chart.yaml dependencies) and opens PRs for updates. Behaviour is driven by
+# renovate.json5 at the repo root; this workflow only schedules the run.
+
+on:
+  schedule:
+    # Weekly, Monday 05:30 IST (00:00 UTC). renovate.json5 also gates PRs to a
+    # Monday-morning window, so this cadence just wakes the bot up to look.
+    - cron: "0 0 * * 1"
+  workflow_dispatch:
+    inputs:
+      dryRun:
+        description: "Dry run (log only, open no PRs)"
+        type: boolean
+        default: false
+      logLevel:
+        description: "Renovate log level"
+        type: choice
+        options: [info, debug]
+        default: info
+
+concurrency:
+  group: renovate
+  cancel-in-progress: false
+
+jobs:
+  renovate:
+    # GitHub-hosted: Renovate needs outbound access to github.com and the
+    # upstream chart repos, which the tailnet self-hosted runner is not meant
+    # to carry. No cluster access is required to open PRs.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: renovatebot/github-action@v46.2.4
+        with:
+          # Fine-grained PAT scoped to this repo with Contents: read/write and
+          # Pull requests: read/write. The default GITHUB_TOKEN is intentionally
+          # not used — PRs it opens cannot trigger ci.yml.
+          token: ${{ secrets.RENOVATE_TOKEN }}
+        env:
+          RENOVATE_REPOSITORIES: '["shikharbhardwaj/infra"]'
+          RENOVATE_DRY_RUN: ${{ inputs.dryRun == true && 'full' || 'null' }}
+          LOG_LEVEL: ${{ inputs.logLevel || 'info' }}
