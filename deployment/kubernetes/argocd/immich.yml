@@ -1,0 +1,49 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: immich
+  namespace: argocd
+spec:
+  project: immich
+  source:
+    repoURL: https://github.com/immich-app/immich-charts.git
+    path: charts/immich
+    # Chart immich-0.13.1 ships Immich appVersion v3.0.0 (v2 -> v3 major upgrade).
+    # v3 drops pgvecto.rs; this cluster already runs VectorChord (see
+    # postgres-clusters/base/immich/cluster.yml), so the migration precondition
+    # is already met.
+    targetRevision: immich-0.13.1
+    helm:
+      parameters:
+        - name: immich.persistence.library.existingClaim
+          value: immich-pvc
+        - name: valkey.enabled
+          value: 'true'
+        - name: valkey.master.persistence.enabled
+          value: 'false'
+      values: |
+        controllers:
+          main:
+            pod:
+              securityContext:
+                fsGroup: 1000
+                runAsUser: 1000
+                runAsGroup: 1000
+                fsGroupChangePolicy: OnRootMismatch
+            containers:
+              main:
+                env:
+                  DB_HOSTNAME: immich-rw.cloudnative-pg.svc.cluster.local
+                  DB_USERNAME: immich
+                  DB_DATABASE_NAME: immich
+                  # Sourced from the immich-db-url secret in the immich namespace
+                  # (created by the immich-pv kustomize app) instead of an inline
+                  # plaintext value.
+                  DB_PASSWORD:
+                    valueFrom:
+                      secretKeyRef:
+                        name: immich-db-url
+                        key: password
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: immich

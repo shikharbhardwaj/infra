@@ -3,3 +3,4 @@ kind: Kustomization
 resources:
 - persistentvolume.yml
 - persistentvolumeclaim.yml
+- secret.yml
