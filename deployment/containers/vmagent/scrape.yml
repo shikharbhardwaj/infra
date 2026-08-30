@@ -74,19 +74,6 @@ scrape_configs:
         labels:
           host: truenas-saras
 
-  # shelly-plug-monitor: custom exporter (podman quadlet on gliese) that polls
-  # a Shelly smart plug's local RPC and exposes smartplug_* power metrics on
-  # :9080 - the source for the "Power monitoring (Shelly)" Grafana dashboard.
-  # The exporter runs in gliese's WSL2 distro, so it's reached at the WSL2
-  # tailnet IP, NOT gliese_tailscale_ip (that's the Windows host, where
-  # windows_exporter/LHM live). The `host` label marks where the exporter runs;
-  # the metrics themselves are keyed by device_id/device_name, not host.
-  - job_name: shelly-plug-monitor
-    static_configs:
-      - targets: ["{{ gliese_wsl_tailscale_ip }}:9080"]
-        labels:
-          host: gliese
-
   # The thor TrueNAS VM is deferred. To onboard it, add a truenas-thor job here
   # mirroring truenas-saras above (target the truenas_thor_tailscale_ip secret,
   # label host: truenas-thor), declare that secret, and deploy the same app on

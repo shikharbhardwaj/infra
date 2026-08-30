@@ -103,7 +103,6 @@ TODO: Move all these to ArgoCD.
 | [prowlarr](/deployment/kubernetes/kustomize/prowlarr) | ✅ | ❌ |
 | [radarr](/deployment/kubernetes/kustomize/radarr) | ✅ | ❌ |
 | [readarr](/deployment/kubernetes/kustomize/readarr) | ✅ | ❌ |
-| [shelly-plug-monitor](/deployment/kubernetes/kustomize/shelly-plug-monitor) | ✅ | ❌ |
 | [sonarr](/deployment/kubernetes/kustomize/sonarr) | ✅ | ❌ |
 | [ttyd](/deployment/kubernetes/kustomize/ttyd) | ✅ | ❌ |
 | [vaultwarden](/deployment/kubernetes/kustomize/vaultwarden) | ✅ | ❌ |

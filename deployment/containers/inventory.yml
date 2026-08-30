@@ -29,5 +29,4 @@ gliese:
   - ah-invoices
   - litellm-db
   - litellm
-  - shelly-plug-monitor
   # - obsidian-sync-mcp # TODO: audit the mcp server before hosting it.
