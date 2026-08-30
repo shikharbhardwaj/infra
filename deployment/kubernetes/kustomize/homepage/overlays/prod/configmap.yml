@@ -111,6 +111,7 @@ data:
               type: immich
               url: https://photos.{{ parent_host }}
               key: {{ immich_api_key }}
+              version: 2
         - Linkwarden:
             href: https://linkwarden.{{ host }}
             ping: https://linkwarden.{{ host }}
