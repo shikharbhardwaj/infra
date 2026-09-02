@@ -81,10 +81,12 @@ to bring them under Renovate + review, and to enable the app-of-apps above.
 ## Setup / operation
 
 - **Secret:** the workflow needs `RENOVATE_TOKEN` — a fine-grained PAT scoped to
-  this repo with **Contents: read/write** and **Pull requests: read/write**.
-  (The default `GITHUB_TOKEN` is avoided so Renovate's PRs can trigger `ci.yml`.)
-- **Cadence:** scheduled weekly (Mon 05:30 IST); PRs are also gated to a
-  Monday-morning window in `renovate.json5`.
+  this repo with **Contents: read/write**, **Pull requests: read/write**, and
+  **Issues: read/write** (the `:dependencyDashboard` issue and PR label writes
+  both need Issues access). (The default `GITHUB_TOKEN` is avoided so
+  Renovate's PRs can trigger `ci.yml`.)
+- **Cadence:** scheduled weekly (Mon 02:00 IST, a buffer before the PR window
+  below); PRs are also gated to a Monday-morning window in `renovate.json5`.
 - **Manual run / first test:** `Actions → renovate → Run workflow`, with
   **Dry run** checked to see what it *would* do without opening PRs.
 - **Backlog:** Renovate maintains a "Dependency Dashboard" issue listing every
