@@ -1,6 +1,11 @@
 {
   $schema: "https://docs.renovatebot.com/renovate-schema.json",
   extends: ["config:recommended", ":dependencyDashboard"],
+  // config:recommended enables most managers by default; restrict to the two
+  // this repo actually wants Renovate touching, so it can't open PRs against
+  // e.g. GitHub Actions versions or k8s image tags outside the chart pins
+  // this automation is documented (docs/chart-upgrades.md) as covering.
+  enabledManagers: ["argocd", "helmv3"],
   timezone: "Asia/Kolkata",
   // Batch the noise into one weekly window; the dependency dashboard issue
   // always shows the current backlog regardless.

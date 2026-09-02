@@ -7,9 +7,12 @@ name: renovate
 
 on:
   schedule:
-    # Weekly, Monday 05:30 IST (00:00 UTC). renovate.json5 also gates PRs to a
-    # Monday-morning window, so this cadence just wakes the bot up to look.
-    - cron: "0 0 * * 1"
+    # Weekly, Monday 02:00 IST (Sunday 20:30 UTC) - a ~4h buffer before
+    # renovate.json5's own "before 6am on monday" PR window closes, since
+    # GitHub scheduled workflows can be delayed (notably around the top of
+    # the hour) and a tight buffer risks the run landing outside its own
+    # window and silently skipping the week.
+    - cron: "30 20 * * 0"
   workflow_dispatch:
     inputs:
       dryRun:
@@ -37,9 +40,11 @@ jobs:
 
       - uses: renovatebot/github-action@v46.2.4
         with:
-          # Fine-grained PAT scoped to this repo with Contents: read/write and
-          # Pull requests: read/write. The default GITHUB_TOKEN is intentionally
-          # not used — PRs it opens cannot trigger ci.yml.
+          # Fine-grained PAT scoped to this repo with Contents: read/write,
+          # Pull requests: read/write, and Issues: read/write (the
+          # :dependencyDashboard issue plus PR label writes both need Issues
+          # access). The default GITHUB_TOKEN is intentionally not used — PRs
+          # it opens cannot trigger ci.yml.
           token: ${{ secrets.RENOVATE_TOKEN }}
         env:
           RENOVATE_REPOSITORIES: '["shikharbhardwaj/infra"]'
