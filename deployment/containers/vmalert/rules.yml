@@ -97,8 +97,15 @@ groups:
       # host turns up its own phantom inputs.
       - record: node:temperature_max:celsius
         expr: max by (host) (node_hwmon_temp_celsius unless node_hwmon_temp_celsius{chip="platform_nct6775_656", sensor=~"temp4|temp5"})
+      # LHM exposes non-readings under the same lhm_*_temperature_celsius name:
+      # NVMe SMART "Warning/Critical Temperature" are fixed spec limits (the
+      # SN530 on gliese reports 79C/84C constantly), and "CPU Core N Distance to
+      # TjMax" is the margin to the 100C throttle point (higher = cooler), not a
+      # temperature. Unfiltered, the 84C constant pinned gliese's peak 1C under
+      # the Overheating alert. Same failure class as the nct6775 filter above;
+      # match by sensorName so real cpu/gpu/storage diodes are untouched.
       - record: node:temperature_max:celsius
-        expr: max by (host) ({__name__=~"lhm_.+_temperature_celsius"})
+        expr: max by (host) ({__name__=~"lhm_.+_temperature_celsius", sensorName!~"Warning Temperature|Critical Temperature|.+ Distance to TjMax"})
 
       # ---- CPU core count (context for saturation panels) ----
       - record: node:cpu_count:cores
