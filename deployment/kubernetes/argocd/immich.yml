@@ -12,7 +12,7 @@ spec:
     # v3 drops pgvecto.rs; this cluster already runs VectorChord (see
     # postgres-clusters/base/immich/cluster.yml), so the migration precondition
     # is already met.
-    targetRevision: immich-0.13.1
+    targetRevision: 0.13.2
     helm:
       parameters:
         - name: immich.persistence.library.existingClaim
