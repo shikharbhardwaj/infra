@@ -21,7 +21,14 @@ metadata:
   name: onlyoffice-db
 spec:
   accessModes: ["ReadWriteOnce"]
-  storageClassName: freenas-nfs-csi
+  # This backs the bundled PostgreSQL's data directory - every CNPG cluster in
+  # this repo (and obsidian-couchdb's data volume) uses iscsi for the same
+  # reason: NFS's advisory locking is unreliable enough that Postgres's
+  # postmaster.pid flock can fail to actually exclude a second postmaster, and
+  # NFS export caching can ack a write before it's durable, both of which have
+  # bitten Postgres-on-PVC here before. Only the DB volume needs this; the
+  # other three (lib/logs/data) aren't lock-guarded and are fine on NFS.
+  storageClassName: freenas-iscsi-csi
   resources:
     requests:
       storage: 2Gi
