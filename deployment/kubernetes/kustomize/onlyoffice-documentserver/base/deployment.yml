@@ -16,6 +16,25 @@ spec:
       labels:
         app: onlyoffice-documentserver
     spec:
+      # The freenas-nfs-csi backend only root-squashes to `kubeuser` (uid/gid 1000) -
+      # it never grants ds (101:102, the image's fixed docservice/converter user) any
+      # chown/chgrp rights, so neither the image's own entrypoint chown nor a k8s
+      # fsGroup chgrp can hand ds write access here (fsGroup also risks being wiped
+      # by supervisord's initgroups() call when it drops root to `user=ds`). chmod
+      # doesn't have that problem - kubeuser already owns these paths (created by the
+      # entrypoint running as squashed root), so it can freely open permissions up
+      # regardless of which uid/gid actually needs to write later.
+      initContainers:
+      - name: fix-nfs-permissions
+        image: busybox:1.36
+        command: ["sh", "-c", "chmod -R a+rwX /var/lib/onlyoffice /var/log/onlyoffice /var/www/onlyoffice/Data"]
+        volumeMounts:
+        - name: lib
+          mountPath: /var/lib/onlyoffice
+        - name: logs
+          mountPath: /var/log/onlyoffice
+        - name: data
+          mountPath: /var/www/onlyoffice/Data
       containers:
       - name: onlyoffice-documentserver
         # Pinned (was :latest) to the version running in prod at time of writing.
