@@ -61,6 +61,17 @@ Label=traefik.http.routers.drive.tls.certresolver=cloudflare
 Label=traefik.http.routers.drive.service=drive
 Label=traefik.http.services.drive.loadbalancer.server.url=https://drive.{{ tenzing_host }}
 
+# office (OnlyOffice DocumentServer) -> tenzing, public so non-tailnet
+# clients can use the Nextcloud editor too. JWT_ENABLED on the docserver is
+# the only gate - no basicAuth in front, since its unauthenticated
+# fetch/XHR asset calls would just 401 instead of prompting.
+Label=traefik.http.routers.office.rule=Host(`office.{{ oci_parent_host }}`)
+Label=traefik.http.routers.office.entryPoints=websecure
+Label=traefik.http.routers.office.tls=true
+Label=traefik.http.routers.office.tls.certresolver=cloudflare
+Label=traefik.http.routers.office.service=office
+Label=traefik.http.services.office.loadbalancer.server.url=https://office.{{ tenzing_host }}
+
 [Service]
 Restart=always
 

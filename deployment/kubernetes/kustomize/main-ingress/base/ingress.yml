@@ -11,6 +11,10 @@ spec:
   - hosts:
     - "{{ host }}"
     - "*.{{ host }}"
+    # office.{{ parent_host }} is also covered - the dev-namespace cert's
+    # dnsNames already include "*.{{ parent_host }}" (see
+    # ../../letsencrypt/base/certificate.yml), no cert change needed.
+    - "office.{{ parent_host }}"
     secretName: tenzing-dev-cert-tls
   rules:
   - host: "{{ host }}"
@@ -234,6 +238,25 @@ spec:
             port:
               number: 3000
   - host: "office.{{ host }}"
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: onlyoffice-documentserver
+            port:
+              number: 80
+  # Public path, via tyr's traefik (see external-routes.container's "office"
+  # router) - relies on JWT_ENABLED (already on) as the only gate, same as
+  # office.{{ host }} above. Kept as a bare-root DocumentServer URL rather
+  # than a subpath off drive.{{ parent_host }}: the Nextcloud onlyoffice
+  # connector app double-concatenates a non-root DocumentServerUrl with
+  # DocumentServer's own X-Forwarded-Host-derived absolute URLs (confirmed
+  # live 2026-09-20 - every conversion/callback round-trip 404s on
+  # .../onlyoffice/onlyoffice/...), so a real subdomain is the only path
+  # that doesn't fight the connector app's own URL-joining logic.
+  - host: "office.{{ parent_host }}"
     http:
       paths:
       - pathType: Prefix

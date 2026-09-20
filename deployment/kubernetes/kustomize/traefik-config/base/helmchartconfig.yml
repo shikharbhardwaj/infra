@@ -15,9 +15,3 @@ spec:
           respondingTimeouts:
             readTimeout: "0"
             writeTimeout: "0"
-    providers:
-      kubernetesCRD:
-        # Default flipped to false in chart 10.3.1+ - needed so an
-        # IngressRoute in one namespace (e.g. nextcloud-prod) can target a
-        # Service in another (e.g. onlyoffice-documentserver in dev).
-        allowCrossNamespace: true
