@@ -19,8 +19,8 @@ groups:
     labels:
       severity: warning
     annotations:
-      summary: '{{ $labels.host }} root disk ({{ $labels.mount }}) is {{ printf "%.0f" (mul $values.A.Value
-        100) }}% full'
+      summary: '{{ $labels.host }} root disk ({{ $labels.mount }}) is {{ humanizePercentage $values.A.Value
+        }} full'
       description: Root filesystem between 90% and 95% for 15m.
     noDataState: OK
     execErrState: Error
@@ -75,8 +75,8 @@ groups:
     labels:
       severity: critical
     annotations:
-      summary: '{{ $labels.host }} root disk ({{ $labels.mount }}) is {{ printf "%.0f" (mul $values.A.Value
-        100) }}% full'
+      summary: '{{ $labels.host }} root disk ({{ $labels.mount }}) is {{ humanizePercentage $values.A.Value
+        }} full'
       description: Root filesystem above 95% - act now.
     noDataState: OK
     execErrState: Error
@@ -241,8 +241,8 @@ groups:
     labels:
       severity: warning
     annotations:
-      summary: '{{ $labels.host }} tasks stalled on memory {{ printf "%.1f" (mul $values.A.Value 100)
-        }}% of the time'
+      summary: '{{ $labels.host }} tasks stalled on memory {{ humanizePercentage $values.A.Value }} of
+        the time'
       description: Memory PSI waiting fraction above 5% for 10m - real memory contention, not just high
         utilization.
     noDataState: OK
@@ -297,7 +297,7 @@ groups:
     labels:
       severity: warning
     annotations:
-      summary: '{{ $labels.host }} CPU is {{ printf "%.0f" (mul $values.A.Value 100) }}%'
+      summary: '{{ $labels.host }} CPU is {{ humanizePercentage $values.A.Value }}'
       description: CPU above 90% for 30m.
     noDataState: OK
     execErrState: Error
