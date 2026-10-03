@@ -1,0 +1,26 @@
+# Expose the host's /etc/iscsi (initiatorname.iscsi, written by the
+# iscsi-tools extension) to the kubelet. On Talos the kubelet runs in its own
+# container with its own /etc, and hostPath volumes resolve there - without
+# this, truenas-csi's node plugin (hostPath /etc/iscsi, type Directory, not
+# configurable in chart 1.3.0) sits in ContainerCreating forever with
+# `hostPath type check failed, /etc/iscsi is not a directory`.
+#
+# The 1.14 KubeletConfig document can't carry extraMounts (its ExtraMounts()
+# is a stub returning nil) and Talos rejects it alongside the legacy
+# .machine.kubelet section - so drop the document and keep its two settings
+# here instead. Bump the kubelet image together with Talos upgrades
+# (`talosctl upgrade-k8s` rewrites it).
+apiVersion: v1alpha1
+kind: KubeletConfig
+$patch: delete
+---
+machine:
+  kubelet:
+    image: ghcr.io/siderolabs/kubelet:v1.37.1
+    defaultRuntimeSeccompProfileEnabled: true
+    extraMounts:
+      - destination: /etc/iscsi
+        type: bind
+        source: /etc/iscsi
+        # rshared: the node plugin mounts it with Bidirectional propagation.
+        options: [bind, rshared, rw]

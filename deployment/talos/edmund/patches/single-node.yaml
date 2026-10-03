@@ -1,0 +1,21 @@
+# Single control-plane node that also runs workloads (saras is the only host).
+apiVersion: v1alpha1
+kind: HostnameConfig
+auto: off
+hostname: edmund
+---
+# Drop the control-plane NoSchedule taint so pods can schedule at all.
+apiVersion: v1alpha1
+kind: KubeNodeConfig
+taints:
+  $patch: delete
+---
+# Talos 1.14 runs kubelet + pods in a sandboxed PID/mount namespace by default.
+# truenas-csi attaches iSCSI by nsenter-ing /proc/1's mount namespace to run the
+# host's iscsiadm (from the iscsi-tools extension); under isolation /proc/1 is
+# the sandbox, not the host, so that is expected (not yet verified) to break.
+# Off until an iSCSI PVC is proven to attach with it on - adding it back later
+# is supported on an existing cluster.
+apiVersion: v1alpha1
+kind: SecurityProfileConfig
+workloadIsolation: false

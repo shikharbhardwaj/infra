@@ -1,0 +1,49 @@
+# Helm values for truenas/truenas-csi (chart 1.3.0) on edmund, backed by
+# truenas-saras (SCALE 25.10.6, pool `main`). Uses TrueNAS's WebSocket
+# JSON-RPC API, which survives the REST API removal in TrueNAS 26 - unlike
+# tenzing's democratic-csi.
+#
+# This file is a Jinja template: the double-brace placeholders come from the
+# ansible vault, rendered by playbooks/bootstrap-edmund.yml (or by
+# deployment/kubernetes/tools/substitute by hand - see ../README.md). Never
+# write literal double braces here, even in comments.
+truenas:
+  url: "wss://{{ truenas_saras_ip }}"
+  defaultPool: main
+  # TrueNAS ships a self-signed cert; without this the pods sit un-Ready with
+  # no obvious error.
+  insecureSkipTLS: true
+  apiKey: "{{ truenas_saras_csi_api_key }}"
+
+storageClasses:
+  # Block storage for anything with a database: CNPG Postgres and the SQLite
+  # apps (actual-budget, ah-invoices, replay-hub metadata). SQLite over NFS
+  # is a corruption risk, so this is the default.
+  - name: truenas-iscsi
+    isDefault: true
+    # Retain: deleting a PVC (or a namespace) must never take budget/receipt
+    # data with it. Clean up the zvol in TrueNAS by hand once sure.
+    reclaimPolicy: Retain
+    allowVolumeExpansion: true
+    parameters:
+      protocol: iscsi
+      datasetPath: k8s/edmund/iscsi
+      compression: LZ4
+      sparse: "true"
+      # Per-volume TrueNAS periodic snapshot task.
+      snapshot.schedule: "0 3 * * *"
+      snapshot.retention: "14"
+      snapshot.retentionUnit: DAY
+  # Shared/read-mostly files only (e.g. replay-hub's clips) - not databases.
+  - name: truenas-nfs
+    reclaimPolicy: Retain
+    allowVolumeExpansion: true
+    parameters:
+      protocol: nfs
+      datasetPath: k8s/edmund/nfs
+      compression: LZ4
+      nfs.hosts: "{{ edmund_lan_ip }}"
+
+volumeSnapshotClass:
+  enabled: true
+  name: truenas-snapshotclass

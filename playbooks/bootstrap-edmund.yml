@@ -1,0 +1,209 @@
+---
+# Bootstrap edmund (single-node Talos cluster, VM on saras) end to end:
+#   1. on saras: download the Talos ISO, create + start the VM, and make the
+#      TrueNAS VM boot before it.
+#   2. on localhost: render the Talos config, apply it, bootstrap etcd, fetch
+#      a kubeconfig and install snapshot-controller + truenas-csi.
+#
+# Safe to re-run - every step checks state first. It never changes an
+# existing VM's hardware or re-applies config to a configured node; do those
+# by hand (qm set / talosctl apply-config). See deployment/talos/edmund/README.md.
+#
+# Run: make bootstrap-edmund. It must run from a machine on saras's LAN: the
+# first apply-config talks to the node's LAN IP before tailscale is up.
+#
+# Secrets (ansible vault, deployment/kubernetes/tools/group_vars/all/vault.yml):
+#   edmund_lan_ip, edmund_tailscale_authkey, truenas_saras_ip,
+#   truenas_saras_csi_api_key
+
+- name: Create the edmund VM on saras
+  hosts: saras
+  vars:
+    talos_version: v1.14.2
+    # Must match deployment/talos/edmund/schematic.yaml / patches/install.yaml.
+    talos_schematic: 8cdf4cd0a3a9fa4771aab65437032804940f2115b1b1ef6872274dde261fa319
+    talos_iso: "talos-{{ talos_version }}-{{ talos_schematic[:12] }}.iso"
+    edmund_vmid: 210
+    # Fixed so the DHCP reservation for edmund_lan_ip can be set up before the
+    # VM first boots (BC:24:11 is Proxmox's own OUI).
+    edmund_mac: BC:24:11:ED:00:01
+    truenas_vmid: 200
+
+  tasks:
+    - name: Download the Talos ISO
+      ansible.builtin.get_url:
+        url: "https://factory.talos.dev/image/{{ talos_schematic }}/{{ talos_version }}/metal-amd64.iso"
+        dest: "/var/lib/vz/template/iso/{{ talos_iso }}"
+        mode: "0644"
+
+    - name: Check whether the VM exists
+      ansible.builtin.command: qm status {{ edmund_vmid }}
+      register: vm_status
+      failed_when: false
+      changed_when: false
+
+    # Boot order disk-then-cdrom: the empty disk falls through to the ISO on
+    # first boot; once Talos is installed the disk wins and the ISO is inert.
+    # CPU type `host` because Talos needs x86-64-v2 (kvm64 lacks it).
+    - name: Create the VM
+      ansible.builtin.command: >-
+        qm create {{ edmund_vmid }}
+        --name edmund
+        --ostype l26
+        --cpu host --cores 4
+        --memory 8192 --balloon 0
+        --scsihw virtio-scsi-single
+        --scsi0 local-lvm:40,discard=on,iothread=1,ssd=1
+        --ide2 local:iso/{{ talos_iso }},media=cdrom
+        --boot order='scsi0;ide2'
+        --net0 virtio={{ edmund_mac }},bridge=vmbr0
+        --agent enabled=1
+        --onboot 1
+        --startup order=2
+      when: vm_status.rc != 0
+
+    # edmund's PVCs live on the TrueNAS VM, so TrueNAS has to be up first on
+    # a cold boot of saras. `up` is the delay before the next VM starts.
+    - name: Read the TrueNAS VM's startup order
+      ansible.builtin.command: qm config {{ truenas_vmid }}
+      register: truenas_config
+      changed_when: false
+
+    - name: Make the TrueNAS VM start first
+      ansible.builtin.command: qm set {{ truenas_vmid }} --startup order=1,up=120
+      when: "'startup: order=1,up=120' not in truenas_config.stdout"
+
+    - name: Start the VM
+      ansible.builtin.command: qm start {{ edmund_vmid }}
+      register: vm_start
+      when: "'running' not in vm_status.stdout"
+
+
+- name: Bootstrap Talos and storage on edmund
+  hosts: localhost
+  connection: local
+  vars_files:
+    - ../deployment/kubernetes/tools/group_vars/all/vault.yml
+  vars:
+    edmund_dir: "{{ playbook_dir }}/../deployment/talos/edmund"
+    out_dir: "{{ edmund_dir }}/out"
+    # saras's LAN (vmbr0).
+    lan_subnet: 10.42.0.0/16
+    snapshotter_version: v8.6.0
+    truenas_csi_version: 1.3.0
+  environment:
+    TALOSCONFIG: "{{ out_dir }}/talosconfig"
+    KUBECONFIG: "{{ out_dir }}/kubeconfig"
+
+  tasks:
+    - name: Check talosctl, kubectl and helm are installed
+      ansible.builtin.command: "which {{ item }}"
+      loop: [talosctl, kubectl, helm]
+      changed_when: false
+
+    # Re-rendering every run is harmless: out/secrets.yaml is reused, so the
+    # PKI is stable. Changes only reach the node via the apply below (first
+    # boot) or a manual `talosctl apply-config`.
+    - name: Render the Talos config
+      ansible.builtin.command: "{{ edmund_dir }}/gen-config.sh"
+      environment:
+        NODE_LAN_IP: "{{ edmund_lan_ip }}"
+        LAN_SUBNET: "{{ lan_subnet }}"
+        TS_AUTHKEY: "{{ edmund_tailscale_authkey }}"
+      changed_when: false
+
+    - name: Wait for the Talos API on the LAN IP
+      ansible.builtin.wait_for:
+        host: "{{ edmund_lan_ip }}"
+        port: 50000
+        timeout: 600
+        msg: >-
+          edmund isn't answering on {{ edmund_lan_ip }}:50000. Check the DHCP
+          reservation for BC:24:11:ED:00:01, and that this machine is on
+          saras's LAN.
+
+    # Only a node in maintenance mode accepts an --insecure apply; a configured
+    # node demands a client cert and refuses at the TLS handshake, which is
+    # the node's own answer to "already configured?". (Probing with our
+    # talosconfig instead misfires when this machine's clock is ahead of the
+    # node's and the client cert was just minted.)
+    - name: Apply the machine config (maintenance mode only)
+      ansible.builtin.command: >-
+        talosctl apply-config --insecure -n {{ edmund_lan_ip }}
+        --file {{ out_dir }}/controlplane.yaml
+      register: apply
+      changed_when: apply.rc == 0
+      failed_when: apply.rc != 0 and 'certificate required' not in apply.stderr
+
+    # Talos installs to disk, reboots, and comes back on the tailnet as
+    # `edmund`. Everything from here goes through the tailnet name.
+    - name: Wait for edmund on the tailnet
+      ansible.builtin.wait_for:
+        host: edmund
+        port: 50000
+        timeout: 900
+
+    - name: Read etcd's state
+      ansible.builtin.command: talosctl service etcd
+      register: etcd
+      until: etcd.rc == 0
+      retries: 30
+      delay: 10
+      changed_when: false
+
+    # Exactly once per cluster - bootstrapping a live cluster is an error.
+    - name: Bootstrap etcd
+      ansible.builtin.command: talosctl bootstrap
+      # Match the STATE line - the event log says "Running pre state" even
+      # while etcd is still waiting to be bootstrapped.
+      when: etcd.stdout is not search('STATE\\s+Running')
+
+    - name: Fetch the kubeconfig
+      ansible.builtin.command: talosctl kubeconfig {{ out_dir }}/kubeconfig --merge=false --force
+      changed_when: false
+
+    # The generated server is the LAN IP (the in-cluster endpoint); clients
+    # use the tailnet name, which Talos includes in the apiserver cert.
+    - name: Point the kubeconfig at the tailnet name
+      ansible.builtin.command: kubectl config set-cluster edmund --server=https://edmund:6443
+      changed_when: false
+
+    - name: Wait for the node to be Ready
+      ansible.builtin.command: kubectl wait --for=condition=Ready node/edmund --timeout=30s
+      register: node_ready
+      until: node_ready.rc == 0
+      retries: 30
+      delay: 10
+      changed_when: false
+
+    - name: Install the snapshot CRDs and controller
+      ansible.builtin.command: >-
+        kubectl apply -k
+        'https://github.com/kubernetes-csi/external-snapshotter/{{ item }}?ref={{ snapshotter_version }}'
+      loop:
+        - client/config/crd
+        - deploy/kubernetes/snapshot-controller
+      register: snapshotter
+      changed_when: "'created' in snapshotter.stdout or 'configured' in snapshotter.stdout"
+
+    - name: Create the truenas-csi namespace
+      ansible.builtin.command: kubectl apply -f {{ edmund_dir }}/csi/namespace.yaml
+      register: csi_ns
+      changed_when: "'unchanged' not in csi_ns.stdout"
+
+    - name: Render the truenas-csi values
+      ansible.builtin.template:
+        src: "{{ edmund_dir }}/csi/values.yaml"
+        dest: "{{ out_dir }}/csi-values.yaml"
+        mode: "0600"
+
+    - name: Add the truenas-csi Helm repo
+      ansible.builtin.command: >-
+        helm repo add truenas-csi https://raw.githubusercontent.com/truenas/truenas-csi/master/charts --force-update
+      changed_when: false
+
+    - name: Install truenas-csi
+      ansible.builtin.command: >-
+        helm upgrade --install truenas-csi truenas-csi/truenas-csi
+        --version {{ truenas_csi_version }}
+        -n truenas-csi -f {{ out_dir }}/csi-values.yaml --wait --timeout 5m

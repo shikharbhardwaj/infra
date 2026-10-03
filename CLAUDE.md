@@ -269,6 +269,36 @@ Personal RAG/assistant stack over an Obsidian vault. Load-bearing pieces:
   `litellm`'s `litellm-config.yaml` and complete the fallback chain (`luna` -> mac -> cloud) - the spot
   is already marked with a `TODO(luna)` comment there.
 
+## edmund (Talos on saras)
+
+`deployment/talos/edmund/` - single-node Talos cluster in a VM on saras,
+being built to take over gliese's apps so gliese can go on-demand (WoL).
+All state lives on **truenas-saras** via the official
+**truenas-csi** driver (WebSocket API), not democratic-csi. See its README
+for bootstrap; not yet wired into CD.
+
+- **TrueNAS 26 removes the REST API.** tenzing's democratic-csi
+  (`freenas-api-*` drivers) uses REST - don't upgrade tenzing's TrueNAS to
+  26 until democratic-csi ships WebSocket support (upstream issue #509) or
+  tenzing moves to truenas-csi.
+- **Talos 1.14 multi-doc config:** most `machine.*`/`cluster.*` fields moved
+  to separate documents (`KubeNodeConfig`, `UnattendedInstallConfig`, ...);
+  validate patches with `talosctl validate --mode metal --strict` on a
+  rendered config.
+- **`workloadIsolation: false`** on purpose - the 1.14 sandbox is expected
+  to break iSCSI CSI drivers that `nsenter` `/proc/1`. Re-test before enabling.
+- SQLite/Postgres go on `truenas-iscsi` (block), never `truenas-nfs`.
+- **The kubelet runs in its own container with its own `/etc`**, so hostPath
+  volumes on host `/etc` paths don't exist from its point of view.
+  truenas-csi's node plugin needs `/etc/iscsi`; `patches/iscsi.yaml`
+  bind-mounts it into the kubelet. The 1.14 `KubeletConfig` doc can't carry
+  `extraMounts`, so that patch deletes it in favour of legacy
+  `.machine.kubelet` (Talos rejects having both).
+- The bootstrap playbook never re-applies config to a configured node -
+  after changing `patches/`, run `gen-config.sh` then
+  `talosctl apply-config -n edmund --file out/controlplane.yaml` (use
+  `--dry-run` first to see the diff and whether it needs a reboot).
+
 ## Known outstanding issues
 
 - gliese's `cf_dns_api_token` is malformed or lacks Cloudflare zone access

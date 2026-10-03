@@ -1,0 +1,19 @@
+# Talos Image Factory schematic for edmund's boot ISO and installer image.
+#
+# The schematic ID is a content hash of this file:
+#   curl -s -X POST --data-binary @schematic.yaml https://factory.talos.dev/schematics
+# It is pinned in patches/install.yaml (installer image) and README.md (ISO
+# URL) - re-POST and update both whenever this list changes.
+#
+# - iscsi-tools / util-linux-tools: iscsid + iscsiadm on the host, which
+#   truenas-csi's node plugin reaches via nsenter for iSCSI PVCs.
+# - qemu-guest-agent: Proxmox VM (enable "QEMU Guest Agent" in VM Options).
+# - tailscale: node joins the tailnet as `edmund` so CD and laptops reach the
+#   Talos/kube APIs the same way they reach every other host.
+customization:
+  systemExtensions:
+    officialExtensions:
+      - siderolabs/iscsi-tools
+      - siderolabs/util-linux-tools
+      - siderolabs/qemu-guest-agent
+      - siderolabs/tailscale

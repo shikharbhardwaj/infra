@@ -1,0 +1,10 @@
+# Talos enforces the `baseline` Pod Security level cluster-wide; the node
+# plugin is privileged (hostPID, hostNetwork, mount propagation) by necessity.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: truenas-csi
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged
