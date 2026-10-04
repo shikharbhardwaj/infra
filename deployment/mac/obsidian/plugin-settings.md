@@ -9,10 +9,10 @@ corrupting the plugin's store. Set these once through each plugin's settings UI 
 Settings → Copilot:
 
 - **Default chat model** → add a custom OpenAI-compatible endpoint:
-  - Base URL: `https://litellm.gliese.{{ oci_parent_host }}/v1` (or `https://litellm.{{ local_host }}/v1`
-    on the LAN)
-  - API key: gliese's `litellm_master_key` (from `deployment/containers/secrets.yml` on gliese
-    — copy the value, don't commit it anywhere)
+  - Base URL: `https://litellm.edmund.<parent_host>/v1` (LiteLLM on edmund; reached over
+    Tailscale, like everything on `*.edmund.`)
+  - API key: the `obsidian-copilot` virtual key (or `litellm_master_key` from the k8s ansible
+    vault) — copy the value, don't commit it anywhere
   - Model name: `local-mac` for vault-grounded chat (see privacy note below); a
     `openrouter-frontier`-backed mode can be added separately for non-vault questions.
 - **Embedding model**: leave on Copilot's local/built-in embedding option — do not point this

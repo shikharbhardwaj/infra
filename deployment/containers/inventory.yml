@@ -27,6 +27,4 @@ gliese:
   - actual-budget
   - replay-hub
   - ah-invoices
-  - litellm-db
-  - litellm
   # - obsidian-sync-mcp # TODO: audit the mcp server before hosting it.

@@ -13,7 +13,7 @@
         <string>start</string>
         <string>--port</string>
         <string>1234</string>
-        <!-- Defaults to 127.0.0.1-only otherwise, which litellm on gliese
+        <!-- Defaults to 127.0.0.1-only otherwise, which litellm on edmund
              (calling over Tailscale) can't reach. Binding 0.0.0.0 also
              exposes this on the LAN, not just the tailnet - acceptable
              here since the home LAN is already a trusted boundary, but

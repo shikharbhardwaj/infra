@@ -71,7 +71,7 @@ first when adding/removing a host, then bring this table in line with it.
 | ---- | ---- | ---- | -------- |
 | `tenzing` | Kubernetes cluster | Hosts most apps (kustomize/helm, see App inventory below) | See App inventory |
 | `tyr` | Oracle Cloud VM | Public-facing utility host | traefik, crafty, uptime-kuma, victoria-metrics, vmagent, vmalert, grafana |
-| `gliese` | Windows machine | Home services host | traefik, actual-budget, replay-hub, uptime-kuma, litellm, obsidian-sync-mcp |
+| `gliese` | Windows machine | Home services host | traefik, actual-budget, replay-hub, ah-invoices, uptime-kuma (being drained to edmund) |
 | `mac` | MacBook Pro (M4 Max) | Local model node | LM Studio |
 | `arete` | Proxmox VE host | Hypervisor | - |
 | `thor` | Proxmox VE host | Hypervisor | - |

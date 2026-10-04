@@ -1,2 +1,0 @@
-podman_secrets:
-- litellm_db_password

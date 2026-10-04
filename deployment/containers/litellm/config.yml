@@ -1,4 +1,0 @@
-podman_secrets:
-- openrouter_api_key
-- litellm_master_key
-- litellm_db_url

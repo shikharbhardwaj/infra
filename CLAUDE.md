@@ -19,7 +19,8 @@ physical/VM host inventory):
 - **gliese** — Windows machine. Podman actually runs inside **WSL2**, and
   Tailscale is installed *inside that WSL2 distro directly* (not just the
   Windows host) - that's what makes Tailscale SSH land you in the right
-  place. Runs traefik, actual-budget, replay-hub, litellm. Non-standard
+  place. Runs traefik, actual-budget, replay-hub, ah-invoices (being drained
+  to edmund - litellm already moved). Non-standard
   traefik ports (8080/8043/8081 for http/https/dashboard) since 80/443 are
   already taken by something else on that host.
 - **mac** — MacBook Pro (M4 Max). No CD, no automated install - GUI apps
@@ -173,7 +174,7 @@ observability with the workloads it's watching.
   (e.g. `Network=host`) backing it.
 - **victoria-metrics** has no traefik route - internal only, reached by
   vmagent/Grafana via the container name over the shared podman network
-  (same as litellm/litellm-db). Retention (`-retentionPeriod`) is set
+  (the same pattern litellm/litellm-db used on gliese). Retention (`-retentionPeriod`) is set
   conservatively for tyr's disk; VictoriaMetrics is far more
   storage-efficient than netdata's dbengine was, so this should be a small
   fraction of what netdata needed for the same fleet.
@@ -233,11 +234,13 @@ observability with the workloads it's watching.
 
 Personal RAG/assistant stack over an Obsidian vault. Load-bearing pieces:
 
-- **`litellm`** (`deployment/containers/litellm/`) runs on **gliese** as a normal podman
-  quadlet - the single OpenAI-compatible endpoint everything else talks to. Model list lives in
-  `litellm-config.yaml` (mounted into the container as `/app/config.yaml` - not to be confused
-  with the container's own `config.yml` metadata for `podman_secrets`): `local-mac` (LM Studio
-  on the mac, reached over Tailscale) and `openrouter-frontier` (cloud, non-sensitive only).
+- **`litellm`** (`deployment/talos/edmund/apps/litellm/`) runs on **edmund** (moved off
+  gliese 2026-10-04), at `litellm.edmund.<parent_host>` - the single OpenAI-compatible endpoint
+  everything else talks to. Postgres is a CNPG cluster (`litellm-db`, B2 backups via the Barman
+  Cloud Plugin). Model list lives in `litellm-config.yaml` (a ConfigMap): `local-mac` (LM Studio
+  on the mac, reached over Tailscale - pods on edmund route to tailnet IPs fine) and
+  `openrouter-frontier` (cloud, non-sensitive only). Image is pinned; bumping it runs prisma
+  migrations against the DB on start.
 - **mac is model-serving only, for now.** `deployment/mac/` holds just a launch agent to keep
   LM Studio's server up, plus documented (not templated - plugin `data.json` is generated
   state) Obsidian plugin settings. No MCP servers run there.
