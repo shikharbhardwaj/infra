@@ -1,0 +1,46 @@
+# Jinja template (rendered by playbooks/bootstrap-edmund.yml from the ansible
+# vault) - never write literal double braces here, even in comments.
+#
+# One ClusterIssuer (Let's Encrypt, Cloudflare DNS-01 - same token and email
+# as tenzing's letsencrypt Issuers) and one wildcard Certificate that Traefik
+# serves by default. DNS-01 needs only DNS control, so the tailnet-only
+# `*.edmund.` records still get a publicly-trusted cert.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cloudflare-api-token
+  namespace: cert-manager
+type: Opaque
+stringData:
+  api-token: "{{ cloudflare_api_token }}"
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt
+spec:
+  acme:
+    email: "{{ letsencrypt_email }}"
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-account-key
+    solvers:
+      - dns01:
+          cloudflare:
+            apiTokenSecretRef:
+              name: cloudflare-api-token
+              key: api-token
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: edmund-wildcard
+  namespace: traefik
+spec:
+  secretName: edmund-wildcard-tls
+  issuerRef:
+    name: letsencrypt
+    kind: ClusterIssuer
+  dnsNames:
+    - "edmund.{{ parent_host }}"
+    - "*.edmund.{{ parent_host }}"

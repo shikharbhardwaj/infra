@@ -91,6 +91,9 @@
     lan_subnet: 10.42.0.0/16
     snapshotter_version: v8.6.0
     truenas_csi_version: 1.3.0
+    cert_manager_version: v1.21.2
+    traefik_chart_version: 41.6.1
+    platform_dir: "{{ edmund_dir }}/platform"
   environment:
     TALOSCONFIG: "{{ out_dir }}/talosconfig"
     KUBECONFIG: "{{ out_dir }}/kubeconfig"
@@ -207,3 +210,49 @@
         helm upgrade --install truenas-csi truenas-csi/truenas-csi
         --version {{ truenas_csi_version }}
         -n truenas-csi -f {{ out_dir }}/csi-values.yaml --wait --timeout 5m
+
+    # ---- Ingress: cert-manager + Traefik ----------------------------------
+
+    - name: Add the jetstack and traefik Helm repos
+      ansible.builtin.command: "helm repo add {{ item.name }} {{ item.url }} --force-update"
+      loop:
+        - {name: jetstack, url: "https://charts.jetstack.io"}
+        - {name: traefik, url: "https://traefik.github.io/charts"}
+      changed_when: false
+
+    - name: Install cert-manager
+      ansible.builtin.command: >-
+        helm upgrade --install cert-manager jetstack/cert-manager
+        --version {{ cert_manager_version }}
+        -n cert-manager --create-namespace
+        -f {{ platform_dir }}/cert-manager/values.yaml --wait --timeout 5m
+
+    # The wildcard Certificate lives in the traefik namespace, next to the
+    # TLSStore that serves it.
+    - name: Create the traefik namespace
+      ansible.builtin.command: kubectl apply -f {{ platform_dir }}/traefik/namespace.yaml
+      register: traefik_ns
+      changed_when: "'unchanged' not in traefik_ns.stdout"
+
+    - name: Render the ClusterIssuer and wildcard Certificate
+      ansible.builtin.template:
+        src: "{{ platform_dir }}/cert-manager/issuer.yaml"
+        dest: "{{ out_dir }}/issuer.yaml"
+        mode: "0600"
+
+    - name: Apply the ClusterIssuer and wildcard Certificate
+      ansible.builtin.command: kubectl apply -f {{ out_dir }}/issuer.yaml
+      register: issuer
+      changed_when: "issuer.stdout is search('created|configured')"
+
+    - name: Install Traefik
+      ansible.builtin.command: >-
+        helm upgrade --install traefik traefik/traefik
+        --version {{ traefik_chart_version }}
+        -n traefik -f {{ platform_dir }}/traefik/values.yaml --wait --timeout 5m
+
+    # DNS-01 against Cloudflare; first issuance usually takes 1-3 minutes.
+    - name: Wait for the wildcard certificate
+      ansible.builtin.command: >-
+        kubectl wait -n traefik --for=condition=Ready certificate/edmund-wildcard --timeout=600s
+      changed_when: false

@@ -1,0 +1,10 @@
+# Helm values for jetstack/cert-manager (v1.21.2) on edmund.
+crds:
+  enabled: true
+
+# Check DNS-01 propagation against public resolvers only. The node's own
+# resolver (Talos hostDNS) may see a different view of the zone and stall
+# the self-check.
+extraArgs:
+  - --dns01-recursive-nameservers-only
+  - --dns01-recursive-nameservers=1.1.1.1:53,8.8.8.8:53

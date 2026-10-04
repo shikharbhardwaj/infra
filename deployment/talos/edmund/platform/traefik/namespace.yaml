@@ -1,0 +1,10 @@
+# Traefik binds the node's 80/443 via hostPort (no LoadBalancer on a single
+# Talos node), which the `baseline` Pod Security level Talos enforces forbids.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: traefik
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged

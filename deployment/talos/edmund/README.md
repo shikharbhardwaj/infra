@@ -40,6 +40,25 @@ litellm + its Postgres, replay-hub) so gliese can become wake-on-LAN only.
   to `LAN_SUBNET` so they never pick the tailscale interface.
 - `NODE_LAN_IP` must be stable: set a DHCP reservation for the VM's MAC.
 
+## Ingress
+
+`platform/` holds cert-manager and Traefik, both installed by the playbook.
+
+- **Traefik** binds the node's 80/443 via hostPort; there's no LoadBalancer
+  on a single node. HTTP redirects to HTTPS. Ingresses use the default
+  `traefik` IngressClass.
+- **Hostnames are `<app>.edmund.<parent_host>`.** Public Cloudflare DNS has
+  `edmund` and `*.edmund` A records pointing at the node's **tailnet IP**
+  (DNS only, not proxied). That's the same pattern as `*.tenzing.` and
+  `*.gliese.`: reachable from the tailnet, including tyr's traefik for
+  anything that needs public exposure.
+- **TLS:** the `letsencrypt` ClusterIssuer (Cloudflare DNS-01, the same token
+  as tenzing) issues one wildcard cert, `edmund-wildcard-tls` in the
+  `traefik` namespace. Traefik's default TLSStore serves it, so an Ingress
+  needs no `tls:` block or Certificate of its own for an `*.edmund.` host.
+  Other hosts (e.g. a `*.<parent_host>` name) need their own Certificate
+  from the same ClusterIssuer.
+
 ## Bootstrap
 
 **Automated:** `make bootstrap-edmund` (`playbooks/bootstrap-edmund.yml`)
@@ -133,7 +152,5 @@ survives a pod restart. Do this before migrating any app.
   `iscsiadm`. This is inferred, not verified. Test it once the smoke test
   passes: enable it, reboot, and re-attach an iSCSI PVC. If that works, keep
   it on.
-- **Not set up yet:** ingress controller + cert-manager (Talos ships neither;
-  k3s's built-in traefik doesn't exist here), CNPG operator, CD wiring (cd.yml
-  only knows tenzing), node_exporter/vmagent scrape job, app migration from
-  gliese.
+- **Not set up yet:** CNPG operator, CD wiring (cd.yml only knows tenzing),
+  node_exporter/vmagent scrape job, app migration from gliese.

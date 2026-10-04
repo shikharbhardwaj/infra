@@ -1,0 +1,41 @@
+# Helm values for traefik/traefik (chart 41.6.1, Traefik v3.7) on edmund.
+#
+# No LoadBalancer on a single Talos node: Traefik binds the node's 80/443
+# directly via hostPort, so it answers on both the LAN IP and the tailnet IP.
+# `*.edmund.<parent_host>` resolves (public DNS) to the tailnet IP - same
+# pattern as `*.tenzing.` / `*.gliese.` - so tyr's traefik and any tailnet
+# device reach apps here.
+ports:
+  web:
+    hostPort: 80
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+          permanent: true
+  websecure:
+    hostPort: 443
+    # No timeouts on long uploads/streams - same as tenzing's traefik-config.
+    transport:
+      respondingTimeouts:
+        readTimeout: "0"
+        writeTimeout: "0"
+
+service:
+  spec:
+    type: ClusterIP
+
+# hostPort means two Traefik pods can't share the node: replace, don't surge.
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
+    maxSurge: 0
+
+# Every Ingress/IngressRoute without its own cert gets the wildcard issued by
+# cert-manager (../cert-manager/issuer.yaml) - no per-app Certificate needed.
+tlsStore:
+  default:
+    defaultCertificate:
+      secretName: edmund-wildcard-tls
