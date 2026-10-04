@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: litellm
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: litellm}
+  template:
+    metadata:
+      labels: {app: litellm}
+    spec:
+      containers:
+        - name: litellm
+          # Pinned (gliese tracked the moving main-stable tag). Bump
+          # deliberately - LiteLLM runs prisma migrations against the DB on start.
+          image: ghcr.io/berriai/litellm:v1.103.2
+          args: [--config, /app/config.yaml, --port, "4000"]
+          ports:
+            - {name: http, containerPort: 4000}
+          env:
+            - name: LITELLM_LOG
+              value: INFO
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef: {name: litellm-db-app, key: uri}
+          envFrom:
+            - secretRef: {name: litellm}
+          volumeMounts:
+            - {name: config, mountPath: /app/config.yaml, subPath: config.yaml, readOnly: true}
+          startupProbe:
+            httpGet: {path: /health/liveliness, port: http}
+            periodSeconds: 5
+            failureThreshold: 60
+          livenessProbe:
+            httpGet: {path: /health/liveliness, port: http}
+            periodSeconds: 30
+          readinessProbe:
+            httpGet: {path: /health/readiness, port: http}
+            periodSeconds: 10
+          resources:
+            requests: {cpu: 100m, memory: 512Mi}
+            limits: {memory: 1536Mi}
+          # The image runs as root, so no runAsNonRoot; harden the rest.
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+            seccompProfile: {type: RuntimeDefault}
+      volumes:
+        - name: config
+          configMap: {name: litellm-config}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: litellm
+spec:
+  selector: {app: litellm}
+  ports:
+    - {name: http, port: 80, targetPort: http}
+---
+# TLS comes from Traefik's default wildcard cert for *.edmund.<parent_host>.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: litellm
+spec:
+  rules:
+    - host: "litellm.edmund.{{ parent_host }}"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service: {name: litellm, port: {name: http}}

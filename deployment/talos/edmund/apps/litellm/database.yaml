@@ -1,0 +1,58 @@
+# Postgres for LiteLLM's admin UI state (virtual keys, users, spend logs).
+# CNPG creates the `litellm` database + owner and a `litellm-db-app` Secret
+# whose `uri` key is the DATABASE_URL the Deployment consumes.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: litellm-db
+spec:
+  instances: 1
+  storage:
+    size: 5Gi
+    storageClass: truenas-iscsi
+  bootstrap:
+    initdb:
+      database: litellm
+      owner: litellm
+  # Barman Cloud Plugin, not in-tree barmanObjectStore (removed in CNPG 1.31).
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      isWALArchiver: true
+      parameters:
+        barmanObjectName: b2
+---
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: b2
+spec:
+  retentionPolicy: 7d
+  configuration:
+    # serverName defaults to the cluster name -> s3://<bucket>/edmund/litellm-db/
+    destinationPath: "s3://{{ cnpg_backup_bucket }}/edmund"
+    endpointURL: "https://{{ cnpg_backup_s3_endpoint }}"
+    s3Credentials:
+      accessKeyId:
+        name: b2-backup-creds
+        key: ACCESS_KEY_ID
+      secretAccessKey:
+        name: b2-backup-creds
+        key: ACCESS_SECRET_KEY
+    wal:
+      compression: gzip
+    data:
+      compression: gzip
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: litellm-db-daily
+spec:
+  # 6-field cron, seconds first: daily at 02:00.
+  schedule: "0 0 2 * * *"
+  backupOwnerReference: self
+  cluster:
+    name: litellm-db
+  method: plugin
+  pluginConfiguration:
+    name: barman-cloud.cloudnative-pg.io

@@ -13,3 +13,8 @@ edit-secrets:
 
 gen-config:
 	cd kustomize/$(app)/overlays/$(variant) && kubectl kustomize | $(current_dir)/tools/substitute
+
+# Apps on edmund (deployment/talos/edmund/apps/<app>). Pins the kube context so
+# a deploy can't land on whatever cluster happens to be current.
+edmund-deploy:
+	cd ../talos/edmund/apps/$(app) && kubectl kustomize | $(current_dir)/tools/substitute | kubectl --context edmund apply -f -

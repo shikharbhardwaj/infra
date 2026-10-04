@@ -69,6 +69,25 @@ default image (minimal flavour) and back up through the plugin: an
 tenzing. That's deprecated, removed in CNPG 1.31, and only works with the
 deprecated `system` images.
 
+## Apps and CD
+
+Apps live in `apps/<app>/`: a kustomization with double-brace placeholders
+rendered from the k8s ansible vault. **They deploy via CD, not by hand:**
+`.github/workflows/cd-edmund.yml` runs `deployment/automation/deploy-edmund.sh`
+on the self-hosted (tailnet) runner on every push to `main` that touches
+`apps/`, the vault or the deploy tooling. It can also be triggered manually
+(workflow_dispatch). It applies each app with
+`make -C deployment/kubernetes edmund-deploy app=<app>`, which pins
+`--context edmund`.
+
+CD authenticates as the `cd-deployer` ServiceAccount
+(`platform/cd/deployer.yaml`, created by the playbook). The
+`EDMUND_KUBECONFIG` GitHub secret holds a kubeconfig for its token, with the
+server set to `https://edmund:6443`. To rotate or revoke it, delete the
+`cd-deployer-token` Secret. To re-issue it, re-apply `deployer.yaml`,
+rebuild the kubeconfig from the new token, and `gh secret set
+EDMUND_KUBECONFIG`.
+
 ## Bootstrap
 
 **Automated:** `make bootstrap-edmund` (`playbooks/bootstrap-edmund.yml`)
@@ -162,5 +181,4 @@ survives a pod restart. Do this before migrating any app.
   `iscsiadm`. This is inferred, not verified. Test it once the smoke test
   passes: enable it, reboot, and re-attach an iSCSI PVC. If that works, keep
   it on.
-- **Not set up yet:** CD wiring (cd.yml only knows tenzing),
-  node_exporter/vmagent scrape job, app migration from gliese.
+- **Not set up yet:** node_exporter/vmagent scrape job, app migration from gliese.

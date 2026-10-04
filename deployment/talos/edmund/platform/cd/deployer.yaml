@@ -1,0 +1,34 @@
+# Credential for .github/workflows/cd-edmund.yml (GitHub secret
+# EDMUND_KUBECONFIG). A ServiceAccount token rather than the Talos admin
+# client cert: deleting this ServiceAccount (or its token Secret) revokes CD's
+# access instantly, whereas the admin cert can only be revoked by rotating the
+# cluster CA. cluster-admin because apps create namespaces, CRDs' CRs (CNPG,
+# ObjectStore), RBAC, etc.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cd-deployer
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cd-deployer
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: ServiceAccount
+    name: cd-deployer
+    namespace: kube-system
+---
+# Long-lived token (bound tokens from `kubectl create token` expire).
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cd-deployer-token
+  namespace: kube-system
+  annotations:
+    kubernetes.io/service-account.name: cd-deployer
+type: kubernetes.io/service-account-token

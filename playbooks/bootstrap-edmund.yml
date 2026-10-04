@@ -280,3 +280,12 @@
         helm upgrade --install plugin-barman-cloud cnpg/plugin-barman-cloud
         --version {{ barman_plugin_chart_version }}
         -n cnpg-system --wait --timeout 5m
+
+    # ---- CD credential ---------------------------------------------------
+    # ServiceAccount whose token backs the EDMUND_KUBECONFIG GitHub secret
+    # (.github/workflows/cd-edmund.yml). Building the kubeconfig and setting
+    # the secret is manual - see deployment/talos/edmund/README.md.
+    - name: Create the CD deployer ServiceAccount
+      ansible.builtin.command: kubectl apply -f {{ platform_dir }}/cd/deployer.yaml
+      register: deployer
+      changed_when: "deployer.stdout is search('created|configured')"

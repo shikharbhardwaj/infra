@@ -1,0 +1,15 @@
+# LiteLLM proxy + its Postgres on edmund (moved from gliese's podman quadlets).
+# Deploy: make -C deployment/kubernetes edmund-deploy app=litellm
+# (kustomize -> vault substitution -> kubectl --context edmund apply).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: litellm
+resources:
+  - namespace.yaml
+  - secrets.yaml
+  - database.yaml
+  - litellm.yaml
+configMapGenerator:
+  - name: litellm-config
+    files:
+      - config.yaml=litellm-config.yaml

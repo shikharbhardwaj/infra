@@ -1,0 +1,53 @@
+name: CD Edmund
+
+# Deploys deployment/talos/edmund/apps/* to the edmund Talos cluster.
+# Independent of cd.yml (tenzing) so a failure in one never blocks the other.
+on:
+  push:
+    branches: [main]
+    paths:
+      - deployment/talos/edmund/apps/**
+      # Vault changes (rotated secrets) must reach the cluster too.
+      - deployment/kubernetes/tools/**
+      - deployment/kubernetes/Makefile
+      - deployment/automation/deploy-edmund.sh
+      - .github/workflows/cd-edmund.yml
+  workflow_dispatch: {}
+
+jobs:
+  deploy-edmund:
+    # The self-hosted runner is on the tailnet, which is how it reaches
+    # https://edmund:6443.
+    runs-on: [self-hosted, linux, x64]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # A kubeconfig for the cd-deployer ServiceAccount
+      # (deployment/talos/edmund/platform/cd/deployer.yaml); its context is
+      # named `edmund`, which the edmund-deploy make target pins.
+      - name: Write kubeconfig
+        run: |
+          mkdir -p "${{ github.workspace }}/out"
+          echo "${{ secrets.EDMUND_KUBECONFIG }}" > "${{ github.workspace }}/out/edmund.kubeconfig"
+          chmod 600 "${{ github.workspace }}/out/edmund.kubeconfig"
+
+      - uses: azure/setup-kubectl@v4
+        with:
+          version: 'v1.37.1'
+
+      - name: Deploy
+        env:
+          ANSIBLE_PASSWORD: ${{ secrets.ANSIBLE_PASSWORD }}
+          KUBECONFIG: ${{ github.workspace }}/out/edmund.kubeconfig
+        run: ./deployment/automation/deploy-edmund.sh
