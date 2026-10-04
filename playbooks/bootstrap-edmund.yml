@@ -93,6 +93,8 @@
     truenas_csi_version: 1.3.0
     cert_manager_version: v1.21.2
     traefik_chart_version: 41.6.1
+    cnpg_chart_version: 0.29.1            # CNPG operator 1.30.1
+    barman_plugin_chart_version: 0.8.1    # plugin-barman-cloud v0.15.1
     platform_dir: "{{ edmund_dir }}/platform"
   environment:
     TALOSCONFIG: "{{ out_dir }}/talosconfig"
@@ -256,3 +258,25 @@
       ansible.builtin.command: >-
         kubectl wait -n traefik --for=condition=Ready certificate/edmund-wildcard --timeout=600s
       changed_when: false
+
+    # ---- Postgres: CloudNativePG + Barman Cloud Plugin -------------------
+    # Backups go through the plugin (CNPG-I sidecar + ObjectStore CRD), not
+    # in-tree barmanObjectStore - that's deprecated and removed in CNPG 1.31,
+    # and only works with the deprecated `system` images. The plugin needs
+    # cert-manager (installed above) and must share the operator's namespace.
+
+    - name: Add the CloudNativePG Helm repo
+      ansible.builtin.command: helm repo add cnpg https://cloudnative-pg.github.io/charts --force-update
+      changed_when: false
+
+    - name: Install the CloudNativePG operator
+      ansible.builtin.command: >-
+        helm upgrade --install cnpg cnpg/cloudnative-pg
+        --version {{ cnpg_chart_version }}
+        -n cnpg-system --create-namespace --wait --timeout 5m
+
+    - name: Install the Barman Cloud Plugin
+      ansible.builtin.command: >-
+        helm upgrade --install plugin-barman-cloud cnpg/plugin-barman-cloud
+        --version {{ barman_plugin_chart_version }}
+        -n cnpg-system --wait --timeout 5m

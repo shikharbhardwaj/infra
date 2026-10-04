@@ -59,6 +59,16 @@ litellm + its Postgres, replay-hub) so gliese can become wake-on-LAN only.
   Other hosts (e.g. a `*.<parent_host>` name) need their own Certificate
   from the same ClusterIssuer.
 
+## Postgres
+
+CloudNativePG operator 1.30.1 plus the **Barman Cloud Plugin** v0.15.1, both
+in `cnpg-system` and installed by the playbook. Clusters use the operator's
+default image (minimal flavour) and back up through the plugin: an
+`ObjectStore` CR plus `spec.plugins: [{name: barman-cloud.cloudnative-pg.io,
+...}]` on the Cluster. **Not** in-tree `backup.barmanObjectStore` as on
+tenzing. That's deprecated, removed in CNPG 1.31, and only works with the
+deprecated `system` images.
+
 ## Bootstrap
 
 **Automated:** `make bootstrap-edmund` (`playbooks/bootstrap-edmund.yml`)
@@ -152,5 +162,5 @@ survives a pod restart. Do this before migrating any app.
   `iscsiadm`. This is inferred, not verified. Test it once the smoke test
   passes: enable it, reboot, and re-attach an iSCSI PVC. If that works, keep
   it on.
-- **Not set up yet:** CNPG operator, CD wiring (cd.yml only knows tenzing),
+- **Not set up yet:** CD wiring (cd.yml only knows tenzing),
   node_exporter/vmagent scrape job, app migration from gliese.

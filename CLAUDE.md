@@ -288,6 +288,10 @@ for bootstrap; not yet wired into CD.
 - **`workloadIsolation: false`** on purpose - the 1.14 sandbox is expected
   to break iSCSI CSI drivers that `nsenter` `/proc/1`. Re-test before enabling.
 - SQLite/Postgres go on `truenas-iscsi` (block), never `truenas-nfs`.
+- **CNPG on edmund backs up via the Barman Cloud Plugin** (ObjectStore CR +
+  `spec.plugins`), never in-tree `barmanObjectStore` - the tenzing gotchas
+  about `system` images don't apply here, and don't copy tenzing's cluster
+  manifests verbatim. ScheduledBackup cron is still 6-field (seconds first).
 - **The kubelet runs in its own container with its own `/etc`**, so hostPath
   volumes on host `/etc` paths don't exist from its point of view.
   truenas-csi's node plugin needs `/etc/iscsi`; `patches/iscsi.yaml`
