@@ -765,6 +765,79 @@
           "sort": "desc"
         }
       }
+    },
+    {
+      "type": "timeseries",
+      "title": "Fan speeds (all sensors)",
+      "description": "Raw per-sensor fan RPM, not a normalized node:* metric - a fan reading is only meaningful per physical sensor. node_hwmon_fan_rpm covers the ansible-managed Linux hosts (needs lm-sensors; tyr is an OCI VM with no hwmon, and arete/thor expose no fan inputs), lhm_*_fan_rpm covers gliese. A fan sitting at 0 is normal for a GPU with a zero-RPM idle mode.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 35,
+        "w": 24,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "victoriametrics"
+          },
+          "expr": "node_hwmon_fan_rpm{host=\"$node\"}",
+          "legendFormat": "{{chip}} {{sensor}}",
+          "refId": "A",
+          "range": true,
+          "instant": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "victoriametrics"
+          },
+          "expr": "{__name__=~\"lhm_.+_fan_rpm\", host=\"$node\"}",
+          "legendFormat": "{{sensorName}}",
+          "refId": "B",
+          "range": true,
+          "instant": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "rotrpm",
+          "decimals": 0,
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 0,
+            "showPoints": "never",
+            "lineWidth": 2,
+            "gradientMode": "opacity"
+          },
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "min",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
     }
   ]
 }
