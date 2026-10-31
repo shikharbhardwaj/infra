@@ -230,6 +230,15 @@ observability with the workloads it's watching.
   (victoria-metrics, vmagent, vmalert, grafana) join traefik/crafty/
   uptime-kuma on that small OCI instance.
 
+## ISP / ER605 monitoring
+
+Alerts when either home WAN (dual-WAN ER605) goes down. blackbox_exporter on
+arete pings IPs that **ER605 policy routing pins to one WAN each, with backup
+off**. Without those routes, a single-WAN outage goes unnoticed. vmagent job
+`isp-wan` -> `isp:wan_up{wan}` / `isp:internet_up` (keep its `or on() vector(0)`:
+when both WANs are down the probes go absent, not 0). See
+`docs/isp-er605-monitoring.md`.
+
 ## AI stack (Obsidian + LiteLLM + MCP)
 
 Personal RAG/assistant stack over an Obsidian vault. Load-bearing pieces:

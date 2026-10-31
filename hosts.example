@@ -23,3 +23,8 @@ arete
 thor
 saras
 tyr ansible_user=ubuntu
+
+# blackbox_exporter for per-WAN ISP probes (playbooks/configure-isp-probes.yml).
+# Must sit behind the ER605. thor (also behind it) is the alert's cross-check.
+[isp_probe_hosts]
+arete
