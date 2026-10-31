@@ -1,0 +1,28 @@
+---
+# blackbox_exporter (packaged config, `icmp` module) on a box behind the ER605,
+# so vmagent on tyr can ping out through each home WAN. See
+# docs/isp-er605-monitoring.md.
+- name: Install ISP probes
+  hosts: isp_probe_hosts
+  become: true
+
+  tasks:
+    - name: Install blackbox_exporter
+      ansible.builtin.apt:
+        name: prometheus-blackbox-exporter
+        state: present
+        update_cache: true
+
+    # Let blackbox ping via unprivileged ICMP sockets (no raw socket / no
+    # CAP_NET_RAW needed) - same default Ubuntu/Fedora ship; Proxmox has it off.
+    - name: Allow unprivileged ICMP
+      ansible.posix.sysctl:
+        name: net.ipv4.ping_group_range
+        value: "0 2147483647"
+        sysctl_file: /etc/sysctl.d/60-unprivileged-ping.conf
+
+    - name: Enable and (re)start blackbox_exporter
+      ansible.builtin.systemd:
+        name: prometheus-blackbox-exporter
+        state: restarted
+        enabled: true

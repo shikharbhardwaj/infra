@@ -452,3 +452,117 @@ groups:
             type: last
             params: []
           type: query
+- orgId: 1
+  name: isp
+  folder: Alerts
+  interval: 1m
+  rules:
+  - uid: isp-wan-down
+    title: WAN down
+    condition: C
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: '{{ $labels.wan }} is down - running on the other WAN'
+      description: Neither IP pinned to this WAN answers ping. Resolves when the WAN is back.
+    noDataState: OK
+    execErrState: Error
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: victoriametrics
+      model:
+        refId: A
+        datasource:
+          type: prometheus
+          uid: victoriametrics
+        editorMode: code
+        expr: isp:wan_up
+        instant: true
+        range: false
+        intervalMs: 1000
+        maxDataPoints: 43200
+    - refId: C
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: __expr__
+      model:
+        refId: C
+        type: threshold
+        expression: A
+        datasource:
+          type: __expr__
+          uid: __expr__
+        conditions:
+        - evaluator:
+            type: lt
+            params:
+            - 1
+          operator:
+            type: and
+          query:
+            params:
+            - C
+          reducer:
+            type: last
+            params: []
+          type: query
+  - uid: isp-internet-down
+    title: Home internet down
+    condition: C
+    for: 2m
+    labels:
+      severity: critical
+    annotations:
+      summary: Home internet is down (both WANs)
+      description: No WAN answers, or tyr can't reach home at all (arete and thor both unreachable).
+    noDataState: OK
+    execErrState: Error
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: victoriametrics
+      model:
+        refId: A
+        datasource:
+          type: prometheus
+          uid: victoriametrics
+        editorMode: code
+        expr: isp:internet_up unless on() (absent(probe_success{job="isp-wan"}) and on() max(up{job="thor"})
+          == 1)
+        instant: true
+        range: false
+        intervalMs: 1000
+        maxDataPoints: 43200
+    - refId: C
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: __expr__
+      model:
+        refId: C
+        type: threshold
+        expression: A
+        datasource:
+          type: __expr__
+          uid: __expr__
+        conditions:
+        - evaluator:
+            type: lt
+            params:
+            - 1
+          operator:
+            type: and
+          query:
+            params:
+            - C
+          reducer:
+            type: last
+            params: []
+          type: query

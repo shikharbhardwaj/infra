@@ -7,6 +7,9 @@ update-proxmox-hosts:
 configure-node-exporter:
 	ansible-playbook -i hosts playbooks/configure-node-exporter.yml
 
+configure-isp-probes:
+	ansible-playbook -i hosts playbooks/configure-isp-probes.yml
+
 # Needs the ansible vault (pass.sh -> Bitwarden) and a machine on saras's LAN.
 bootstrap-edmund:
 	ansible-playbook -i hosts --vault-password-file pass.sh playbooks/bootstrap-edmund.yml

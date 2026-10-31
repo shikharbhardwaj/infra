@@ -126,3 +126,15 @@ groups:
         expr: max by (host, disk) (disk_temperature_celsius)
       - record: node:hba_temperature:celsius
         expr: max by (host) (hba_temperature_celsius)
+
+  # Home WAN status from the isp-wan probes (see vmagent/scrape.yml).
+  - name: isp
+    interval: 30s
+    rules:
+      # Per WAN: 1 if either of its pinned targets answers.
+      - record: isp:wan_up
+        expr: max by (wan) (probe_success{job="isp-wan"})
+      # Any WAN up. `or on() vector(0)`: when both WANs are down tyr can't
+      # scrape arete, so the probes go absent rather than 0.
+      - record: isp:internet_up
+        expr: max(probe_success{job="isp-wan"}) or on() vector(0)

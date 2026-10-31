@@ -79,3 +79,24 @@ scrape_configs:
   # label host: truenas-thor), declare that secret, and deploy the same app on
   # it. (Left as prose, not a commented-out block: install's preflight scans
   # comments too, so a real placeholder here would fail before the secret exists.)
+
+  # Per-WAN ping via blackbox_exporter on arete (behind the ER605). Each
+  # target is pinned to one WAN by an ER605 policy route with backup OFF, so
+  # it fails exactly when that WAN is down. See docs/isp-er605-monitoring.md.
+  - job_name: isp-wan
+    scrape_interval: 15s
+    metrics_path: /probe
+    params:
+      module: [icmp]
+    static_configs:
+      - targets: ["1.0.0.1", "149.112.112.112"]
+        labels: {host: er605, wan: wan1}
+      - targets: ["8.8.4.4", "208.67.220.220"]
+        labels: {host: er605, wan: wan2}
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__address__]
+        target_label: target
+      - target_label: __address__
+        replacement: "{{ arete_tailscale_ip }}:9115"
